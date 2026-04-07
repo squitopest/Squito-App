@@ -5,7 +5,7 @@ platform :ios do
   lane :build_and_export do
     # Build the app using gym
     gym(
-      workspace: "App.xcworkspace",
+      project: "App.xcodeproj",
       scheme: "App",
       export_method: "app-store",
       clean: true,
