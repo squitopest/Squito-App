@@ -57,7 +57,7 @@ jobs:
 
       - name: Build and Export using Fastlane
         working-directory: ios/App
-        run: bundle exec fastlane build_and_export
+        run: fastlane build_and_export
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
