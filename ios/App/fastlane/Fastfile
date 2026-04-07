@@ -1,0 +1,16 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build the iOS app for TestFlight / App Store"
+  lane :build_and_export do
+    # Build the app using gym
+    gym(
+      workspace: "App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      clean: true,
+      output_directory: "./build",
+      output_name: "SquitoApp.ipa"
+    )
+  end
+end
