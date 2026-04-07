@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -12,7 +12,7 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
   show: { 
     opacity: 1, 
@@ -205,7 +205,7 @@ export default function PointsPage() {
             <div>
               <h4 className="font-bold text-squito-green">Pro tip</h4>
               <p className="mt-1 text-[13px] font-medium leading-relaxed text-squito-green/80 pr-2">
-                Sign up for a plan + leave a review + refer one friend = 650 bonus points. That's a free service visit!
+                Sign up for a plan + leave a review + refer one friend = 650 bonus points. That&apos;s a free service visit!
               </p>
             </div>
           </div>

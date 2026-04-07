@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -10,7 +10,7 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
   show: { 
     opacity: 1, 
@@ -34,7 +34,7 @@ export default function MePage() {
         <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full border-4 border-squito-green bg-[#111] shadow-md">
           <span className="text-[40px]">🏡</span>
         </div>
-        <h1 className="mt-4 font-display text-[22px] font-bold text-gray-900">Marc's Account</h1>
+        <h1 className="mt-4 font-display text-[22px] font-bold text-gray-900">Marc&apos;s Account</h1>
         <p className="text-[13px] font-medium text-gray-500">Premium Shield Member <span className="mx-1">•</span> Gold Points</p>
       </motion.div>
 
