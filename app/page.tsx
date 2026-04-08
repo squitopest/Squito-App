@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { haptics } from "@/lib/haptics";
 
 const feedData = [
   {
@@ -96,6 +97,7 @@ export default function TikTokFeed() {
 
   const toggleLike = (id: number) => {
     setLiked(prev => ({ ...prev, [id]: !prev[id] }));
+    haptics.light();
   };
 
   return (
@@ -197,7 +199,7 @@ export default function TikTokFeed() {
             {/* Comment */}
             <div className="flex flex-col items-center gap-1 mt-1">
               <motion.button
-                onClick={() => setCommentsOpen(true)}
+                onClick={() => { setCommentsOpen(true); haptics.medium(); }}
                 whileTap={{ scale: 0.8 }}
                 className="text-[34px] text-white drop-shadow-md"
               >
@@ -211,6 +213,7 @@ export default function TikTokFeed() {
               <motion.button
                 whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.9 }}
+                onClick={() => haptics.heavy()}
                 className="flex h-[56px] w-[56px] items-center justify-center rounded-full bg-squito-green shadow-[0_0_20px_rgba(107,158,17,0.5)] border-2 border-white/20"
               >
                 <span className="text-[26px]">🗓️</span>

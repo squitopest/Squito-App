@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { haptics } from "@/lib/haptics";
 
 const navItems = [
   { name: "TikTok", href: "/", icon: "🏠" },
@@ -24,6 +25,7 @@ export function BottomNav() {
           <Link
             key={item.name}
             href={item.href}
+            onClick={() => haptics.light()}
             className="flex flex-col items-center justify-center gap-1 p-2"
           >
             <span
