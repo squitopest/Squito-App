@@ -95,6 +95,17 @@ export function WelcomeCarousel() {
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.div
                 key={currentSlide}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, { offset }) => {
+                  if (offset.x < -40) {
+                    handleNext();
+                  } else if (offset.x > 40 && currentSlide > 0) {
+                    haptics.light();
+                    setCurrentSlide((prev) => prev - 1);
+                  }
+                }}
                 initial={{ opacity: 0, x: 50, scale: 0.95 }}
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -50, scale: 0.95 }}

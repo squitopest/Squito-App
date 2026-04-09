@@ -42,6 +42,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
   refreshProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error?: string; success?: boolean }>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -180,6 +181,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   };
 
+  const resetPassword = async (email: string) => {
+    if (!supabase) return { error: "Supabase not configured." };
+    setIsLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://squito-app.vercel.app/me/security",
+    });
+    setIsLoading(false);
+    if (error) return { error: error.message };
+    return { success: true };
+  };
+
   const signOutAction = async () => {
     if (supabase) await supabase.auth.signOut();
     setUser(null);
@@ -209,6 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut: signOutAction,
         continueAsGuest,
         refreshProfile,
+        resetPassword,
       }}
     >
       {children}

@@ -10,13 +10,14 @@ import { NativeBiometric } from "@capgo/capacitor-native-biometric";
 type AuthView = "login" | "signup";
 
 export function AuthGate() {
-  const { user, isGuest, isLoading, isAuthReady, signIn, signUp, continueAsGuest } = useAuth();
+  const { user, isGuest, isLoading, isAuthReady, signIn, signUp, continueAsGuest, resetPassword } = useAuth();
   const [view, setView] = useState<AuthView>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -68,6 +69,7 @@ export function AuthGate() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setMsg("");
     if (!email || !password) {
       setError("Please fill in all fields.");
       return;
@@ -85,6 +87,23 @@ export function AuthGate() {
           await NativeBiometric.setCredentials({ username: email, password, server: "squito.app" });
         } catch(e) {}
       }
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError("");
+    setMsg("");
+    if (!email) {
+      setError("Please enter your email above to reset password.");
+      return;
+    }
+    setSubmitting(true);
+    const result = await resetPassword(email);
+    setSubmitting(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setMsg("Password reset email sent! Please check your inbox.");
     }
   };
 
@@ -169,6 +188,7 @@ export function AuthGate() {
             onClick={() => {
               setView(tab);
               setError("");
+              setMsg("");
             }}
             className={`flex-1 py-3 text-[13px] font-bold uppercase tracking-wider transition-all ${
               view === tab
@@ -231,6 +251,15 @@ export function AuthGate() {
                   {error}
                 </motion.p>
               )}
+              {msg && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl bg-squito-green/10 px-4 py-2.5 text-[13px] font-medium text-[#4c730a]"
+                >
+                  {msg}
+                </motion.p>
+              )}
 
               <GlassButton
                 variant="primary"
@@ -243,6 +272,7 @@ export function AuthGate() {
 
               <button
                 type="button"
+                onClick={handleForgotPassword}
                 className="mt-1 text-[12px] font-semibold text-squito-green hover:underline"
               >
                 Forgot password?
