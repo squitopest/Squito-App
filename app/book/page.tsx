@@ -33,7 +33,7 @@ function BookForm() {
       if (initialPlan === "premium-shield") setFormData((f) => ({ ...f, service: `Premium Shield (${billingCycle})` }));
       if (initialPlan === "ultimate-fortress") setFormData((f) => ({ ...f, service: `Ultimate Fortress (${billingCycle})` }));
     }
-  }, [initialPlan]);
+  }, [initialPlan, billingCycle]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

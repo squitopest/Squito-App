@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     init();
-  }, [fetchProfile]);
+  }, [fetchProfile, router]);
 
   // ── Auth actions ──
 
