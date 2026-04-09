@@ -89,10 +89,25 @@ export default function SecurityPage() {
 
   // Automatically open password form if arriving via email recovery link
   useEffect(() => {
+    // Check initial hash string (if Supabase hasn't eaten it yet)
     if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
       setShowPasswordForm(true);
       // Clean up the URL so it doesn't trigger again on refresh
       window.history.replaceState(null, "", window.location.pathname);
+    }
+    
+    // Listen directly to Supabase engine for the recovery event, bypassing URL race conditions!
+    if (supabase) {
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (event) => {
+          if (event === "PASSWORD_RECOVERY") {
+            setShowPasswordForm(true);
+          }
+        }
+      );
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
     }
   }, []);
 

@@ -189,8 +189,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = async (email: string) => {
     if (!supabase) return { error: "Supabase not configured." };
     setIsLoading(true);
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://squito-app.vercel.app/me/security",
+      redirectTo: `${origin}/me/security`,
     });
     setIsLoading(false);
     if (error) return { error: error.message };
