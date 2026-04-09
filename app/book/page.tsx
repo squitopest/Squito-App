@@ -11,6 +11,7 @@ import { haptics } from "@/lib/haptics";
 function BookForm() {
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan");
+  const billingCycle = searchParams.get("billing") || "monthly";
 
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -28,9 +29,9 @@ function BookForm() {
 
   useEffect(() => {
     if (initialPlan) {
-      if (initialPlan === "essential-defense") setFormData((f) => ({ ...f, service: "Essential Defense" }));
-      if (initialPlan === "premium-shield") setFormData((f) => ({ ...f, service: "Premium Shield" }));
-      if (initialPlan === "ultimate-fortress") setFormData((f) => ({ ...f, service: "Ultimate Fortress" }));
+      if (initialPlan === "essential-defense") setFormData((f) => ({ ...f, service: `Essential Defense (${billingCycle})` }));
+      if (initialPlan === "premium-shield") setFormData((f) => ({ ...f, service: `Premium Shield (${billingCycle})` }));
+      if (initialPlan === "ultimate-fortress") setFormData((f) => ({ ...f, service: `Ultimate Fortress (${billingCycle})` }));
     }
   }, [initialPlan]);
 
@@ -243,9 +244,18 @@ function BookForm() {
             onChange={(e) => setFormData({ ...formData, service: e.target.value })}
             className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
           >
-            <option value="Essential Defense">Essential Defense ($199.99 initial)</option>
-            <option value="Premium Shield">Premium Shield ($299.99 initial)</option>
-            <option value="Ultimate Fortress">Ultimate Fortress ($399.99 initial)</option>
+            {/* If they came from the plans page with a billing cycle, render that exact string */}
+            {initialPlan && <option value={formData.service}>{formData.service}</option>}
+            <optgroup label="Monthly Plans">
+              <option value="Essential Defense (monthly)">Essential Defense ($49.99/mo)</option>
+              <option value="Premium Shield (monthly)">Premium Shield ($79.99/mo)</option>
+              <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo)</option>
+            </optgroup>
+            <optgroup label="Yearly Plans">
+              <option value="Essential Defense (yearly)">Essential Defense ($599.88/yr)</option>
+              <option value="Premium Shield (yearly)">Premium Shield ($959.88/yr)</option>
+              <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1559.88/yr)</option>
+            </optgroup>
             <optgroup label="Other Services">
               <option value="One-time Inspection">One-time Inspection / Custom Quote</option>
             </optgroup>
