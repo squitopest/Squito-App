@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Mock toggle functional component
 function Toggle({
@@ -32,8 +32,30 @@ export default function NotificationsPage() {
     marketing: false,
   });
 
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("squito_notification_prefs");
+      if (saved) {
+        try {
+          setToggles(JSON.parse(saved));
+        } catch (e) {
+          // ignore parse errors
+        }
+      }
+      setIsLoaded(true);
+    }
+  }, []);
+
   const handleToggle = (key: keyof typeof toggles) => {
-    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+    setToggles((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("squito_notification_prefs", JSON.stringify(next));
+      }
+      return next;
+    });
   };
 
   return (

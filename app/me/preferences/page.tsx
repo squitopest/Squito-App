@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function Toggle({
   active,
@@ -24,8 +24,30 @@ function Toggle({
 }
 
 export default function PreferencesPage() {
-  const [darkMode, setDarkMode] = useState(false); // mock default
+  const [darkMode, setDarkMode] = useState(false);
   const [animations, setAnimations] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedDark = localStorage.getItem("squito_pref_darkmode");
+      if (savedDark !== null) setDarkMode(savedDark === "true");
+
+      const savedAnim = localStorage.getItem("squito_pref_animations");
+      if (savedAnim !== null) setAnimations(savedAnim === "true");
+    }
+  }, []);
+
+  const handleDarkMode = (val: boolean) => {
+    setDarkMode(val);
+    if (typeof window !== "undefined") localStorage.setItem("squito_pref_darkmode", String(val));
+    // Implementation Note: the root layout would read this class to set dark mode. 
+    // We are just saving the state cleanly.
+  };
+
+  const handleAnimations = (val: boolean) => {
+    setAnimations(val);
+    if (typeof window !== "undefined") localStorage.setItem("squito_pref_animations", String(val));
+  };
 
   return (
     <div className="flex min-h-full flex-col bg-gray-50 pb-10">
@@ -57,7 +79,7 @@ export default function PreferencesPage() {
                 Toggle dark app theme
               </span>
             </div>
-            <Toggle active={darkMode} onChange={() => setDarkMode(!darkMode)} />
+            <Toggle active={darkMode} onChange={() => handleDarkMode(!darkMode)} />
           </div>
 
           <button className="flex w-full items-center justify-between px-5 py-4 text-left active:bg-gray-50">
@@ -92,7 +114,7 @@ export default function PreferencesPage() {
             </div>
             <Toggle
               active={!animations}
-              onChange={() => setAnimations(!animations)}
+              onChange={() => handleAnimations(!animations)}
             />
           </div>
         </div>
