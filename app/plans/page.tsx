@@ -6,7 +6,7 @@ import Link from "next/link";
 import { haptics } from "@/lib/haptics";
 import { useState } from "react";
 
-type BillingCycle = "monthly" | "yearly" | "initial";
+type BillingCycle = "monthly" | "yearly";
 
 const plans = [
   {
@@ -74,11 +74,9 @@ export default function PlansPage() {
   const getPriceDisplay = (plan: any) => {
     switch (billingCycle) {
       case "monthly":
-        return { amount: plan.prices.monthly, suffix: "/month" };
+        return { amount: plan.prices.monthly, suffix: "/month", initial: plan.prices.initial };
       case "yearly":
-        return { amount: plan.prices.yearly, suffix: "/year" };
-      case "initial":
-        return { amount: plan.prices.initial, suffix: "initial fee" };
+        return { amount: plan.prices.yearly, suffix: "/year", initial: plan.prices.initial };
     }
   };
 
@@ -107,7 +105,7 @@ export default function PlansPage() {
         transition={{ delay: 0.1 }}
         className="mt-8 mx-auto flex items-center rounded-full bg-gray-100 p-1 shadow-inner max-w-sm w-full"
       >
-        {(["monthly", "yearly", "initial"] as const).map((cycle) => (
+        {(["monthly", "yearly"] as const).map((cycle) => (
           <button
             key={cycle}
             onClick={() => {
@@ -120,7 +118,7 @@ export default function PlansPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {cycle === "initial" ? "One-Time" : cycle}
+            {cycle}
           </button>
         ))}
       </motion.div>
@@ -167,6 +165,9 @@ export default function PlansPage() {
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400 mt-1">
                     {pricing.suffix}
+                  </span>
+                  <span className={`text-[11px] font-bold mt-3 px-3 py-1 rounded-full ${plan.popular ? "bg-squito-green/20 text-[#4c730a]" : "bg-gray-100 text-gray-600"}`}>
+                    + {pricing.initial} initial service fee
                   </span>
                 </div>
                 <p
