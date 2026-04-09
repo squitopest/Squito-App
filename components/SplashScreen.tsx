@@ -28,9 +28,6 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     // Mark as shown
     sessionStorage.setItem("squito_splash_shown", "true");
 
-    // Force the app back to the home route (PestTok feed) upon restart/refresh
-    router.replace("/");
-
     // Hide the splash screen after the animation comfortably runs (2.5 seconds)
     const timer = setTimeout(() => {
       setShowSplash(false);
