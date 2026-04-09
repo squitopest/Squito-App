@@ -9,7 +9,7 @@ const slides = [
   {
     id: "welcome",
     emoji: "📱",
-    title: "Welcome to PestTok",
+    title: "Welcome Home",
     desc: "Swipe through our engaging feed to see real Squito squad action.",
     color: "bg-squito-green/10",
     iconColor: "text-squito-green",

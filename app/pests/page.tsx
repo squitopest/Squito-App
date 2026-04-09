@@ -119,7 +119,7 @@ export default function PestsPage() {
               Pest Library
             </h1>
             <p className="mt-1 text-[13px] text-gray-500 font-medium">
-              {pestsData.length} species identified across Nassau & Suffolk
+              Most commonly identified across Nassau & Suffolk
             </p>
           </div>
           <button
