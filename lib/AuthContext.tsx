@@ -123,6 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+        if (event === "PASSWORD_RECOVERY") {
+          // Force route to the security page explicitly if recovery hash is processed
+          router.push("/me/security#type=recovery");
+        }
+
         if (newSession?.user) {
           setUser(newSession.user);
           setSession(newSession);
