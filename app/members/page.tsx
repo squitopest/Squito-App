@@ -37,9 +37,10 @@ export default function MembersPage() {
             Squito Club—exclusive by design.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-squito-moss/90">
-            We built the app so anyone can book as a guest. Squito Club is for homeowners and
-            property managers who want the full experience: priority access, history in one place,
-            and offers reserved for members.
+            We built the app so anyone can book as a guest. Squito Club is for
+            homeowners and property managers who want the full experience:
+            priority access, history in one place, and offers reserved for
+            members.
           </p>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
             <span className="inline-flex items-center justify-center rounded-full border border-squito-pine/20 bg-white px-6 py-3 text-sm font-semibold text-squito-forest">
@@ -53,7 +54,8 @@ export default function MembersPage() {
             </Link>
           </div>
           <p className="mt-6 text-sm text-squito-moss/70">
-            No pressure—guests get the same core service. Club layers on convenience and priority.
+            No pressure—guests get the same core service. Club layers on
+            convenience and priority.
           </p>
         </div>
       </section>
@@ -68,7 +70,9 @@ export default function MembersPage() {
               key={p.title}
               className="rounded-2xl border border-squito-pine/10 bg-white p-6 shadow-sm"
             >
-              <h3 className="font-display text-lg font-semibold text-squito-forest">{p.title}</h3>
+              <h3 className="font-display text-lg font-semibold text-squito-forest">
+                {p.title}
+              </h3>
               <p className="mt-2 text-squito-moss/90">{p.body}</p>
             </li>
           ))}

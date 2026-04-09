@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { GlassButton } from "@/components/ui/GlassButton";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -47,12 +48,16 @@ export function GuestBookingForm() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setStatus("error");
-        setMessage(typeof json.error === "string" ? json.error : "Something went wrong.");
+        setMessage(
+          typeof json.error === "string" ? json.error : "Something went wrong.",
+        );
         return;
       }
       setStatus("success");
       form.reset();
-      setMessage("Request received. We will confirm by phone or email shortly.");
+      setMessage(
+        "Request received. We will confirm by phone or email shortly.",
+      );
     } catch {
       setStatus("error");
       setMessage("Network error. Please try again or call us.");
@@ -67,38 +72,48 @@ export function GuestBookingForm() {
         className="rounded-[32px] border border-squito-neon/20 bg-squito-neon/5 p-8 text-center backdrop-blur-xl"
         role="status"
       >
-        <p className="font-display text-2xl font-semibold text-squito-neon">You remain protected.</p>
+        <p className="font-display text-2xl font-semibold text-squito-neon">
+          You remain protected.
+        </p>
         <p className="mt-3 text-squito-mist/80">{message}</p>
-        <button
+        <GlassButton
+          variant="ghost"
           type="button"
           onClick={() => {
             setStatus("idle");
             setMessage("");
           }}
-          className="mt-8 text-sm font-semibold text-squito-neon underline-offset-4 hover:underline"
+          className="mt-8 text-sm font-semibold text-squito-neon underline-offset-4 hover:underline py-2 px-6"
         >
           Submit another request
-        </button>
+        </GlassButton>
       </motion.div>
     );
   }
 
   return (
-    <motion.form 
+    <motion.form
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      onSubmit={handleSubmit} 
+      onSubmit={handleSubmit}
       className="space-y-6 rounded-[32px] border border-squito-cardBorder bg-squito-card p-6 shadow-2xl backdrop-blur-2xl sm:p-10"
     >
       <div className="mb-8">
-        <h2 className="font-display text-3xl font-semibold text-white">Guest Booking</h2>
-        <p className="mt-2 text-sm text-squito-muted">Fast routing. No account required.</p>
+        <h2 className="font-display text-3xl font-semibold text-white">
+          Guest Booking
+        </h2>
+        <p className="mt-2 text-sm text-squito-muted">
+          Fast routing. No account required.
+        </p>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label htmlFor="name" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-white/90"
+          >
             Full name
           </label>
           <input
@@ -111,7 +126,10 @@ export function GuestBookingForm() {
           />
         </div>
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-white/90"
+          >
             Email
           </label>
           <input
@@ -125,7 +143,10 @@ export function GuestBookingForm() {
           />
         </div>
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="phone"
+            className="block text-sm font-medium text-white/90"
+          >
             Phone
           </label>
           <input
@@ -139,7 +160,10 @@ export function GuestBookingForm() {
           />
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="address" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="address"
+            className="block text-sm font-medium text-white/90"
+          >
             Street address
           </label>
           <input
@@ -152,7 +176,10 @@ export function GuestBookingForm() {
           />
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="cityZip" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="cityZip"
+            className="block text-sm font-medium text-white/90"
+          >
             City & ZIP (Long Island)
           </label>
           <input
@@ -164,7 +191,10 @@ export function GuestBookingForm() {
           />
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="service" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="service"
+            className="block text-sm font-medium text-white/90"
+          >
             What do you need?
           </label>
           <select
@@ -181,7 +211,10 @@ export function GuestBookingForm() {
           </select>
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="preferredDate" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="preferredDate"
+            className="block text-sm font-medium text-white/90"
+          >
             Preferred date or window
           </label>
           <input
@@ -192,7 +225,10 @@ export function GuestBookingForm() {
           />
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="notes" className="block text-sm font-medium text-white/90">
+          <label
+            htmlFor="notes"
+            className="block text-sm font-medium text-white/90"
+          >
             Notes (optional)
           </label>
           <textarea
@@ -215,13 +251,14 @@ export function GuestBookingForm() {
         <p className="text-xs text-squito-muted max-w-[250px]">
           By submitting this request, you agree to our contact terms.
         </p>
-        <button
+        <GlassButton
+          variant="primary"
           type="submit"
           disabled={status === "submitting"}
-          className="inline-flex w-full justify-center rounded-full bg-squito-neon px-8 py-4 text-[15px] font-bold tracking-wide text-[#09090b] shadow-[0_0_20px_rgba(192,255,0,0.2)] transition hover:bg-squito-neonHover active:scale-[0.98] disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full justify-center !rounded-full bg-squito-neon/90 hover:bg-squito-neon dark:bg-squito-neon px-8 py-4 text-[15px] font-bold tracking-wide text-[#09090b] shadow-[0_0_20px_rgba(192,255,0,0.2)] disabled:opacity-60 sm:w-auto"
         >
           {status === "submitting" ? "Sending…" : "Request booking"}
-        </button>
+        </GlassButton>
       </div>
     </motion.form>
   );

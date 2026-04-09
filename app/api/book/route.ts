@@ -17,7 +17,10 @@ export async function POST(request: Request) {
   for (const key of required) {
     const v = data[key];
     if (typeof v !== "string" || !v.trim()) {
-      return NextResponse.json({ error: `Missing or invalid: ${key}` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Missing or invalid: ${key}` },
+        { status: 400 },
+      );
     }
   }
 

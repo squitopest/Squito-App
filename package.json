@@ -18,10 +18,15 @@
     "@capacitor/keyboard": "^8.0.2",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-native-biometric": "^8.4.2",
+    "@supabase/supabase-js": "^2.102.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "next": "^14.2.18",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "resend": "^6.10.0",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.3.0",
