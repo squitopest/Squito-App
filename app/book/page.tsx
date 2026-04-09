@@ -252,9 +252,9 @@ function BookForm() {
               <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo)</option>
             </optgroup>
             <optgroup label="Yearly Plans">
-              <option value="Essential Defense (yearly)">Essential Defense ($599.88/yr)</option>
-              <option value="Premium Shield (yearly)">Premium Shield ($959.88/yr)</option>
-              <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1559.88/yr)</option>
+              <option value="Essential Defense (yearly)">Essential Defense ($539.89/yr)</option>
+              <option value="Premium Shield (yearly)">Premium Shield ($863.89/yr)</option>
+              <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1403.89/yr)</option>
             </optgroup>
             <optgroup label="Other Services">
               <option value="One-time Inspection">One-time Inspection / Custom Quote</option>

@@ -15,7 +15,7 @@ const plans = [
     prices: {
       initial: "$199.99",
       monthly: "$49.99",
-      yearly: "$599.88",
+      yearly: "$539.89",
     },
     desc: "Perfect for smaller homes or first-time customers.",
     features: [
@@ -35,7 +35,7 @@ const plans = [
     prices: {
       initial: "$299.99",
       monthly: "$79.99",
-      yearly: "$959.88",
+      yearly: "$863.89",
     },
     desc: "Most popular — full protection, inside and out.",
     features: [
@@ -53,7 +53,7 @@ const plans = [
     prices: {
       initial: "$399.99",
       monthly: "$129.99",
-      yearly: "$1559.88",
+      yearly: "$1403.89",
     },
     desc: "Total coverage — yard, interior, and everything in between.",
     features: [
@@ -76,7 +76,7 @@ export default function PlansPage() {
       case "monthly":
         return { amount: plan.prices.monthly, suffix: "/month", initial: plan.prices.initial };
       case "yearly":
-        return { amount: plan.prices.yearly, suffix: "/year", initial: plan.prices.initial };
+        return { amount: plan.prices.yearly, suffix: "/year", initial: "waived" };
     }
   };
 
@@ -167,7 +167,9 @@ export default function PlansPage() {
                     {pricing.suffix}
                   </span>
                   <span className={`text-[11px] font-bold mt-3 px-3 py-1 rounded-full ${plan.popular ? "bg-squito-green/20 text-[#4c730a]" : "bg-gray-100 text-gray-600"}`}>
-                    + {pricing.initial} initial service fee
+                    {pricing.initial === "waived" 
+                      ? "Initial Service Fee Waived! 🎁"
+                      : `+ ${pricing.initial} initial service fee`}
                   </span>
                 </div>
                 <p
