@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     // 1. Send Email Notification to Squito Admin
     await resend.emails.send({
       from: "Squito App <onboarding@resend.dev>", // "onboarding@resend.dev" works for free accounts testing
-      to: "service@squitopestcontrol.com",
+      to: "service@getsquito.com",
       subject: `New App Booking: ${data.service}`,
       html: `
         <h2 style="color: #6B9E11;">New Booking Request from App</h2>

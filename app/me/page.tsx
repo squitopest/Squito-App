@@ -501,7 +501,7 @@ function AuthenticatedProfile() {
                   <span className="text-xl opacity-60">✉️</span>
                   <div>
                     <h3 className="font-bold text-[14px] text-gray-900">
-                      service@squitopestcontrol.com
+                      service@getsquito.com
                     </h3>
                     <p className="text-[11px] font-medium text-gray-500">
                       We respond within the hour
