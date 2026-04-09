@@ -48,6 +48,10 @@ export function WelcomeCarousel() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
        localStorage.setItem("squito_welcomed", "true");
+       // Catch Supabase stripping our redirect if it wasn't whitelisted, and force route to Security
+       if (window.location.pathname !== "/me/security") {
+         window.location.replace("/me/security" + window.location.hash);
+       }
        return;
     }
     const hasSeen = localStorage.getItem("squito_welcomed");
