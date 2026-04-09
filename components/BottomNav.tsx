@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { haptics } from "@/lib/haptics";
 
 const navItems = [
-  { name: "PestTok", href: "/", icon: "🏠" },
+  { name: "Home", href: "/", icon: "🏠" },
   { name: "Pests", href: "/pests", icon: "🔍" },
   { name: "Plans", href: "/plans", icon: "🛡️" },
   { name: "Profile", href: "/me", icon: "👤" },
