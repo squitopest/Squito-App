@@ -42,7 +42,8 @@ function BookForm() {
     }
 
     try {
-      const res = await fetch("/api/book", {
+      const API_BASE = (typeof window !== "undefined" && (window as any).Capacitor) ? "https://squito-app.vercel.app" : "";
+      const res = await fetch(`${API_BASE}/api/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

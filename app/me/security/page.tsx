@@ -127,7 +127,8 @@ export default function SecurityPage() {
     setDeleteError("");
 
     try {
-      const res = await fetch("/api/delete-account", {
+      const API_BASE = (typeof window !== "undefined" && (window as any).Capacitor) ? "https://squito-app.vercel.app" : "";
+      const res = await fetch(`${API_BASE}/api/delete-account`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

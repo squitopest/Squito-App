@@ -86,7 +86,8 @@ export default function PestsPage() {
       setIdentifyResult(null);
 
       try {
-        const res = await fetch("/api/identify-pest", {
+        const API_BASE = (typeof window !== "undefined" && (window as any).Capacitor) ? "https://squito-app.vercel.app" : "";
+        const res = await fetch(`${API_BASE}/api/identify-pest`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: base64 }),
