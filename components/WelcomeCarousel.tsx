@@ -46,6 +46,10 @@ export function WelcomeCarousel() {
 
   // Use an effect to cleanly read localStorage after hydration to avoid SSR mismatch
   useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+       localStorage.setItem("squito_welcomed", "true");
+       return;
+    }
     const hasSeen = localStorage.getItem("squito_welcomed");
     if (!hasSeen) {
       setIsVisible(true);

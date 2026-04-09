@@ -87,6 +87,15 @@ export default function SecurityPage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
 
+  // Automatically open password form if arriving via email recovery link
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+      setShowPasswordForm(true);
+      // Clean up the URL so it doesn't trigger again on refresh
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
   const handleChangePassword = async () => {
     if (!supabase) return;
     if (newPassword.length < 6) {
