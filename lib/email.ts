@@ -115,7 +115,7 @@ function buildWelcomeHTML(firstName: string): string {
                 Questions? Call us at
                 <a href="tel:6312031000" style="color:#6b9e11;text-decoration:none;font-weight:600;">(631) 203-1000</a>
                 or email
-                <a href="mailto:service@getsquito.com" style="color:#6b9e11;text-decoration:none;font-weight:600;">service@getsquito.com</a>.
+                <a href="mailto:service@squitopestcontrol.com" style="color:#6b9e11;text-decoration:none;font-weight:600;">service@squitopestcontrol.com</a>.
                 We're here to help.
               </p>
             </td>

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     // 1. Send Email Notification to Squito Admin
     await resend.emails.send({
       from: "Squito App <onboarding@resend.dev>", // "onboarding@resend.dev" works for free accounts testing
-      to: "service@getsquito.com",
+      to: "service@squitopestcontrol.com",
       subject: `New App Booking: ${data.service}`,
       html: `
         <h2 style="color: #6B9E11;">New Booking Request from App</h2>
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     // 2. Send Confirmation Email to Customer
     // (Note: unless domain is verified on Resend, "onboarding@resend.dev" can only send to the verified email. 
-    // Usually in prod you send from "service@getsquito.com" to the user's email)
+    // Usually in prod you send from "service@squitopestcontrol.com" to the user's email)
     await resend.emails.send({
       from: "Squito Pest Control <onboarding@resend.dev>", 
       to: data.email, // This works if they verified domain, otherwise Resend blocks it unless it's the verified email
