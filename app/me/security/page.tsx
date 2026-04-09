@@ -125,9 +125,23 @@ export default function SecurityPage() {
     setPasswordSaving(true);
     setPasswordMessage("");
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
+    let error = null;
+    let retries = 3;
+
+    // Supabase known issue: session locks can be stolen by background refreshes during recovery.
+    // Implement a backoff-retry loop to allow the background lock to release.
+    for (let i = 0; i < retries; i++) {
+        const result = await supabase.auth.updateUser({
+            password: newPassword,
+        });
+        error = result.error;
+        if (!error) break; // Success!
+        if (error.message && error.message.includes("Lock")) {
+            await new Promise(resolve => setTimeout(resolve, 500)); // wait and retry
+        } else {
+            break; // actual auth error, do not retry
+        }
+    }
 
     if (error) {
       setPasswordMessage(error.message);
