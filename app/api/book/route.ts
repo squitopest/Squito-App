@@ -70,28 +70,31 @@ export async function POST(request: Request) {
       `,
     });
 
-    // 3. GorillaDesk CRM Integration Stub
+    // 3. GorillaDesk CRM Integration
     const gorillaDeskApiKey = process.env.GORILLADESK_API_KEY;
     if (gorillaDeskApiKey) {
-      /*
-      // Example of connecting to GorillaDesk API when active
-      await fetch('https://app.gorilladesk.com/api/v2/customers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': \`Bearer \${gorillaDeskApiKey}\`
-        },
-        body: JSON.stringify({
-          contact_name: data.name,
-          email: data.email,
-          custom_fields: {
-            service_address: data.address,
-            preferred_plan: data.service
-          }
-        })
-      });
-      */
-      console.log("[GorillaDesk API Stub] - Successfully pushed to CRM");
+      try {
+        await fetch('https://app.gorilladesk.com/api/v2/customers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${gorillaDeskApiKey}`
+          },
+          body: JSON.stringify({
+            contact_name: data.name,
+            email: data.email,
+            custom_fields: {
+              service_address: data.address,
+              preferred_plan: data.service,
+              phone: data.phone,
+              preferred_date: data.preferredDate || 'Not specified'
+            }
+          })
+        });
+        console.log("[GorillaDesk] - Successfully pushed to CRM");
+      } catch (gdError) {
+        console.error("[GorillaDesk Error]", gdError);
+      }
     }
 
     return NextResponse.json({ ok: true });
