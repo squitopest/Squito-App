@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
         // If we are dropped on the wrong page (like root /), instantly redirect to security
         if (window.location.pathname !== "/me/security") {
-          window.location.replace("/me/security" + window.location.hash);
+          router.push("/me/security" + window.location.hash);
           return; // Abort init, the new page load will handle it
         }
       }
