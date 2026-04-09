@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/haptics";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { supabase } from "@/lib/supabase";
+import { WelcomeCarousel } from "@/components/WelcomeCarousel";
 
 const feedData = [
   {
@@ -373,7 +374,9 @@ export default function TikTokFeed() {
   };
 
   return (
-    <div className="relative h-full w-full snap-y snap-mandatory overflow-y-scroll bg-black scrollbar-hide">
+    <>
+      <WelcomeCarousel />
+      <div className="relative h-full w-full snap-y snap-mandatory overflow-y-scroll bg-black scrollbar-hide">
       {feed.map((post) => (
         <FeedItem
           key={post.id}
@@ -465,5 +468,6 @@ export default function TikTokFeed() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
