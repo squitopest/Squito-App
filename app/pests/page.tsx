@@ -61,35 +61,62 @@ export default function PestsPage() {
     }
   };
 
+  // Compress & normalize any image (HEIC, PNG, BMP, WebP) to JPEG < 1MB
+  // so GPT-4o vision never throws "unsupported image" errors.
+  const compressToJpeg = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new window.Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const MAX = 1024;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Image load failed")); };
+      img.src = objectUrl;
+    });
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset input so the same file can be re-selected
+    e.target.value = "";
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64 = event.target?.result as string;
-      setIdentifyImage(base64);
-      setIdentifying(true);
-      setIdentifyResult(null);
+    setIdentifying(true);
+    setIdentifyResult(null);
 
-      try {
-        const { Capacitor } = await import("@capacitor/core");
-        const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
-        const res = await fetch(`${API_BASE}/api/identify-pest`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64 }),
-        });
-        const data = await res.json();
-        setIdentifyResult(data);
-      } catch {
-        setIdentifyResult({ error: "Failed to identify. Please try again." });
-      } finally {
-        setIdentifying(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const jpeg = await compressToJpeg(file);
+      setIdentifyImage(jpeg);
+
+      const { Capacitor } = await import("@capacitor/core");
+      const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+      const res = await fetch(`${API_BASE}/api/identify-pest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: jpeg }),
+      });
+      const data = await res.json();
+      setIdentifyResult(data);
+    } catch (err: any) {
+      setIdentifyImage(null);
+      setIdentifyResult({ error: err?.message || "Failed to process image. Please try again." });
+    } finally {
+      setIdentifying(false);
+    }
   };
+
 
   return (
     <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8">
