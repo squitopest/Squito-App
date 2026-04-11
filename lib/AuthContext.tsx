@@ -22,6 +22,7 @@ export interface UserProfile {
   avatar_url: string | null;
   tier: string;
   total_points: number;
+  redeemable_points: number;
   onboarding_complete: boolean;
   created_at: string;
 }
@@ -37,7 +38,8 @@ interface AuthState {
   signUp: (
     email: string,
     password: string,
-    displayName: string
+    displayName: string,
+    referralEmail?: string
   ) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
@@ -116,6 +118,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (p) setProfile(p);
       }
 
+      // Initialize APNs Hardware Hook (Native Only)
+      if (typeof window !== "undefined") {
+        import("@capacitor/core").then(({ Capacitor }) => {
+          if (Capacitor.isNativePlatform()) {
+            import("@capacitor/push-notifications").then(({ PushNotifications }) => {
+              PushNotifications.requestPermissions().then((result) => {
+                if (result.receive === 'granted') {
+                  PushNotifications.register();
+                }
+              }).catch(console.warn);
+
+              // Webhook raw APNs tokens directly into OneSignal CRM
+              PushNotifications.addListener('registration', async (token) => {
+                const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+                if (!appId || !supabase) return;
+                try {
+                  const { data: { session: currentSession } } = await supabase.auth.getSession();
+                  await fetch("https://onesignal.com/api/v1/players", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      app_id: appId,
+                      device_type: 0, // 0 = iOS (Apple APNs)
+                      identifier: token.value,
+                      external_user_id: currentSession?.user?.id || undefined
+                    })
+                  });
+                } catch (err) {
+                  console.warn("OneSignal Registration failed", err);
+                }
+              });
+            }).catch(console.warn);
+          }
+        }).catch(console.warn);
+      }
+
       setIsLoading(false);
       setIsAuthReady(true);
 
@@ -124,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, newSession) => {
         if (event === "PASSWORD_RECOVERY") {
-          // Force route to the security page explicitly if recovery hash is processed
           router.push("/me/security#type=recovery");
         }
 
@@ -162,7 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    displayName: string
+    displayName: string,
+    referralEmail?: string
   ) => {
     if (!supabase) return { error: "Supabase not configured. Add your keys to .env.local" };
     setIsLoading(true);
@@ -170,7 +208,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        data: { display_name: displayName },
+        data: { 
+          display_name: displayName,
+          ...(referralEmail ? { referer_email: referralEmail } : {})
+        },
       },
     });
     setIsLoading(false);
@@ -205,7 +246,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setIsGuest(false);
     localStorage.removeItem(GUEST_KEY);
-    router.push("/");
+    // Use hard navigation so Capacitor's WebView fully remounts AuthGate
+    if (typeof window !== "undefined") {
+      window.location.replace("/");
+    } else {
+      router.push("/");
+    }
   };
 
   const continueAsGuest = () => {

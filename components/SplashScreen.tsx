@@ -10,12 +10,7 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
-  const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window !== "undefined") {
-      return !sessionStorage.getItem("squito_splash_shown");
-    }
-    return true;
-  });
+  const [showSplash, setShowSplash] = useState(true);
   const router = useRouter();
 
   useEffect(() => {

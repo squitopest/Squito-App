@@ -140,3 +140,52 @@ function buildWelcomeHTML(firstName: string): string {
 </html>
 `;
 }
+
+export interface RedemptionAlertParams {
+  rewardName: string;
+  pointsSpent: number;
+  userEmail: string;
+  userName: string;
+  userPhone?: string | null;
+}
+
+export async function sendRedemptionAlert({
+  rewardName,
+  pointsSpent,
+  userEmail,
+  userName,
+  userPhone
+}: RedemptionAlertParams) {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[Email] RESEND_API_KEY not set — skipping redemption alert.");
+    return { success: false, error: "No API key" };
+  }
+
+  const { data, error } = await resend.emails.send({
+    from: "Squito Rewards <welcome@squitopestcontrol.com>",
+    to: ["service@getsquito.com", userEmail],
+    subject: `🎁 Reward Redeemed: ${rewardName}`,
+    html: `
+      <h2>New Reward Redemption via Squito App!</h2>
+      <p>A customer has just redeemed a reward using their PestPoints.</p>
+      <hr />
+      <h3>Customer Details</h3>
+      <p><strong>Name:</strong> ${userName}</p>
+      <p><strong>Email:</strong> ${userEmail}</p>
+      <p><strong>Phone:</strong> ${userPhone || "Not provided"}</p>
+      <br />
+      <h3>Redemption Details</h3>
+      <p><strong>Item:</strong> ${rewardName}</p>
+      <p><strong>Points Spent:</strong> ${pointsSpent}</p>
+      <br/>
+      <p style="color:#6b9e11;font-weight:bold;">Action Required: Please process this reward to the customer account or prepare to deliver the physical item at their next service visit.</p>
+    `,
+  });
+
+  if (error) {
+    console.error("[Email] Redemption alert failed:", error);
+    return { success: false, error: error.message };
+  }
+  return { success: true, id: data?.id };
+}

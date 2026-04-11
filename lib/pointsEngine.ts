@@ -46,7 +46,7 @@ export const TIERS: TierInfo[] = [
     perks: [
       "2x earn multiplier",
       "Free annual termite inspection",
-      "VIP same-day routing",
+      "VIP priority routing",
       "Exclusive promotions",
     ],
     color: "#6b9e11", // squito green
@@ -85,45 +85,88 @@ export function getProgressToNextTier(points: number): {
 
 // ──────────────────────────────────────────────
 // Point Operations (Supabase-backed)
+//
+// KEY DESIGN — dual-balance system:
+//   total_points     = lifetime earn total (only goes UP, determines tier)
+//   redeemable_points = spendable balance (goes DOWN on redeem)
+//
+// This means redeeming points never drops your tier.
 // ──────────────────────────────────────────────
 
+// Duplicate guard window (ms) — same user + reason within this window is rejected
+const DEDUP_WINDOW_MS = 60_000; // 60 seconds
+
+/**
+ * Award points with tier multiplier applied automatically.
+ * A Gold member earning 50 base points actually receives 50 × 1.5 = 75.
+ * Includes a 60-second duplicate guard (same user + same reason).
+ */
 export async function awardPoints(
   userId: string,
-  amount: number,
+  baseAmount: number,
   reason: string,
   metadata: Record<string, unknown> = {}
 ) {
   if (!supabase) return { error: "Supabase not configured" };
 
-  // 1. Insert the transaction
-  const { error: txError } = await supabase
+  // ── Duplicate guard ──
+  // Check if this exact user+reason was awarded in the last 60 seconds
+  const cutoff = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
+  const { data: recentTx } = await supabase
     .from("points_transactions")
-    .insert({
-      user_id: userId,
-      amount,
-      type: "earn",
-      reason,
-      metadata,
-    });
+    .select("id")
+    .eq("user_id", userId)
+    .eq("reason", reason)
+    .eq("type", "earn")
+    .gte("created_at", cutoff)
+    .limit(1);
 
-  if (txError) return { error: txError.message };
+  if (recentTx && recentTx.length > 0) {
+    console.warn(`[Points] Duplicate blocked: "${reason}" for user ${userId} within ${DEDUP_WINDOW_MS / 1000}s`);
+    return { error: "Duplicate transaction blocked", duplicate: true };
+  }
 
-  // 2. Update the user's total points
+  // ── Fetch current profile ──
   const { data: profile, error: fetchError } = await supabase
     .from("profiles")
-    .select("total_points")
+    .select("total_points, redeemable_points, tier")
     .eq("id", userId)
     .single();
 
   if (fetchError) return { error: fetchError.message };
 
-  const newTotal = (profile.total_points || 0) + amount;
+  // ── Apply tier multiplier ──
+  const currentTier = getTierForPoints(profile.total_points || 0);
+  const multipliedAmount = Math.round(baseAmount * currentTier.multiplier);
+
+  // ── Insert the transaction (record the actual multiplied amount) ──
+  const { error: txError } = await supabase
+    .from("points_transactions")
+    .insert({
+      user_id: userId,
+      amount: multipliedAmount,
+      type: "earn",
+      reason,
+      metadata: {
+        ...metadata,
+        base_amount: baseAmount,
+        multiplier: currentTier.multiplier,
+        tier_at_earn: currentTier.name,
+      },
+    });
+
+  if (txError) return { error: txError.message };
+
+  // ── Update both balances ──
+  const newTotal = (profile.total_points || 0) + multipliedAmount;
+  const newRedeemable = (profile.redeemable_points ?? profile.total_points ?? 0) + multipliedAmount;
   const newTier = getTierForPoints(newTotal);
 
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
       total_points: newTotal,
+      redeemable_points: newRedeemable,
       tier: newTier.name,
       updated_at: new Date().toISOString(),
     })
@@ -131,9 +174,21 @@ export async function awardPoints(
 
   if (updateError) return { error: updateError.message };
 
-  return { success: true, newTotal, newTier: newTier.name };
+  return {
+    success: true,
+    baseAmount,
+    multiplier: currentTier.multiplier,
+    earnedAmount: multipliedAmount,
+    newTotal,
+    newRedeemable,
+    newTier: newTier.name,
+  };
 }
 
+/**
+ * Redeem points — deducts from redeemable_points only.
+ * total_points is never reduced, so tier status is preserved.
+ */
 export async function redeemPoints(userId: string, rewardId: string) {
   if (!supabase) return { error: "Supabase not configured" };
 
@@ -149,25 +204,27 @@ export async function redeemPoints(userId: string, rewardId: string) {
   // 2. Get user's current balance
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("total_points")
+    .select("total_points, redeemable_points")
     .eq("id", userId)
     .single();
 
   if (profileError || !profile) return { error: "Profile not found" };
 
-  if (profile.total_points < reward.cost_points) {
+  // Use redeemable_points for spending (fallback to total_points for legacy)
+  const spendable = profile.redeemable_points ?? profile.total_points ?? 0;
+
+  if (spendable < reward.cost_points) {
     return { error: "Insufficient points" };
   }
 
-  // 3. Deduct points
-  const newTotal = profile.total_points - reward.cost_points;
-  const newTier = getTierForPoints(newTotal);
+  // 3. Deduct from redeemable only — total_points stays intact
+  const newRedeemable = spendable - reward.cost_points;
 
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
-      total_points: newTotal,
-      tier: newTier.name,
+      redeemable_points: newRedeemable,
+      // total_points stays the same — tier is preserved!
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
@@ -175,7 +232,7 @@ export async function redeemPoints(userId: string, rewardId: string) {
   if (updateError) return { error: updateError.message };
 
   // 4. Record the transaction
-  await supabase.from("points_transactions").insert({
+  const { error: txError } = await supabase.from("points_transactions").insert({
     user_id: userId,
     amount: -reward.cost_points,
     type: "redeem",
@@ -183,14 +240,24 @@ export async function redeemPoints(userId: string, rewardId: string) {
     metadata: { reward_id: rewardId },
   });
 
+  if (txError) {
+    console.error("[PointsEngine] Tx Error: ", txError);
+    return { error: "Failed to record ledger transaction: " + txError.message };
+  }
+
   // 5. Record the redemption
-  await supabase.from("redemptions").insert({
+  const { error: rError } = await supabase.from("redemptions").insert({
     user_id: userId,
     reward_id: rewardId,
     points_spent: reward.cost_points,
   });
 
-  return { success: true, newTotal, reward };
+  if (rError) {
+    console.error("[PointsEngine] Redemptions Error: ", rError);
+    return { error: "Failed to secure redemption log: " + rError.message };
+  }
+
+  return { success: true, newRedeemable, reward };
 }
 
 export async function getPointsHistory(userId: string) {

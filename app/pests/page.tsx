@@ -270,9 +270,32 @@ export default function PestsPage() {
                     🛡️ {selectedPest.riskLevel}
                   </span>
                 </div>
+                
+                <Link href={selectedPest.category === "Wildlife" ? "tel:6312031000" : "/plans"} className="block mt-5 outline-none">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 20 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="mx-auto max-w-[260px] relative overflow-hidden rounded-full bg-gradient-to-r from-squito-green to-[#88c520] p-[2px] shadow-xl shadow-squito-green/30"
+                  >
+                    {/* Shimmer animation bar passing through */}
+                    <motion.div
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1.5 }}
+                      className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg]"
+                    />
+                    <div className="relative flex items-center justify-center gap-2 rounded-full bg-white/10 px-5 py-2.5 backdrop-blur-md">
+                      <span className="text-[13px] font-bold text-white tracking-wide drop-shadow-md">
+                        {selectedPest.category === "Wildlife" ? "📞 Call for Wildlife control" : "View Treatment Options 🛡️"}
+                      </span>
+                    </div>
+                  </motion.div>
+                </Link>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-6 py-4 pb-32">
+              <div className="flex-1 overflow-y-auto px-6 py-4 pb-12">
                 <div className="space-y-5">
                   {/* Overview */}
                   <div>
@@ -356,17 +379,6 @@ export default function PestsPage() {
                 </div>
               </div>
 
-              {/* CTA */}
-              <div className="absolute bottom-0 left-0 right-0 border-t border-gray-100 bg-white/80 p-5 backdrop-blur-xl pb-safe">
-                <Link href="/book">
-                  <GlassButton
-                    variant="primary"
-                    className="w-full py-4 text-[15px]"
-                  >
-                    Book Treatment Plan
-                  </GlassButton>
-                </Link>
-              </div>
             </motion.div>
           </motion.div>
         )}

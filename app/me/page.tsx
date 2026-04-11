@@ -165,7 +165,7 @@ function GuestCTA() {
             },
             {
               icon: "⚡",
-              text: "Priority same-day routing",
+              text: "Priority routing",
             },
             {
               icon: "💰",
@@ -201,17 +201,19 @@ function GuestCTA() {
         >
           <h2 className="font-bold text-gray-900 mb-4">Contact Squito</h2>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-4 rounded-2xl bg-[#f4fae6] p-4 text-squito-green">
-              <span className="text-xl">📞</span>
-              <div>
-                <h3 className="font-bold text-[14px] text-gray-900">
-                  (631) 203-1000
-                </h3>
-                <p className="text-[11px] font-medium text-squito-green">
-                  Call us — same-day available
-                </p>
+            <a href="tel:6312031000" className="block outline-none">
+              <div className="flex items-center gap-4 rounded-2xl bg-[#f4fae6] p-4 text-squito-green transition-transform active:scale-95">
+                <span className="text-xl">📞</span>
+                <div>
+                  <h3 className="font-bold text-[14px] text-gray-900 leading-none mb-1">
+                    (631) 203-1000
+                  </h3>
+                  <p className="text-[11px] font-bold text-squito-green uppercase tracking-wide">
+                    Tap to call
+                  </p>
+                </div>
               </div>
-            </div>
+            </a>
           </div>
         </motion.div>
       </motion.div>
@@ -226,15 +228,17 @@ function AuthenticatedProfile() {
   const [activeView, setActiveView] = useState<"profile" | "points">(
     "profile"
   );
-  const [pointsTab, setPointsTab] = useState<"Earn" | "Redeem" | "Gift" | "History">("Earn");
+  const [pointsTab, setPointsTab] = useState<"Earn" | "Redeem" | "History">("Earn");
   const [pointsHistory, setPointsHistory] = useState<any[]>([]);
   const [rewards, setRewards] = useState<any[]>([]);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, reward: any | null}>({isOpen: false, reward: null});
   const [serviceBookings, setServiceBookings] = useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";
   const totalPoints = profile?.total_points || 0;
+  const redeemablePoints = profile?.redeemable_points ?? totalPoints;
   const tierInfo = getTierForPoints(totalPoints);
   const progress = getProgressToNextTier(totalPoints);
 
@@ -275,12 +279,68 @@ function AuthenticatedProfile() {
     loadBookings();
   }, [user]);
 
+  const handleConfirmRedeem = async () => {
+    if (!user || !confirmModal.reward) return;
+    const reward = confirmModal.reward;
+    setRedeemingId(reward.id);
+                                  
+    try {
+      const { haptics } = await import("@/lib/haptics");
+      await haptics.light();
+    } catch (e) {}
+
+    const { redeemPoints } = await import("@/lib/pointsEngine");
+    const res = await redeemPoints(user.id, reward.id);
+                                  
+    if (res.success) {
+      try {
+        await fetch("/api/redeem-alert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rewardName: reward.name,
+            pointsSpent: reward.cost_points,
+            userEmail: user.email,
+            userName: displayName,
+            userPhone: profile?.phone || "",
+          }),
+        });
+      } catch (err) {
+        console.warn("[Redeem] Alert dispatch failed", err);
+      }
+
+      try {
+        const confetti = (await import("canvas-confetti")).default;
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ["#6b9e11", "#a3e635", "#eab308"]
+        });
+      } catch (err) {
+        console.warn("[Redeem] Confetti failed", err);
+      }
+
+      setConfirmModal({ isOpen: false, reward: null });
+      setTimeout(() => alert("🎉 Reward Redeemed! The Squito team has been notified."), 500);
+
+      await refreshProfile();
+      getPointsHistory(user.id).then(setPointsHistory);
+    } else {
+      alert(res.error || "Failed to redeem reward.");
+      setConfirmModal({ isOpen: false, reward: null });
+    }
+                                  
+    setRedeemingId(null);
+  };
+
   return (
-    <AnimatePresence mode="wait">
-      {activeView === "profile" ? (
-        <motion.div
-          key="profile"
-          initial={{ opacity: 0, x: -20 }}
+    <>
+      <AnimatePresence mode="wait">
+        {activeView === "profile" ? (
+          <motion.div
+            key="profile"
+            initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           className="flex min-h-full flex-col px-5 pb-10 pt-12 sm:px-8"
@@ -367,7 +427,7 @@ function AuthenticatedProfile() {
                   <p className="mt-1 text-[12px] text-gray-500">
                     Book your first visit and it&apos;ll show here!
                   </p>
-                  <Link href="/book">
+                  <Link href="/plans">
                     <GlassButton
                       variant="secondary"
                       className="mt-4 text-[13px]"
@@ -428,7 +488,7 @@ function AuthenticatedProfile() {
                   icon: "👤",
                   route: "/me/personal-info",
                 },
-                { name: "Payment Methods", icon: "💳", route: "/me/billing" },
+                { name: "My Subscriptions", icon: "🛡️", route: "/me/billing" },
                 {
                   name: "Notifications",
                   icon: "🔔",
@@ -438,11 +498,6 @@ function AuthenticatedProfile() {
                   name: "Security & Privacy",
                   icon: "🔒",
                   route: "/me/security",
-                },
-                {
-                  name: "App Preferences",
-                  icon: "⚙️",
-                  route: "/me/preferences",
                 },
               ].map((setting, idx) => (
                 <Link
@@ -485,30 +540,41 @@ function AuthenticatedProfile() {
             >
               <h2 className="font-bold text-gray-900 mb-4">Contact Squito</h2>
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-4 rounded-2xl bg-[#f4fae6] p-4 text-squito-green">
-                  <span className="text-xl">📞</span>
-                  <div>
-                    <h3 className="font-bold text-[14px] text-gray-900">
-                      (631) 203-1000
-                    </h3>
-                    <p className="text-[11px] font-medium text-squito-green">
-                      Call us — same-day available
-                    </p>
+                <a href="tel:6312031000" className="block outline-none">
+                  <div className="flex items-center gap-4 rounded-2xl bg-[#f4fae6] p-4 text-squito-green transition-transform active:scale-95">
+                    <span className="text-xl">📞</span>
+                    <div>
+                      <h3 className="font-bold text-[14px] text-gray-900 leading-none mb-1">
+                        (631) 203-1000
+                      </h3>
+                      <p className="text-[11px] font-bold text-squito-green uppercase tracking-wide">
+                        Tap to call
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </a>
 
-                <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                  <span className="text-xl opacity-60">✉️</span>
-                  <div>
-                    <h3 className="font-bold text-[14px] text-gray-900">
-                      service@getsquito.com
-                    </h3>
-                    <p className="text-[11px] font-medium text-gray-500">
-                      We respond within the hour
-                    </p>
+                <a href="mailto:service@getsquito.com" className="block outline-none">
+                  <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 transition-transform active:scale-95 hover:bg-gray-50">
+                    <span className="text-xl opacity-60">✉️</span>
+                    <div>
+                      <h3 className="font-bold text-[14px] text-gray-900">
+                        service@getsquito.com
+                      </h3>
+                      <p className="text-[11px] font-medium text-gray-500">
+                        We respond within the hour
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </a>
               </div>
+            </motion.div>
+
+            {/* App Version Footer */}
+            <motion.div variants={itemVariants} className="text-center pt-2">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-gray-300">
+                App Version 1.0.4 (Build 822)
+              </p>
             </motion.div>
           </motion.div>
         </motion.div>
@@ -532,11 +598,8 @@ function AuthenticatedProfile() {
           </div>
 
           <div className="bg-white px-5 pb-8 pt-4 border-b border-gray-100 shadow-sm sm:px-8">
-            <header className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-display text-xl font-bold tracking-widest text-[#111]">
-                S<span className="text-squito-green">●</span>QUITO
-              </div>
-              <span className="text-sm font-bold tracking-wide text-squito-green">
+            <header className="flex items-center">
+              <span className="text-xl font-display font-bold tracking-wide text-gray-900">
                 Points & Rewards
               </span>
             </header>
@@ -631,7 +694,7 @@ function AuthenticatedProfile() {
 
           <div className="flex-1 px-5 pt-2 pb-10 sm:px-8">
             <div className="flex border-b border-gray-200 px-2 pt-2">
-              {(["Earn", "Redeem", "Gift", "History"] as const).map((tab) => (
+              {(["Earn", "Redeem", "History"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setPointsTab(tab)}
@@ -657,6 +720,11 @@ function AuthenticatedProfile() {
                 >
                   <p className="mt-6 text-[13px] font-medium leading-relaxed text-gray-600 pr-4">
                     Every action earns you points toward free services and rewards.
+                    {tierInfo.multiplier > 1 && (
+                      <span className="ml-1 font-bold text-squito-green">
+                        Your {tierInfo.name} tier earns {tierInfo.multiplier}x!
+                      </span>
+                    )}
                   </p>
 
                   <motion.div
@@ -668,53 +736,71 @@ function AuthenticatedProfile() {
                     {[
                       {
                         title: "Book a service",
-                        desc: "Any scheduled visit",
-                        pts: "+50 pts",
+                        desc: "General Pest, Wasps, Ticks, etc.",
+                        pts: "50 - 150 pts",
                         icon: "🗓️",
+                        route: "/book",
                       },
                       {
                         title: "Sign up for a plan",
                         desc: "Essential, Premium, or Ultimate",
-                        pts: "+200 pts",
+                        pts: "150 - 300 pts",
                         icon: "📋",
+                        route: "/plans",
                       },
                       {
-                        title: "Leave a Google review",
-                        desc: "Verified reviews only",
-                        pts: "+150 pts",
-                        icon: "⭐",
-                      },
-                      {
-                        title: "Refer a friend",
-                        desc: "When they complete their first service",
-                        pts: "+300 pts",
+                        title: "Refer a neighbor",
+                        desc: "We both get $50 or 300 points!",
+                        pts: "300 pts",
                         icon: "👥",
-                      },
-                    ].map((action, idx) => (
-                      <motion.div
-                        variants={itemVariants}
-                        whileTap={{ scale: 0.96 }}
-                        key={idx}
-                        className="flex cursor-pointer items-center gap-4 rounded-3xl bg-white border border-gray-100 p-3 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
-                      >
-                        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[#f4fae6]">
-                          <span className="text-[22px] drop-shadow-sm">
-                            {action.icon}
-                          </span>
-                        </div>
-                        <div className="flex-1 space-y-0.5">
-                          <h3 className="font-display font-bold text-[14px] text-gray-900">
-                            {action.title}
-                          </h3>
-                          <p className="text-[11px] font-medium text-gray-500">
-                            {action.desc}
-                          </p>
-                        </div>
-                        <div className="font-bold tracking-wide text-squito-green">
-                          {action.pts}
-                        </div>
-                      </motion.div>
-                    ))}
+                        onClick: async () => {
+                          try {
+                            const { Share } = await import("@capacitor/share");
+                            const refUrl = `https://squito-app.vercel.app/?ref=${encodeURIComponent(user?.email || "")}`;
+                            await Share.share({
+                              title: "Squito Pest Control",
+                              text: `Get $50 off your first pest control service with Squito! Tap here:`,
+                              url: refUrl,
+                              dialogTitle: "Refer a Neighbor"
+                            });
+                          } catch (err) {
+                            console.warn("Share failed:", err);
+                          }
+                        }
+                      }
+                    ].map((action, idx) => {
+                      const InnerContent = (
+                        <motion.div
+                          variants={itemVariants}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={action.onClick}
+                          className="flex cursor-pointer items-center gap-4 rounded-3xl bg-white border border-gray-100 p-3 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                        >
+                          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[#f4fae6]">
+                            <span className="text-[22px] drop-shadow-sm">
+                              {action.icon}
+                            </span>
+                          </div>
+                          <div className="flex-1 space-y-0.5">
+                            <h3 className="font-display font-bold text-[14px] text-gray-900">
+                              {action.title}
+                            </h3>
+                            <p className="text-[11px] font-medium text-gray-500">
+                              {action.desc}
+                            </p>
+                          </div>
+                          <div className="font-bold text-[12px] text-squito-green">
+                            {action.pts}
+                          </div>
+                        </motion.div>
+                      );
+                      
+                      if (action.route) {
+                        return <Link href={action.route} key={idx} className="block outline-none">{InnerContent}</Link>;
+                      }
+                      
+                      return <div key={idx} className="block w-full text-left outline-none">{InnerContent}</div>;
+                    })}
                   </motion.div>
 
                   <motion.div
@@ -728,8 +814,7 @@ function AuthenticatedProfile() {
                       <div>
                         <h4 className="font-bold text-squito-green">Pro tip</h4>
                         <p className="mt-1 text-[13px] font-medium leading-relaxed text-squito-green/80 pr-2">
-                          Sign up for a plan + leave a review + refer one friend = 650
-                          bonus points. That&apos;s a free service visit!
+                          Sign up for a plan instead of a one-time service to earn 200 bonus points instantly!
                         </p>
                       </div>
                     </div>
@@ -752,16 +837,16 @@ function AuthenticatedProfile() {
                   <div className="mt-2 mb-6 inline-flex items-center gap-2 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-4 py-2">
                     <span className="text-sm">💰</span>
                     <span className="text-[13px] font-bold text-squito-green">
-                      Your balance: {totalPoints} pts
+                      Redeemable: {redeemablePoints} pts
                     </span>
                   </div>
 
                   {rewards.length === 0 ? (
                     <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
                       <span className="text-4xl">🎁</span>
-                      <p className="mt-3 font-bold text-gray-900">Loading rewards...</p>
+                      <p className="mt-3 font-bold text-gray-900">Check back later!</p>
                       <p className="mt-1 text-[12px] text-gray-500">
-                        Connect Supabase to see the rewards catalog.
+                        New exclusive rewards are being added to the catalog soon.
                       </p>
                     </div>
                   ) : (
@@ -772,7 +857,7 @@ function AuthenticatedProfile() {
                       className="flex flex-col gap-4"
                     >
                       {rewards.map((reward: any) => {
-                        const canAfford = totalPoints >= reward.cost_points;
+                        const canAfford = redeemablePoints >= reward.cost_points;
                         const isRedeeming = redeemingId === reward.id;
                         return (
                           <motion.div
@@ -801,15 +886,9 @@ function AuthenticatedProfile() {
                               </span>
                               <button
                                 disabled={!canAfford || isRedeeming}
-                                onClick={async () => {
+                                onClick={() => {
                                   if (!user) return;
-                                  setRedeemingId(reward.id);
-                                  const { redeemPoints } = await import("@/lib/pointsEngine");
-                                  await redeemPoints(user.id, reward.id);
-                                  await refreshProfile();
-                                  // Reload rewards and history
-                                  getPointsHistory(user.id).then(setPointsHistory);
-                                  setRedeemingId(null);
+                                  setConfirmModal({ isOpen: true, reward: reward });
                                 }}
                                 className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${
                                   canAfford
@@ -828,30 +907,6 @@ function AuthenticatedProfile() {
                 </motion.div>
               )}
 
-              {/* ── GIFT TAB ── */}
-              {pointsTab === "Gift" && (
-                <motion.div
-                  key="gift"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mt-12 flex flex-col items-center text-center px-4"
-                >
-                  <span className="text-5xl mb-4">🎁</span>
-                  <h3 className="font-display text-xl font-bold text-gray-900">
-                    Gift Points
-                  </h3>
-                  <p className="mt-3 text-[13px] font-medium text-gray-500 max-w-[260px] leading-relaxed">
-                    Send PestPoints to friends and family so they can enjoy
-                    pest-free living too. Coming soon!
-                  </p>
-                  <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                      Coming Soon
-                    </span>
-                  </div>
-                </motion.div>
-              )}
 
               {/* ── HISTORY TAB ── */}
               {pointsTab === "History" && (
@@ -925,6 +980,54 @@ function AuthenticatedProfile() {
         </motion.div>
       )}
     </AnimatePresence>
+
+    {/* ── CUSTOM CONFIRM MODAL ── */}
+    <AnimatePresence>
+      {confirmModal.isOpen && confirmModal.reward && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="w-full max-w-sm rounded-[32px] bg-white p-6 shadow-2xl"
+          >
+            <div className="mx-auto mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#f4fae6] shadow-inner">
+              <span className="text-[40px] drop-shadow-sm">{confirmModal.reward.icon}</span>
+            </div>
+            <h3 className="text-center font-display text-xl font-bold text-gray-900">
+              Confirm Redemption
+            </h3>
+            <p className="mt-3 text-center text-[14px] font-medium leading-relaxed text-gray-500 px-2">
+              Are you sure you want to spend <strong className="text-squito-green">{confirmModal.reward.cost_points} points</strong> on{" "}
+              <span className="text-gray-800">{confirmModal.reward.name}</span>?
+            </p>
+
+            <div className="mt-8 flex gap-3">
+              <button
+                disabled={redeemingId !== null}
+                onClick={() => setConfirmModal({ isOpen: false, reward: null })}
+                className="flex-1 rounded-2xl bg-gray-100 py-3.5 text-[14px] font-bold text-gray-600 transition-colors active:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={redeemingId !== null}
+                onClick={handleConfirmRedeem}
+                className="flex-1 rounded-2xl bg-squito-green py-3.5 text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(107,158,17,0.25)] transition-transform active:scale-95 disabled:opacity-50"
+              >
+                {redeemingId ? "Processing..." : "Get Reward"}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 }
 

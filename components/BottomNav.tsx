@@ -9,7 +9,7 @@ import { haptics } from "@/lib/haptics";
 const navItems = [
   { name: "Home", href: "/", icon: "🏠" },
   { name: "Pests", href: "/pests", icon: "🔍" },
-  { name: "Plans", href: "/plans", icon: "🛡️" },
+  { name: "Services", href: "/plans", icon: "🛡️" },
   { name: "Profile", href: "/me", icon: "👤" },
 ];
 

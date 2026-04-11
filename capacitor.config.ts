@@ -8,6 +8,7 @@ const config: CapacitorConfig = {
     // Allows loading local video/image assets
     androidScheme: 'https',
     iosScheme: 'capacitor',
+    allowNavigation: ['*.supabase.co', '*.cloudflarestream.com'],
   },
   plugins: {
     SplashScreen: {

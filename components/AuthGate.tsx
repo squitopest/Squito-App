@@ -16,12 +16,25 @@ export function AuthGate() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [referralEmail, setReferralEmail] = useState("");
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [hasBiometricCreds, setHasBiometricCreds] = useState(false);
+
+  // Auto-fill referral logic from Share URL
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref");
+      if (ref) {
+        setReferralEmail(decodeURIComponent(ref));
+        setView("signup");
+      }
+    }
+  }, []);
 
   // Check for biometrics
   useEffect(() => {
@@ -123,7 +136,7 @@ export function AuthGate() {
       return;
     }
     setSubmitting(true);
-    const result = await signUp(email, password, displayName);
+    const result = await signUp(email, password, displayName, referralEmail);
     setSubmitting(false);
     if (result.error) {
       setError(result.error);
@@ -340,6 +353,20 @@ export function AuthGate() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
                   autoComplete="new-password"
+                  className={inputClasses}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                  Referral Email <span className="font-medium text-gray-400">(Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={referralEmail}
+                  onChange={(e) => setReferralEmail(e.target.value)}
+                  placeholder="Friend's email"
+                  autoComplete="email"
                   className={inputClasses}
                 />
               </div>

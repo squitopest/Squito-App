@@ -1,75 +1,191 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
-import { awardPoints } from "@/lib/pointsEngine";
 import { haptics } from "@/lib/haptics";
+import { Capacitor } from "@capacitor/core";
+
+// ── Phone number formatting ─────────────────────────────────────────────────
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+// ── Today's date as YYYY-MM-DD for the date picker min ─────────────────────
+function todayISO(): string {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
 
 function BookForm() {
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan");
+  const initialService = searchParams.get("service");
   const billingCycle = searchParams.get("billing") || "monthly";
 
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [pointsAwarded, setPointsAwarded] = useState(false);
-  const { user, isGuest, refreshProfile } = useAuth();
+  const [earnedAmount, setEarnedAmount] = useState(0);
+  const [locating, setLocating] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const { user, isGuest, profile, refreshProfile } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
-    email: user?.email || "",
+    email: "",
     phone: "",
     address: "",
-    service: "Essential Defense",
+    service: "Mosquito Barrier Spray ($119)",
     preferredDate: "",
+    preferredTime: "",
   });
 
+  // Auto-fill from profile once available
   useEffect(() => {
-    if (initialPlan) {
+    if (profile) {
+      setFormData((f) => ({
+        ...f,
+        name: f.name || profile.display_name || "",
+        email: f.email || profile.email || user?.email || "",
+        phone: f.phone || (profile.phone ? formatPhone(profile.phone) : ""),
+        address: f.address || profile.service_address || profile.address || "",
+      }));
+    } else if (user?.email) {
+      setFormData((f) => ({
+        ...f,
+        email: f.email || user.email || "",
+        name: f.name || user.user_metadata?.display_name || "",
+      }));
+    }
+  }, [profile, user]);
+
+  // Set service from query params
+  const SERVICE_MAP: Record<string, string> = {
+    "mosquito-barrier": "Mosquito Barrier Spray ($119)",
+    "organic-treatment": "Organic Mosquito & Tick Treatment ($99)",
+    "tick-treatment": "Tick Treatment ($99)",
+    "general-pest": "General & Full Property Pest Control ($299)",
+    "hornet-wasp": "Hornet & Wasp Removal ($349)",
+    "termite-inspection": "Termite Inspection ($199)",
+    "free-estimate": "Free Estimate / Custom Quote",
+  };
+
+  useEffect(() => {
+    if (initialService && SERVICE_MAP[initialService]) {
+      setFormData((f) => ({ ...f, service: SERVICE_MAP[initialService] }));
+    } else if (initialPlan) {
       if (initialPlan === "essential-defense") setFormData((f) => ({ ...f, service: `Essential Defense (${billingCycle})` }));
       if (initialPlan === "premium-shield") setFormData((f) => ({ ...f, service: `Premium Shield (${billingCycle})` }));
       if (initialPlan === "ultimate-fortress") setFormData((f) => ({ ...f, service: `Ultimate Fortress (${billingCycle})` }));
     }
-  }, [initialPlan, billingCycle]);
+  }, [initialPlan, initialService, billingCycle]);
 
+  // ── GPS: Use My Location ──────────────────────────────────────────────────
+  const useMyLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setErrorMessage("GPS not available on this device.");
+      return;
+    }
+    setLocating(true);
+    setGpsAccuracy(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude, accuracy } = pos.coords;
+          // Store coordinates for precise CRM routing
+          setCoordinates({ lat: latitude, lng: longitude });
+          setGpsAccuracy(Math.round(accuracy));
+
+          // Use Nominatim (free, no API key needed) for reverse geocoding
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18`,
+            { headers: { "User-Agent": "SquitoApp/1.0" } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address;
+            // Build a clean US street address
+            const parts = [
+              addr.house_number,
+              addr.road,
+            ].filter(Boolean).join(" ");
+            const cityState = [
+              addr.city || addr.town || addr.village || addr.hamlet,
+              addr.state,
+              addr.postcode,
+            ].filter(Boolean).join(", ");
+            const fullAddress = [parts, cityState].filter(Boolean).join(", ");
+            setFormData((f) => ({ ...f, address: fullAddress || data.display_name || "" }));
+          }
+        } catch (err) {
+          console.error("Reverse geocode failed:", err);
+        } finally {
+          setLocating(false);
+        }
+      },
+      (err) => {
+        console.error("GPS error:", err);
+        setErrorMessage("Could not get your location. Please enter your address manually.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }, []);
+
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
     if (typeof window !== "undefined" && (window as any).Capacitor) {
-        haptics.light();
+      haptics.light();
     }
 
     try {
-      const API_BASE = (typeof window !== "undefined" && (window as any).Capacitor) ? "https://squito-app.vercel.app" : "";
-      const res = await fetch(`${API_BASE}/api/book`, {
+      const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+      const isFreeEstimate = formData.service === "Free Estimate / Custom Quote";
+
+      if (isFreeEstimate) {
+        // Free estimates skip payment — process directly
+        const res = await fetch(`${API_BASE}/api/book`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            coordinates: coordinates || undefined,
+            userId: user && !isGuest ? user.id : undefined,
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to submit");
+        setStatus("success");
+        return;
+      }
+
+      // Paid services → create Stripe Checkout session and redirect
+      const res = await fetch(`${API_BASE}/api/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          cityZip: formData.address // Simplified for UI form matching
+          coordinates: coordinates || undefined,
+          userId: user && !isGuest ? user.id : undefined,
         }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to submit booking");
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        throw new Error(result.error || "Failed to start checkout");
       }
 
-      // Award points if user is logged in (not guest)
-      if (user && !isGuest) {
-        const result = await awardPoints(user.id, 50, "Booked a service", {
-          source: "booking_form",
-        });
-        if (result && "success" in result && result.success) {
-          setPointsAwarded(true);
-          await refreshProfile(); // Refresh profile to update point count in nav/profile
-        }
-      }
-
-      setStatus("success");
+      // Redirect to Stripe Checkout
+      window.location.href = result.url;
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message || "An error occurred");
@@ -78,6 +194,7 @@ function BookForm() {
   };
 
   if (status === "success") {
+    // Only free estimates land here — paid bookings redirect to /book/success
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -88,61 +205,19 @@ function BookForm() {
           <span className="text-5xl">✅</span>
         </div>
         <h1 className="font-display text-3xl font-bold text-gray-900">
-          Booking Confirmed!
+          Estimate Request Sent!
         </h1>
         <p className="mt-4 font-medium text-gray-500">
-          We&apos;ve received your request and sent a confirmation email to <strong className="text-gray-800">{formData.email}</strong>. We&apos;ll be in touch shortly!
+          We&apos;ve received your request and will contact you at <strong className="text-gray-800">{formData.email}</strong> to schedule your free estimate.
         </p>
-
-        {pointsAwarded && (
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 20 }}
-              className="mt-6 flex w-full items-center gap-3 rounded-2xl border border-squito-green/20 bg-[#f7fbe8] px-5 py-4 shadow-sm"
-            >
-              <motion.span
-                initial={{ rotate: -20, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
-                className="text-3xl"
-              >
-                🎉
-              </motion.span>
-              <div className="text-left w-full">
-                <p className="font-bold text-squito-green text-[15px]">+50 PestPoints!</p>
-                <p className="text-[12px] font-medium text-squito-green/70">
-                  Earned for booking a service
-                </p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        )}
-
-        {!user && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 flex w-full items-center gap-2 rounded-2xl bg-gray-100 px-5 py-3 text-left"
-          >
-            <span className="text-lg">💡</span>
-            <p className="text-[12px] font-medium text-gray-600">
-              Create an account to earn <strong className="text-squito-green">50 points</strong> on every booking!
-            </p>
-          </motion.div>
-        )}
-
         <GlassButton
           variant="ghost"
           onClick={() => {
             setStatus("idle");
-            setPointsAwarded(false);
           }}
           className="mt-10 text-squito-green dark:text-squito-green py-2 px-6"
         >
-          Book another property
+          Book another service
         </GlassButton>
       </motion.div>
     );
@@ -184,10 +259,10 @@ function BookForm() {
               Full Name
             </label>
             <input
+              id="booking-name"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Jane Smith"
               className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
             />
           </div>
@@ -197,11 +272,11 @@ function BookForm() {
               Email Address
             </label>
             <input
+              id="booking-email"
               required
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="jane@example.com"
               className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
             />
           </div>
@@ -212,79 +287,182 @@ function BookForm() {
             Phone
           </label>
           <input
+            id="booking-phone"
             required
             type="tel"
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            placeholder="(555) 555-5555"
+            onChange={(e) => setFormData({ ...formData, phone: formatPhone(e.target.value) })}
             className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
           />
         </div>
 
+        {/* Address with GPS button */}
         <div>
-          <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
-            Service Address (Long Island)
-          </label>
+          <div className="flex items-center justify-between mb-1.5 pl-1">
+            <label className="text-[13px] font-bold text-gray-900">
+              Service Address
+            </label>
+            <button
+              type="button"
+              onClick={useMyLocation}
+              disabled={locating}
+              className="flex items-center gap-1 text-[12px] font-bold text-squito-green active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {locating ? (
+                <>
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="inline-block"
+                  >
+                    ⏳
+                  </motion.span>
+                  Locating…
+                </>
+              ) : (
+                <>📍 Use My Location</>
+              )}
+            </button>
+          </div>
           <input
+            id="booking-address"
             required
             value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            placeholder="123 Main St, Huntington NY 11743"
+            onChange={(e) => {
+              setFormData({ ...formData, address: e.target.value });
+              // If user edits manually, clear GPS data
+              if (coordinates) {
+                setCoordinates(null);
+                setGpsAccuracy(null);
+              }
+            }}
             className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
           />
+          {gpsAccuracy !== null && coordinates && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-1.5 flex items-center gap-1.5 pl-1"
+            >
+              <span className="text-[11px]">✅</span>
+              <span className="text-[11px] font-medium text-squito-green">
+                GPS location captured (±{gpsAccuracy}m accuracy)
+              </span>
+            </motion.div>
+          )}
         </div>
 
         <div>
           <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
-            Plan Required
+            Service Needed
           </label>
           <select
+            id="booking-service"
             required
             value={formData.service}
             onChange={(e) => setFormData({ ...formData, service: e.target.value })}
             className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
           >
-            {/* If they came from the plans page with a billing cycle, render that exact string */}
-            {initialPlan && <option value={formData.service}>{formData.service}</option>}
-            <optgroup label="Monthly Plans">
+            <optgroup label="One-Time Services">
+              <option value="Mosquito Barrier Spray ($119)">Mosquito Barrier Spray — $119</option>
+              <option value="Organic Mosquito & Tick Treatment ($99)">Organic Mosquito & Tick Treatment — $99</option>
+              <option value="Tick Treatment ($99)">Tick Treatment — $99</option>
+              <option value="General & Full Property Pest Control ($299)">General & Full Property Pest Control — $299</option>
+              <option value="Hornet & Wasp Removal ($349)">Hornet & Wasp Removal — $349</option>
+              <option value="Termite Inspection ($199)">Termite Inspection — $199</option>
+              <option value="Free Estimate / Custom Quote">Free Estimate / Custom Quote</option>
+            </optgroup>
+            <optgroup label="Seasonal Plans (Save More)">
               <option value="Essential Defense (monthly)">Essential Defense ($49.99/mo)</option>
               <option value="Premium Shield (monthly)">Premium Shield ($79.99/mo)</option>
               <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo)</option>
-            </optgroup>
-            <optgroup label="Yearly Plans">
               <option value="Essential Defense (yearly)">Essential Defense ($539.89/yr)</option>
               <option value="Premium Shield (yearly)">Premium Shield ($863.89/yr)</option>
-              <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1403.89/yr)</option>
-            </optgroup>
-            <optgroup label="Other Services">
-              <option value="One-time Inspection">One-time Inspection / Custom Quote</option>
+              <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1,403.89/yr)</option>
             </optgroup>
           </select>
         </div>
 
         <div>
           <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
-            When can we come?
+            Preferred Date & Time
           </label>
-          <input
-            required
-            value={formData.preferredDate}
-            onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-            placeholder="Anytime next week"
-            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              id="booking-date"
+              required
+              type="date"
+              min={todayISO()}
+              value={formData.preferredDate}
+              onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
+            />
+            <select
+              id="booking-time"
+              required
+              value={formData.preferredTime}
+              onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
+            >
+              <option value="" disabled>Time</option>
+              <option value="8:00 AM">8:00 AM</option>
+              <option value="8:30 AM">8:30 AM</option>
+              <option value="9:00 AM">9:00 AM</option>
+              <option value="9:30 AM">9:30 AM</option>
+              <option value="10:00 AM">10:00 AM</option>
+              <option value="10:30 AM">10:30 AM</option>
+              <option value="11:00 AM">11:00 AM</option>
+              <option value="11:30 AM">11:30 AM</option>
+              <option value="12:00 PM">12:00 PM</option>
+              <option value="12:30 PM">12:30 PM</option>
+              <option value="1:00 PM">1:00 PM</option>
+              <option value="1:30 PM">1:30 PM</option>
+              <option value="2:00 PM">2:00 PM</option>
+              <option value="2:30 PM">2:30 PM</option>
+              <option value="3:00 PM">3:00 PM</option>
+              <option value="3:30 PM">3:30 PM</option>
+              <option value="4:00 PM">4:00 PM</option>
+              <option value="4:30 PM">4:30 PM</option>
+              <option value="5:00 PM">5:00 PM</option>
+            </select>
+          </div>
         </div>
 
         {user && !isGuest && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-3 rounded-2xl border border-squito-green/15 bg-[#f7fbe8] px-4 py-3"
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 18 }}
+            className="relative overflow-hidden rounded-2xl border border-squito-green/20 bg-gradient-to-r from-[#f7fbe8] to-[#eef6d6] px-5 py-4"
           >
-             <span className="text-xl">⭐</span>
-            <p className="text-[12px] font-medium text-squito-green">
-              You&apos;ll earn <strong>+50 PestPoints</strong> when this booking is confirmed!
-            </p>
+            {/* Animated shimmer */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+              initial={{ x: "-100%" }}
+              animate={{ x: "200%" }}
+              transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 2 }}
+            />
+            <div className="relative flex items-center gap-3">
+              <motion.span
+                className="text-2xl"
+                animate={{ scale: [1, 1.25, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
+              >
+                ⭐
+              </motion.span>
+              <div>
+                <p className="text-[13px] font-bold text-squito-green">
+                  Earn up to <motion.span
+                    className="inline-block text-[15px]"
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 4 }}
+                  >+150 PestPoints</motion.span> on this booking!
+                </p>
+                <p className="text-[11px] font-medium text-squito-green/70 mt-0.5">
+                  Points increase with your tier. Higher tier = bigger rewards!
+                </p>
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -294,8 +472,17 @@ function BookForm() {
           className={`mt-4 flex w-full py-4 text-[15px] shadow-[0_8px_20px_rgba(107,158,17,0.25)] transition-all ${status === "submitting" ? "bg-squito-green/50" : "bg-squito-green/90 dark:bg-squito-green hover:bg-squito-green"}`}
           disabled={status === "submitting"}
         >
-          {status === "submitting" ? "Processing..." : "Confirm Booking"}
+          {status === "submitting"
+            ? "Processing..."
+            : formData.service === "Free Estimate / Custom Quote"
+            ? "Schedule Free Estimate"
+            : "Proceed to Payment →"}
         </GlassButton>
+        {formData.service !== "Free Estimate / Custom Quote" && (
+          <p className="mt-2 text-center text-[11px] font-medium text-gray-400">
+            🔒 Secure payment via Stripe
+          </p>
+        )}
       </motion.form>
     </>
   );
