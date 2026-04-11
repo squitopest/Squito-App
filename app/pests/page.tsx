@@ -55,6 +55,8 @@ export default function PestsPage() {
         return "bg-amber-100 text-amber-800 border-amber-200";
       case "Sanitary":
         return "bg-purple-100 text-purple-800 border-purple-200";
+      case "Protected Species":
+        return "bg-emerald-100 text-emerald-800 border-emerald-300";
       case "Nuisance":
       default:
         return "bg-[#f4fae6] text-squito-green border-squito-green/20";
@@ -569,6 +571,20 @@ export default function PestsPage() {
                         <p className="text-[13px] text-gray-600 mt-3 leading-relaxed">
                           {identifyResult.description}
                         </p>
+
+                        {/* Protected Bee Banner */}
+                        {identifyResult.isProtected && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-3 rounded-xl bg-emerald-50 border-2 border-emerald-300 px-3.5 py-3"
+                          >
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">🐝 Protected Species — New York State Law</p>
+                            <p className="text-[12px] text-emerald-800 leading-snug font-medium">
+                              This is a protected bee species. Extermination may be illegal. Do NOT spray or poison. Contact a licensed beekeeper for free or low-cost safe relocation.
+                            </p>
+                          </motion.div>
+                        )}
 
                         {/* Visual Clues */}
                         {identifyResult.visualClues && (
