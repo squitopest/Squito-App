@@ -22,11 +22,45 @@ function todayISO(): string {
   return d.toISOString().split("T")[0];
 }
 
+// ── Price lookup (mirrors the API so the UI can preview costs) ──────────────
+const SERVICE_PRICES: Record<string, number> = {
+  "Mosquito Barrier Spray ($119)": 119,
+  "Organic Mosquito & Tick Treatment ($99)": 99,
+  "Tick Treatment ($99)": 99,
+  "General & Full Property Pest Control ($299)": 299,
+  "Hornet & Wasp Removal ($349)": 349,
+  "Termite Inspection ($199)": 199,
+  "Free Estimate / Custom Quote": 0,
+  "Essential Defense (monthly)": 49.99,
+  "Premium Shield (monthly)": 79.99,
+  "Ultimate Fortress (monthly)": 129.99,
+  "Essential Defense (yearly)": 539.89,
+  "Premium Shield (yearly)": 863.89,
+  "Ultimate Fortress (yearly)": 1403.89,
+};
+
+const SERVICE_DESCRIPTIONS: Record<string, string> = {
+  "Mosquito Barrier Spray ($119)": "Perimeter barrier spray — keeps your yard bite-free",
+  "Organic Mosquito & Tick Treatment ($99)": "Eco-safe treatment, pet & kid friendly",
+  "Tick Treatment ($99)": "21-day tick elimination barrier",
+  "General & Full Property Pest Control ($299)": "Complete interior + exterior treatment",
+  "Hornet & Wasp Removal ($349)": "Professional nest removal, zero risk to family",
+  "Termite Inspection ($199)": "Full property inspection with written report",
+  "Free Estimate / Custom Quote": "A technician will assess & quote on-site",
+  "Essential Defense (monthly)": "Monthly recurring — core protection plan",
+  "Premium Shield (monthly)": "Monthly recurring — expanded coverage",
+  "Ultimate Fortress (monthly)": "Monthly recurring — all-inclusive platinum",
+  "Essential Defense (yearly)": "Annual plan — save 10% vs monthly",
+  "Premium Shield (yearly)": "Annual plan — save 10% vs monthly",
+  "Ultimate Fortress (yearly)": "Annual plan — save 10% vs monthly",
+};
+
 function BookForm() {
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan");
   const initialService = searchParams.get("service");
   const billingCycle = searchParams.get("billing") || "monthly";
+  const wasCancelled = searchParams.get("cancelled") === "true";
 
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -223,6 +257,11 @@ function BookForm() {
     );
   }
 
+  // Derived price for the selected service
+  const selectedPrice = SERVICE_PRICES[formData.service] ?? 0;
+  const isFree = formData.service === "Free Estimate / Custom Quote";
+  const isRecurring = formData.service.includes("monthly") || formData.service.includes("yearly");
+
   return (
     <>
       <motion.p
@@ -235,6 +274,21 @@ function BookForm() {
           ? "Earn 50 PestPoints with every booking! 🎉"
           : "Fast guest routing. No account required."}
       </motion.p>
+
+      {/* Cancellation Recovery Banner */}
+      {wasCancelled && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3.5"
+        >
+          <span className="text-xl">⚠️</span>
+          <div>
+            <p className="text-[13px] font-bold text-amber-800">Payment was cancelled</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">No charge was made. Your form is still filled in &mdash; just hit &ldquo;Proceed to Payment&rdquo; again when ready.</p>
+          </div>
+        </motion.div>
+      )}
 
       {status === "error" && (
         <motion.div
@@ -466,6 +520,42 @@ function BookForm() {
           </motion.div>
         )}
 
+      {/* Live Order Summary Card */}
+      {!isFree && (
+        <motion.div
+          key={formData.service}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 28 }}
+          className="mt-2 rounded-2xl border border-squito-green/25 bg-gradient-to-br from-[#f7fbe8] to-[#eef6d6] px-5 py-4"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-squito-green/60 mb-3">Order Summary</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <p className="text-[14px] font-bold text-gray-900 leading-snug">
+                {formData.service.replace(/\s*\(.*\)$/, "")}
+              </p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {SERVICE_DESCRIPTIONS[formData.service]}
+              </p>
+              {isRecurring && (
+                <span className="mt-1.5 inline-block rounded-full bg-squito-green/15 px-2 py-0.5 text-[10px] font-bold text-squito-green">
+                  🔄 Recurring plan
+                </span>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[22px] font-bold text-gray-900">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
+              <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "one-time"}</p>
+            </div>
+          </div>
+          <div className="mt-3 border-t border-squito-green/15 pt-3 flex items-center justify-between">
+            <p className="text-[11px] text-gray-500">Total charged today</p>
+            <p className="text-[13px] font-bold text-squito-green">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
+          </div>
+        </motion.div>
+      )}
+
         <GlassButton
           variant="primary"
           type="submit"
@@ -474,11 +564,11 @@ function BookForm() {
         >
           {status === "submitting"
             ? "Processing..."
-            : formData.service === "Free Estimate / Custom Quote"
-            ? "Schedule Free Estimate"
-            : "Proceed to Payment →"}
+            : isFree
+            ? "Schedule Free Estimate →"
+            : `Pay $${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })} Securely →`}
         </GlassButton>
-        {formData.service !== "Free Estimate / Custom Quote" && (
+        {!isFree && (
           <p className="mt-2 text-center text-[11px] font-medium text-gray-400">
             🔒 Secure payment via Stripe
           </p>
@@ -496,7 +586,7 @@ export default function BookPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mt-6 font-display text-[2rem] font-bold leading-tight text-gray-900"
       >
-        Complete Booking
+        Book a Service
       </motion.h1>
       <Suspense fallback={<div className="mt-8 text-center text-sm text-gray-500">Loading form...</div>}>
         <BookForm />

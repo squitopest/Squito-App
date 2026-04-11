@@ -2,31 +2,79 @@
 
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
 import Link from "next/link";
 import { haptics } from "@/lib/haptics";
+import { Capacitor } from "@capacitor/core";
+
+interface BookingDetails {
+  name: string;
+  email: string;
+  service: string;
+  address: string;
+  preferredDate: string;
+  preferredTime: string;
+  amountTotal: number;
+  currency: string;
+}
+
+/** Format cents → "$119.00" */
+function formatAmount(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(cents / 100);
+}
+
+/** Build a Google Calendar add-event link */
+function googleCalendarUrl(details: BookingDetails): string {
+  if (!details.preferredDate) return "";
+  const dateStr = details.preferredDate.replace(/-/g, ""); // YYYYMMDD
+  const title = encodeURIComponent(`Squito Pest Control — ${details.service.replace(/\s*\(.*\)$/, "")}`);
+  const loc = encodeURIComponent(details.address);
+  const desc = encodeURIComponent(`Service: ${details.service}\nAddress: ${details.address}\nContact: ${details.email}`);
+  // Use all-day event (no time component) if time not provided
+  const dates = `${dateStr}/${dateStr}`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${desc}`;
+}
+
+/** Build an Apple/ICS calendar link */
+function appleCalendarUrl(details: BookingDetails): string {
+  if (!details.preferredDate) return "";
+  const dateStr = details.preferredDate.replace(/-/g, "");
+  const title = encodeURIComponent(`Squito Pest Control — ${details.service.replace(/\s*\(.*\)$/, "")}`);
+  const loc = encodeURIComponent(details.address);
+  const desc = encodeURIComponent(`Service: ${details.service}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&location=${loc}&details=${desc}`;
+}
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const { user, refreshProfile } = useAuth();
+  const [details, setDetails] = useState<BookingDetails | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If there's a session ID, we assume payment was made and the Webhook is handling it.
-    if (sessionId) {
-      if (typeof window !== "undefined" && (window as any).Capacitor) {
-        haptics.success();
-      }
-      
-      // Delay profile refresh slightly to give the webhook time to process
-      // and award points before we fetch the user's new balance.
-      const timer = setTimeout(() => {
-        refreshProfile();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!sessionId) { setLoading(false); return; }
+
+    if (Capacitor.isNativePlatform()) haptics.success();
+
+    // Fetch booking details from Stripe session
+    const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+    fetch(`${API_BASE}/api/checkout/session?id=${sessionId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.error) setDetails(data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+
+    // Give webhook 3s to process then refresh points
+    const timer = setTimeout(() => refreshProfile(), 3000);
+    return () => clearTimeout(timer);
   }, [sessionId, refreshProfile]);
 
   if (!sessionId) {
@@ -35,15 +83,11 @@ function SuccessContent() {
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50">
           <span className="text-4xl">⚠️</span>
         </div>
-        <h1 className="font-display text-2xl font-bold text-gray-900">
-          No session found
-        </h1>
-        <p className="mt-3 text-sm font-medium text-gray-500 max-w-xs">
-          Please try booking again.
-        </p>
+        <h1 className="font-display text-2xl font-bold text-gray-900">No session found</h1>
+        <p className="mt-3 text-sm font-medium text-gray-500 max-w-xs">Please try booking again.</p>
         <Link href="/book" className="mt-8">
           <GlassButton variant="primary" className="bg-squito-green/90 dark:bg-squito-green px-8 py-3">
-            Go Back
+            Book Again
           </GlassButton>
         </Link>
       </div>
@@ -52,16 +96,16 @@ function SuccessContent() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex min-h-[70vh] flex-col items-center justify-center p-8 text-center pb-32"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex min-h-[70vh] flex-col items-center pb-32"
     >
-      {/* Success checkmark animation */}
+      {/* Animated checkmark */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-        className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#f4fae6]"
+        className="mt-8 mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-[#f4fae6]"
       >
         <motion.span
           initial={{ scale: 0, rotate: -45 }}
@@ -77,28 +121,82 @@ function SuccessContent() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="font-display text-3xl font-bold text-gray-900"
+        className="font-display text-3xl font-bold text-gray-900 text-center"
       >
         Payment Confirmed!
       </motion.h1>
-
       <motion.p
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="mt-4 font-medium text-gray-500 max-w-xs"
+        className="mt-2 text-sm font-medium text-gray-500 text-center max-w-xs"
       >
-        Your booking is confirmed and a receipt has been sent to your email. We&apos;ll be in touch shortly!
+        A receipt has been sent to your email. We&apos;ll be in touch shortly!
       </motion.p>
 
+      {/* Booking Details Card */}
+      {!loading && details && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
+          className="mt-6 w-full max-w-sm rounded-3xl border border-gray-100 bg-white shadow-lg overflow-hidden"
+        >
+          {/* Card Header */}
+          <div className="bg-gradient-to-r from-squito-green to-[#5a8c10] px-5 py-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Booking Confirmed</p>
+            <p className="text-[17px] font-bold text-white mt-0.5 leading-snug">
+              {details.service.replace(/\s*\(.*\)$/, "")}
+            </p>
+          </div>
+
+          {/* Detail Rows */}
+          <div className="divide-y divide-gray-50 px-5">
+            {details.name && (
+              <div className="flex items-center justify-between py-3">
+                <span className="text-[12px] text-gray-400 font-medium">Name</span>
+                <span className="text-[13px] font-bold text-gray-800">{details.name}</span>
+              </div>
+            )}
+            {details.address && (
+              <div className="flex items-start justify-between gap-3 py-3">
+                <span className="text-[12px] text-gray-400 font-medium shrink-0">Address</span>
+                <span className="text-[13px] font-bold text-gray-800 text-right">{details.address}</span>
+              </div>
+            )}
+            {details.preferredDate && (
+              <div className="flex items-center justify-between py-3">
+                <span className="text-[12px] text-gray-400 font-medium">Appointment</span>
+                <span className="text-[13px] font-bold text-gray-800">
+                  {new Date(details.preferredDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                  {details.preferredTime && ` at ${details.preferredTime}`}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between py-3">
+              <span className="text-[12px] text-gray-400 font-medium">Amount Paid</span>
+              <span className="text-[14px] font-bold text-squito-green">
+                {formatAmount(details.amountTotal, details.currency)}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="mt-6 w-full max-w-sm rounded-3xl border border-gray-100 bg-gray-50 p-5 animate-pulse h-44" />
+      )}
+
+      {/* PestPoints Banner */}
       {user ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mt-6 flex w-full max-w-sm items-center gap-2 rounded-2xl bg-[#f7fbe8] border border-squito-green/20 px-5 py-3 text-left shadow-sm"
+          transition={{ delay: 0.7 }}
+          className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-[#f7fbe8] border border-squito-green/20 px-5 py-3.5"
         >
-          <span className="text-lg">🎉</span>
+          <span className="text-xl">🎉</span>
           <p className="text-[12px] font-medium text-squito-green">
             Your <strong>PestPoints</strong> will be awarded automatically! Check your profile shortly.
           </p>
@@ -107,21 +205,49 @@ function SuccessContent() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mt-6 flex w-full max-w-sm items-center gap-2 rounded-2xl bg-gray-100 px-5 py-3 text-left"
+          transition={{ delay: 0.7 }}
+          className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-gray-100 px-5 py-3.5"
         >
-          <span className="text-lg">💡</span>
+          <span className="text-xl">💡</span>
           <p className="text-[12px] font-medium text-gray-600">
             Create an account to earn <strong className="text-squito-green">PestPoints</strong> on every booking!
           </p>
         </motion.div>
       )}
 
+      {/* Calendar CTAs */}
+      {details?.preferredDate && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85 }}
+          className="mt-4 flex w-full max-w-sm gap-2"
+        >
+          <a
+            href={googleCalendarUrl(details)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-200 bg-white py-3 text-[12px] font-bold text-gray-700 shadow-sm active:scale-95 transition-transform"
+          >
+            📅 Google Calendar
+          </a>
+          <a
+            href={appleCalendarUrl(details)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-200 bg-white py-3 text-[12px] font-bold text-gray-700 shadow-sm active:scale-95 transition-transform"
+          >
+            🍎 Apple Calendar
+          </a>
+        </motion.div>
+      )}
+
+      {/* Navigation CTAs */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="mt-10 flex flex-col gap-3 w-full max-w-sm"
+        transition={{ delay: 1.0 }}
+        className="mt-6 flex flex-col gap-3 w-full max-w-sm"
       >
         <Link href="/plans">
           <GlassButton
@@ -132,10 +258,7 @@ function SuccessContent() {
           </GlassButton>
         </Link>
         <Link href="/">
-          <GlassButton
-            variant="ghost"
-            className="w-full py-3 text-squito-green"
-          >
+          <GlassButton variant="ghost" className="w-full py-3 text-squito-green">
             Back to Home
           </GlassButton>
         </Link>
