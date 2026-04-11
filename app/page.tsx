@@ -15,35 +15,35 @@ const feedData = [
     id: 1,
     videoSrc: "/videos/video1.mp4",
     username: "@squitoprotect",
-    description: "Watch how our technicians create a 21-day barrier against Long Island ticks. Your yard should be a sanctuary, not a threat. 🛡️ #pestcontrol #longisland",
+    description: "Watch our technician locate and eliminate hidden pests before they become a massive problem! Protecting your home starts from the outside. 🛡️ #SquitoDefense",
     likes: "12.4K", comments: "342", animation: undefined,
   },
   {
     id: 2,
     videoSrc: "/videos/video2.mp4",
     username: "@squitoprotect",
-    description: "Did you know ticks wait on the tips of tall grass to latch onto you? This is called 'questing'. We eliminate them before they get the chance. 🕷️⚠️ #ticks",
+    description: "Found a serious infestation hiding right where you'd least expect! Here is how we ensure your property stays completely secure season after season. 🕷️⚠️ #Exterminator",
     likes: "8.9K", comments: "156", animation: undefined,
   },
   {
     id: 3,
     videoSrc: "/videos/video3.mp4",
     username: "@squitoprotect",
-    description: "One mosquito can ruin an entire summer evening. Our barrier spray keeps your outdoor spaces completely bite-free all season long. 🌿🦟 #mosquitocontrol",
+    description: "Creating an impenetrable barrier around the yard! We don’t just spray; we target the exact breeding grounds to guarantee you get your summer back. 🌿🦟 #MosquitoBarrier",
     likes: "22.1K", comments: "891", animation: undefined,
   },
   {
     id: 4,
     videoSrc: "/videos/video4.mp4",
     username: "@squitoprotect",
-    description: "Bald-faced hornets are extremely aggressive when disturbed. Always call a professional. Our team removes nests safely with zero risk to your family. 🐝⚡ #hornets",
+    description: "This nested right near the front door! Always leave aggressive removals to the professionals. We handled this safely, quickly, and effectively! 🐝⚡ #WaspRemoval",
     likes: "15.7K", comments: "423", animation: undefined,
   },
   {
     id: 5,
     videoSrc: "/videos/video5.mp4",
     username: "@squitoprotect",
-    description: "Our organic lawn treatment is pet-safe and kid-safe while being lethal to grubs, chinch bugs, and everything in between. 🌱💪 #organicpestcontrol",
+    description: "Applying our premium, pet-friendly organic treatment to the lawn. It is scientifically engineered to be incredibly tough on pests while keeping your family perfectly safe! 🌱💪 #SafePestControl",
     likes: "31.2K", comments: "1.2K", animation: undefined,
   },
 ];
@@ -303,7 +303,7 @@ const FeedItem = memo(function FeedItem({
       </div>
 
       {/* Left: Captions & Info */}
-      <div className="absolute bottom-6 left-4 right-20 flex flex-col gap-2 z-10 pointer-events-none">
+      <div className="absolute bottom-24 pb-[env(safe-area-inset-bottom)] left-4 right-20 flex flex-col gap-2 z-10 pointer-events-none">
         <h3 className="font-display text-[17px] font-bold text-white drop-shadow-md">
           {post.username}
         </h3>
@@ -326,7 +326,7 @@ const FeedItem = memo(function FeedItem({
       </div>
 
       {/* Right: Action Buttons */}
-      <div className="absolute bottom-6 right-4 flex flex-col items-center gap-6 z-10">
+      <div className="absolute bottom-24 pb-[env(safe-area-inset-bottom)] right-4 flex flex-col items-center gap-6 z-10">
         {/* Profile Follow */}
         <div className="relative mb-2 flex flex-col items-center">
           <div className="h-[50px] w-[50px] overflow-hidden rounded-full border-[2px] border-white bg-black">

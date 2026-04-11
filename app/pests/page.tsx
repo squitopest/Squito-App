@@ -26,7 +26,6 @@ const itemVariants: Variants = {
 };
 
 export default function PestsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedPest, setSelectedPest] = useState<Pest | null>(null);
   const [activeCategory, setActiveCategory] = useState<PestCategory | "All">("All");
   const [identifyMode, setIdentifyMode] = useState(false);
@@ -34,27 +33,15 @@ export default function PestsPage() {
   const [identifyResult, setIdentifyResult] = useState<any>(null);
   const [identifying, setIdentifying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const filteredPests = useMemo(() => {
     let results = pestsData;
-
     if (activeCategory !== "All") {
       results = results.filter((pest) => pest.category === activeCategory);
     }
-
-    if (searchQuery) {
-      const lowerQuery = searchQuery.toLowerCase();
-      results = results.filter(
-        (pest) =>
-          pest.name.toLowerCase().includes(lowerQuery) ||
-          pest.description.toLowerCase().includes(lowerQuery) ||
-          pest.category.toLowerCase().includes(lowerQuery) ||
-          pest.scientificName.toLowerCase().includes(lowerQuery),
-      );
-    }
-
     return results;
-  }, [searchQuery, activeCategory]);
+  }, [activeCategory]);
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -86,7 +73,8 @@ export default function PestsPage() {
       setIdentifyResult(null);
 
       try {
-        const API_BASE = (typeof window !== "undefined" && (window as any).Capacitor) ? "https://squito-app.vercel.app" : "";
+        const { Capacitor } = await import("@capacitor/core");
+        const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
         const res = await fetch(`${API_BASE}/api/identify-pest`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,6 +98,7 @@ export default function PestsPage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-squito-green">
@@ -119,35 +108,51 @@ export default function PestsPage() {
               Pest Library
             </h1>
             <p className="mt-1 text-[13px] text-gray-500 font-medium">
-              Most commonly identified across Nassau & Suffolk
+              Most commonly identified across Nassau &amp; Suffolk
             </p>
           </div>
-          <button
-            onClick={() => setIdentifyMode(true)}
-            className="flex items-center gap-2 rounded-2xl bg-squito-green px-4 py-2.5 text-[12px] font-bold text-white shadow-lg shadow-squito-green/30 transition-all hover:shadow-xl hover:shadow-squito-green/40 active:scale-95"
-          >
-            <span className="text-lg">📸</span>
-            ID a Pest
-          </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="mt-6 relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-            <span className="text-gray-400 text-lg">🔍</span>
-          </div>
-          <input
-            type="text"
-            id="pest-search"
-            className="block w-full rounded-2xl border-0 py-3.5 pl-12 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-squito-green bg-white/60 backdrop-blur-md transition-all text-[15px] font-medium"
-            placeholder="Search by name, species, or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        {/* ── Pest Identifier Hero Card ── */}
+        <motion.div
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setIdentifyMode(true)}
+          className="mt-5 cursor-pointer relative overflow-hidden rounded-[24px] bg-gradient-to-br from-squito-green via-[#7ec518] to-[#5a9e0f] p-5 shadow-xl shadow-squito-green/30"
+        >
+          {/* Animated glow blob */}
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-white/20 blur-2xl pointer-events-none"
           />
-        </div>
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-inner">
+              <span className="text-3xl">📸</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">AI-Powered • Instant Results</p>
+              <h2 className="mt-0.5 font-display text-[20px] font-bold text-white leading-tight">
+                Pest Identifier
+              </h2>
+              <p className="mt-1 text-[12px] font-medium text-white/80">
+                Snap or upload a photo for an instant expert ID
+              </p>
+            </div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 border border-white/30">
+              <span className="text-white font-bold text-sm">→</span>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            {["🦟 Mosquito", "🕷️ Spider", "🐜 Ant", "🐝 Wasp", "🪲 Beetle"].map((tag) => (
+              <span key={tag} className="rounded-full bg-white/15 border border-white/20 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </motion.div>
 
         {/* Category Filters */}
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-5 px-5">
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-5 px-5">
           {pestCategories.map((cat) => (
             <button
               key={cat.value}
@@ -169,7 +174,7 @@ export default function PestsPage() {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        key={activeCategory + searchQuery}
+        key={activeCategory}
         className="mt-6 grid grid-cols-2 gap-4"
       >
         {filteredPests.map((pest) => (
@@ -448,7 +453,7 @@ export default function PestsPage() {
                     </div>
                     <div className="flex gap-3">
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => cameraInputRef.current?.click()}
                         className="flex items-center gap-2 rounded-2xl bg-squito-green px-6 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-squito-green/30 active:scale-95 transition"
                       >
                         📸 Take Photo
@@ -460,11 +465,20 @@ export default function PestsPage() {
                         🖼️ Upload
                       </button>
                     </div>
+                    {/* Camera input (native camera on iOS) */}
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                    {/* Gallery/file picker (no capture) */}
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      capture="environment"
                       className="hidden"
                       onChange={handleImageUpload}
                     />
@@ -501,6 +515,7 @@ export default function PestsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="w-full rounded-2xl bg-white border border-gray-200 shadow-lg p-5"
                       >
+                        {/* Header */}
                         <div className="flex items-start gap-4">
                           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-squito-green/10 text-3xl">
                             🎯
@@ -509,19 +524,42 @@ export default function PestsPage() {
                             <h3 className="font-display text-lg font-bold text-gray-900">
                               {identifyResult.name}
                             </h3>
-                            <div className="flex items-center gap-2 mt-1">
+                            {identifyResult.scientificName && (
+                              <p className="text-[11px] italic text-gray-400 mt-0.5">{identifyResult.scientificName}</p>
+                            )}
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border ${getRiskColor(identifyResult.dangerLevel || "Nuisance")}`}>
                                 {identifyResult.dangerLevel || "Unknown Risk"}
                               </span>
-                              <span className="text-[11px] text-gray-400">
-                                {identifyResult.confidence}% match
+                              <span className="text-[11px] text-gray-400 font-medium">
+                                {identifyResult.confidence}% confidence
                               </span>
                             </div>
                           </div>
                         </div>
+
+                        {/* Description */}
                         <p className="text-[13px] text-gray-600 mt-3 leading-relaxed">
                           {identifyResult.description}
                         </p>
+
+                        {/* Visual Clues */}
+                        {identifyResult.visualClues && (
+                          <div className="mt-3 rounded-xl bg-gray-50 border border-gray-100 px-3.5 py-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">🔬 What the AI Observed</p>
+                            <p className="text-[12px] text-gray-600 leading-snug">{identifyResult.visualClues}</p>
+                          </div>
+                        )}
+
+                        {/* Recommendation */}
+                        {identifyResult.recommendation && (
+                          <div className="mt-3 rounded-xl bg-amber-50 border border-amber-100 px-3.5 py-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-1">⚠️ Recommendation</p>
+                            <p className="text-[12px] text-gray-700 leading-snug font-medium">{identifyResult.recommendation}</p>
+                          </div>
+                        )}
+
+                        {/* Actions */}
                         {identifyResult.matchedPestId && (
                           <button
                             onClick={() => {
@@ -535,7 +573,7 @@ export default function PestsPage() {
                             }}
                             className="mt-4 w-full rounded-xl bg-squito-green/10 py-3 text-[13px] font-bold text-squito-green transition hover:bg-squito-green/20"
                           >
-                            View Full Profile →
+                            View Full Pest Profile →
                           </button>
                         )}
                         <Link href="/book" className="block mt-2">
@@ -545,6 +583,7 @@ export default function PestsPage() {
                         </Link>
                       </motion.div>
                     )}
+
 
                     {identifyResult?.error && (
                       <div className="w-full rounded-2xl bg-red-50 border border-red-100 p-5 text-center">

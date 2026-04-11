@@ -21,7 +21,7 @@ function BottomNavContent() {
   const currentPath = `${pathname}${query}`;
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-[9000] flex justify-center px-4 pointer-events-none">
+    <div className="fixed bottom-2 pb-[env(safe-area-inset-bottom)] left-0 right-0 z-[9000] flex justify-center px-4 pointer-events-none">
       <nav className="flex h-16 w-full max-w-sm items-center justify-around rounded-full border border-squito-greenLight/30 bg-squito-green/85 backdrop-blur-2xl shadow-[0_8px_32px_rgba(107,158,17,0.4)] pointer-events-auto px-2">
         {navItems.map((item) => {
           const isActive =
@@ -73,7 +73,7 @@ export function BottomNav() {
   return (
     <Suspense
       fallback={
-        <nav className="fixed bottom-6 left-0 right-0 z-[9000] flex justify-center px-4">
+        <nav className="fixed bottom-2 pb-[env(safe-area-inset-bottom)] left-0 right-0 z-[9000] flex justify-center px-4">
           <div className="h-16 w-full max-w-sm rounded-full bg-squito-green/85 backdrop-blur-2xl" />
         </nav>
       }
