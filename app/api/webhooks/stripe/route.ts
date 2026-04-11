@@ -77,8 +77,14 @@ export async function POST(req: Request) {
         preferredTime: meta.preferredTime || "",
         userId: meta.userId || "",
         coordinates: meta.coordinates ? JSON.parse(meta.coordinates) : null,
-        isPaid: true, // It's from a Stripe Checkout Session
-        isStripeWebhook: true
+        // Tax fields
+        county: meta.county || "",
+        taxRate: meta.taxRate ? parseFloat(meta.taxRate) : null,
+        subtotal: meta.subtotal || null,
+        taxAmount: meta.taxAmount || null,
+        totalCharged: meta.totalCharged || null,
+        isPaid: true,
+        isStripeWebhook: true,
       };
 
       // 3. Process backend (CRM, Emails, Points)

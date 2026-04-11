@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
@@ -70,6 +70,7 @@ function BookForm() {
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const { user, isGuest, profile, refreshProfile } = useAuth();
+  const addressInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -121,7 +122,57 @@ function BookForm() {
     }
   }, [initialPlan, initialService, billingCycle]);
 
-  // ── GPS: Use My Location ──────────────────────────────────────────────────
+  // ── Google Places Autocomplete ──────────────────────────────────────────────
+  useEffect(() => {
+    const GMAP_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!GMAP_KEY || !addressInputRef.current) return;
+
+    // Only load once
+    if ((window as any).__googleMapsLoaded) {
+      attachAutocomplete();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GMAP_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      (window as any).__googleMapsLoaded = true;
+      attachAutocomplete();
+    };
+    document.head.appendChild(script);
+
+    function attachAutocomplete() {
+      if (!addressInputRef.current || !(window as any).google) return;
+      const autocomplete = new (window as any).google.maps.places.Autocomplete(
+        addressInputRef.current,
+        {
+          componentRestrictions: { country: "us" },
+          fields: ["formatted_address", "geometry", "address_components"],
+          // Bias results toward Long Island
+          bounds: new (window as any).google.maps.LatLngBounds(
+            { lat: 40.5, lng: -73.9 }, // SW corner (Nassau/Brooklyn border)
+            { lat: 41.1, lng: -71.8 }  // NE corner (Montauk)
+          ),
+          strictBounds: false,
+        }
+      );
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place.formatted_address) return;
+        setFormData((f) => ({ ...f, address: place.formatted_address }));
+        if (place.geometry?.location) {
+          setCoordinates({
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          });
+          setGpsAccuracy(null); // GPS chip not used
+        }
+      });
+    }
+  }, []);
+
   const useMyLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setErrorMessage("GPS not available on this device.");
@@ -257,10 +308,23 @@ function BookForm() {
     );
   }
 
-  // Derived price for the selected service
+  // Derived price + NYS tax for the selected service
   const selectedPrice = SERVICE_PRICES[formData.service] ?? 0;
   const isFree = formData.service === "Free Estimate / Custom Quote";
   const isRecurring = formData.service.includes("monthly") || formData.service.includes("yearly");
+
+  // Client-side tax preview (mirrors bookingEngine.detectCountyTax)
+  const NASSAU_CITIES = /\b(garden city|hempstead|long beach|great neck|mineola|valley stream|freeport|oceanside|lynbrook|malverne|rockville centre|hewlett|merrick|bellmore|wantagh|seaford|massapequa|levittown|hicksville|syosset|plainview|farmingdale|bethpage|westbury|new hyde park|floral park|elmont|uniondale|east meadow|franklin square|north valley stream)\b/i;
+  const SUFFOLK_CITIES = /\b(brentwood|central islip|bay shore|islip|patchogue|riverhead|smithtown|hauppauge|commack|north babylon|babylon|west babylon|deer park|amityville|lindenhurst|copiague|huntington|melville|bohemia|ronkonkoma|holbrook|lake grove|stony brook|port jefferson|setauket|centereach|coram|ridge|moriches|hampton bays|southampton|east hampton|montauk|greenport|cutchogue|mattituck|shelter island)\b/i;
+  const taxRate = !formData.address ? 0 :
+    formData.address.toLowerCase().includes("nassau") || NASSAU_CITIES.test(formData.address) ? 0.0825 :
+    formData.address.toLowerCase().includes("suffolk") || SUFFOLK_CITIES.test(formData.address) ? 0.08625 : 0.08;
+  const taxCounty = !formData.address ? "" :
+    formData.address.toLowerCase().includes("nassau") || NASSAU_CITIES.test(formData.address) ? "Nassau" :
+    formData.address.toLowerCase().includes("suffolk") || SUFFOLK_CITIES.test(formData.address) ? "Suffolk" : "NY";
+  const taxAmount = !isFree ? Math.round(selectedPrice * taxRate * 100) / 100 : 0;
+  const totalWithTax = selectedPrice + taxAmount;
+
 
   return (
     <>
@@ -379,12 +443,14 @@ function BookForm() {
             </button>
           </div>
           <input
+            ref={addressInputRef}
             id="booking-address"
             required
+            autoComplete="off"
+            placeholder="Start typing your address…"
             value={formData.address}
             onChange={(e) => {
               setFormData({ ...formData, address: e.target.value });
-              // If user edits manually, clear GPS data
               if (coordinates) {
                 setCoordinates(null);
                 setGpsAccuracy(null);
@@ -523,7 +589,7 @@ function BookForm() {
       {/* Live Order Summary Card */}
       {!isFree && (
         <motion.div
-          key={formData.service}
+          key={formData.service + formData.address}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 28 }}
@@ -546,12 +612,27 @@ function BookForm() {
             </div>
             <div className="text-right shrink-0">
               <p className="text-[22px] font-bold text-gray-900">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
-              <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "one-time"}</p>
+              <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "subtotal"}</p>
             </div>
           </div>
+          {/* Tax breakdown — shown once address has enough data */}
+          {formData.address.length > 5 && taxRate > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mt-2 space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-gray-400">{taxCounty} County Tax ({(taxRate * 100).toFixed(3)}%)</p>
+                <p className="text-[11px] text-gray-500">+${taxAmount.toFixed(2)}</p>
+              </div>
+            </motion.div>
+          )}
           <div className="mt-3 border-t border-squito-green/15 pt-3 flex items-center justify-between">
             <p className="text-[11px] text-gray-500">Total charged today</p>
-            <p className="text-[13px] font-bold text-squito-green">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
+            <p className="text-[14px] font-bold text-squito-green">
+              ${formData.address.length > 5 ? totalWithTax.toFixed(2) : selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })} {formData.address.length > 5 && taxRate > 0 ? "(incl. tax)" : ""}
+            </p>
           </div>
         </motion.div>
       )}
@@ -566,7 +647,7 @@ function BookForm() {
             ? "Processing..."
             : isFree
             ? "Schedule Free Estimate →"
-            : `Pay $${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })} Securely →`}
+            : `Pay $${(formData.address.length > 5 ? totalWithTax : selectedPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Securely →`}
         </GlassButton>
         {!isFree && (
           <p className="mt-2 text-center text-[11px] font-medium text-gray-400">

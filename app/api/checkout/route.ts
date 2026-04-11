@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { calculateTax } from "@/lib/bookingEngine";
 
 // Service ID → price in cents (Stripe uses cents)
 const SERVICE_PRICES: Record<string, number> = {
@@ -44,11 +45,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Unknown service: ${service}` }, { status: 400 });
   }
 
+  // Calculate NYS county-level sales tax
+  const priceUSD = priceInCents / 100;
+  const tax = calculateTax(priceUSD, address);
+  const taxInCents = Math.round(tax.taxAmount * 100);
+
   try {
     const stripe = getStripe();
 
-    // In Native iOS Capacitor, the origin is capacitor://localhost, which crashes WKWebView on redirect.
-    // For native functionality, we lock the return origin to Vercel production logic.
+    // In Native iOS Capacitor, origin is capacitor://localhost — lock to Vercel
     let origin = request.headers.get("origin") || "https://squito-app.vercel.app";
     if (origin.includes("capacitor://")) {
       origin = "https://squito-app.vercel.app";
@@ -63,15 +68,27 @@ export async function POST(request: Request) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: service.replace(/\s*\(.*\)$/, ""), // "Mosquito Barrier Spray"
+              name: service.replace(/\s*\(.*\)$/, ""),
               description: `Service at ${address}${preferredDate ? ` on ${preferredDate}` : ""}${preferredTime ? ` at ${preferredTime}` : ""}`,
             },
             unit_amount: priceInCents,
           },
           quantity: 1,
         },
+        {
+          // Sales tax as a transparent separate line item
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `${tax.county} County Sales Tax (${(tax.taxRate * 100).toFixed(3)}%)`,
+              description: "New York State + local sales tax",
+            },
+            unit_amount: taxInCents,
+          },
+          quantity: 1,
+        },
       ],
-      // Store all booking data in metadata so we can process it on success
+      // Store all booking + tax data in metadata for webhook processing
       metadata: {
         name,
         email,
@@ -82,12 +99,17 @@ export async function POST(request: Request) {
         preferredTime: preferredTime || "",
         userId: userId || "",
         coordinates: coordinates ? JSON.stringify(coordinates) : "",
+        county: tax.county,
+        taxRate: String(tax.taxRate),
+        subtotal: String(priceUSD),
+        taxAmount: String(tax.taxAmount),
+        totalCharged: String(tax.total),
       },
       success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/book?cancelled=true`,
     });
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url, tax });
   } catch (err: any) {
     console.error("[Stripe Checkout Error]", err);
     return NextResponse.json(

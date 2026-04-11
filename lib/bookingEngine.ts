@@ -1,29 +1,81 @@
 import { Resend } from "resend";
-import { awardPoints } from "@/lib/pointsEngine";
+import { createClient } from "@supabase/supabase-js";
 
+// ── Service-role Supabase client (bypasses RLS — server-only) ───────────────
+function getServiceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
+// ── NYS Sales Tax by county ─────────────────────────────────────────────────
+// NYS base 4% + county rates
+const COUNTY_TAX: Record<string, number> = {
+  nassau:  0.0825,  // 8.25%
+  suffolk: 0.08625, // 8.625%
+};
+const DEFAULT_NY_TAX = 0.08; // fallback NYC/other NY = 8%
+
+export function detectCountyTax(address: string): { county: string; rate: number } {
+  const lower = address.toLowerCase();
+  if (lower.includes("nassau") || /\b(garden city|hempstead|long beach|great neck|mineola|valley stream|freeport|oceanside|lynbrook|malverne|rockville centre|hewlett|merrick|bellmore|wantagh|seaford|massapequa|levittown|hicksville|syosset|plainview|farmingdale|bethpage|westbury|new hyde park|floral park|elmont|uniondale|east meadow|franklin square|north valley stream)\b/.test(lower)) {
+    return { county: "Nassau", rate: COUNTY_TAX.nassau };
+  }
+  if (lower.includes("suffolk") || /\b(brentwood|central islip|bay shore|islip|patchogue|riverhead|smithtown|hauppauge|commack|north babylon|babylon|west babylon|deer park|amityville|lindenhurst|copiague|huntington|melville|bethpage|bohemia|ronkonkoma|holbrook|lake grove|stony brook|port jefferson|setauket|centereach|coram|middle island|ridge|moriches|hampton bays|southampton|east hampton|montauk|greenport|cutchogue|mattituck|shelter island)\b/.test(lower)) {
+    return { county: "Suffolk", rate: COUNTY_TAX.suffolk };
+  }
+  return { county: "NY", rate: DEFAULT_NY_TAX };
+}
+
+export function calculateTax(priceUSD: number, address: string): {
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  taxRate: number;
+  county: string;
+} {
+  const { county, rate } = detectCountyTax(address);
+  const taxAmount = Math.round(priceUSD * rate * 100) / 100;
+  return {
+    subtotal: priceUSD,
+    taxAmount,
+    total: Math.round((priceUSD + taxAmount) * 100) / 100,
+    taxRate: rate,
+    county,
+  };
+}
+
+// ── Points per service ───────────────────────────────────────────────────────
 function determinePoints(serviceName: string): number {
   if (!serviceName) return 50;
   const svc = serviceName.toLowerCase();
-  
   if (svc.includes("ultimate")) return 300;
   if (svc.includes("premium")) return 200;
   if (svc.includes("essential") || svc.includes("plan")) return 150;
-  
   if (svc.includes("hornet") || svc.includes("wasp")) return 150;
   if (svc.includes("general") || svc.includes("property")) return 125;
   if (svc.includes("termite")) return 100;
   if (svc.includes("mosquito") || svc.includes("tick")) return 75;
-  
   if (svc.includes("free estimate") || svc.includes("quote")) return 0;
-  
   return 50;
 }
 
+// ── Tier multiplier lookup (mirrors pointsEngine.ts) ────────────────────────
+function getTierMultiplier(totalPoints: number): { multiplier: number; tier: string } {
+  if (totalPoints >= 1000) return { multiplier: 2,    tier: "Elite" };
+  if (totalPoints >= 500)  return { multiplier: 1.5,  tier: "Gold" };
+  if (totalPoints >= 250)  return { multiplier: 1.25, tier: "Silver" };
+  return                          { multiplier: 1,    tier: "Starter" };
+}
+
+// ── Main processBooking ──────────────────────────────────────────────────────
 export async function processBooking(data: Record<string, any>) {
   const resendApiKey = process.env.RESEND_API_KEY;
-  
+  const supabase = getServiceSupabase();
+
   if (!resendApiKey) {
-    console.warn("RESEND_API_KEY not found. Logging booking to console:");
+    console.warn("[BookingEngine] RESEND_API_KEY not found — logging booking only");
     console.log(data);
     return { ok: true, notice: "Logged locally" };
   }
@@ -31,7 +83,7 @@ export async function processBooking(data: Record<string, any>) {
   const resend = new Resend(resendApiKey);
 
   try {
-    // 1. Send Email Notification to Squito Admin
+    // ── 1. Send admin notification ─────────────────────────────────────────
     await resend.emails.send({
       from: "Squito App <onboarding@resend.dev>",
       to: "service@getsquito.com",
@@ -42,100 +94,145 @@ export async function processBooking(data: Record<string, any>) {
         <p><strong>Email:</strong> ${data.email}</p>
         <p><strong>Phone:</strong> ${data.phone}</p>
         <p><strong>Address:</strong> ${data.address}</p>
-        ${data.coordinates ? `<p><strong>GPS:</strong> <a href="https://maps.google.com/?q=${data.coordinates.lat},${data.coordinates.lng}">${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lng.toFixed(6)}</a></p>` : ''}
+        ${data.county ? `<p><strong>County:</strong> ${data.county} (Tax rate: ${((data.taxRate || 0) * 100).toFixed(3)}%)</p>` : ""}
+        ${data.coordinates ? `<p><strong>GPS:</strong> <a href="https://maps.google.com/?q=${data.coordinates.lat},${data.coordinates.lng}">${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lng.toFixed(6)}</a></p>` : ""}
         <p><strong>Service:</strong> ${data.service}</p>
-        <p><strong>Preferred Date:</strong> ${data.preferredDate || 'Not specified'}</p>
-        <p><strong>Preferred Time:</strong> ${data.preferredTime || 'Not specified'}</p>
-        <p><strong>Payment:</strong> ${data.isPaid ? '✅ Paid via Stripe' : '🆓 Free Estimate Request'}</p>
+        <p><strong>Subtotal:</strong> $${data.subtotal ?? "N/A"}</p>
+        <p><strong>Tax:</strong> $${data.taxAmount ?? "N/A"}</p>
+        <p><strong>Total Charged:</strong> $${data.totalCharged ?? "N/A"}</p>
+        <p><strong>Preferred Date:</strong> ${data.preferredDate || "Not specified"}</p>
+        <p><strong>Preferred Time:</strong> ${data.preferredTime || "Not specified"}</p>
+        <p><strong>Payment:</strong> ${data.isPaid ? "✅ Paid via Stripe" : "🆓 Free Estimate Request"}</p>
       `,
     });
 
-    // 2. Send Confirmation Email to Customer
+    // ── 2. Send customer confirmation ──────────────────────────────────────
     await resend.emails.send({
       from: "Squito Pest Control <onboarding@resend.dev>",
       to: data.email,
       subject: "Your Squito booking is confirmed! ✅",
       html: `
-        <h2>Hi ${data.name},</h2>
-        <p>Thank you for choosing Squito Pest Control! ${data.isPaid ? 'Your payment has been received.' : 'Your free estimate request has been received.'}</p>
-        <p>We've confirmed your request for <strong>${data.service}</strong> at <strong>${data.address}</strong>.</p>
-        ${data.preferredDate ? `<p>Your preferred appointment: <strong>${data.preferredDate}${data.preferredTime ? ` at ${data.preferredTime}` : ''}</strong></p>` : ''}
-        <p>Our team will contact you shortly at ${data.phone} to finalize scheduling.</p>
-        <br/>
-        <p>Stay Safe,</p>
-        <p>The Squito Team</p>
+        <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto;">
+          <h2 style="color: #6B9E11;">Hi ${data.name},</h2>
+          <p>${data.isPaid ? "Your payment has been received and your booking is confirmed." : "Your free estimate request has been received."}</p>
+          <div style="background: #f7fbe8; border-radius: 12px; padding: 16px; margin: 20px 0;">
+            <p style="margin:4px 0;"><strong>Service:</strong> ${data.service.replace(/\s*\(.*\)$/, "")}</p>
+            <p style="margin:4px 0;"><strong>Address:</strong> ${data.address}</p>
+            ${data.preferredDate ? `<p style="margin:4px 0;"><strong>Appointment:</strong> ${data.preferredDate}${data.preferredTime ? ` at ${data.preferredTime}` : ""}</p>` : ""}
+            ${data.isPaid ? `<p style="margin:4px 0;"><strong>Amount Paid:</strong> $${data.totalCharged ?? data.subtotal}</p>` : ""}
+          </div>
+          <p>Our team will contact you shortly at <strong>${data.phone}</strong> to finalize scheduling.</p>
+          <br/>
+          <p>Stay pest-free,</p>
+          <p><strong>The Squito Team</strong></p>
+          <p style="font-size:11px; color:#999;">Squito Pest Control — Long Island, NY | service@getsquito.com</p>
+        </div>
       `,
     });
 
-    // 3. GorillaDesk CRM Integration
+    // ── 3. Write to service_bookings ────────────────────────────────────────
+    const userId = data.userId;
+    if (supabase && userId && typeof userId === "string" && userId.length > 0) {
+      const { error: bookingErr } = await supabase.from("service_bookings").insert({
+        user_id: userId,
+        service_type: data.service,
+        status: "scheduled",
+        scheduled_date: data.preferredDate || null,
+        notes: [
+          data.preferredTime ? `Time: ${data.preferredTime}` : null,
+          data.address ? `Address: ${data.address}` : null,
+          data.county ? `County: ${data.county} (${((data.taxRate || 0) * 100).toFixed(3)}% tax)` : null,
+          data.isPaid ? `Paid via Stripe — $${data.totalCharged}` : "Free Estimate",
+        ].filter(Boolean).join(" | "),
+      });
+      if (bookingErr) console.error("[BookingEngine] service_bookings insert failed:", bookingErr.message);
+      else console.log(`[BookingEngine] service_bookings row created for user ${userId}`);
+    }
+
+    // ── 4. GorillaDesk CRM ──────────────────────────────────────────────────
     const gorillaDeskApiKey = process.env.GORILLADESK_API_KEY;
     if (gorillaDeskApiKey) {
       try {
-        const gdResponse = await fetch('https://app.gorilladesk.com/api/v1/customers', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${gorillaDeskApiKey}`
-          },
+        const gdResponse = await fetch("https://app.gorilladesk.com/api/v1/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${gorillaDeskApiKey}` },
           body: JSON.stringify({
-            first_name: data.name.split(' ')[0] || data.name,
-            last_name: data.name.split(' ').slice(1).join(' ') || '',
+            first_name: data.name.split(" ")[0] || data.name,
+            last_name: data.name.split(" ").slice(1).join(" ") || "",
             email: data.email,
             phone: data.phone,
             address: data.address,
-            source: 'app_booking',
-            notes: `Service: ${data.service} | Date: ${data.preferredDate || 'TBD'} ${data.preferredTime || ''} | GPS: ${data.coordinates ? `${data.coordinates.lat},${data.coordinates.lng}` : 'N/A'} | ${data.isPaid ? 'PAID via App' : 'Free Estimate'}`,
-          })
+            source: "app_booking",
+            notes: `Service: ${data.service} | Date: ${data.preferredDate || "TBD"} ${data.preferredTime || ""} | County: ${data.county || "?"} | Tax: $${data.taxAmount ?? "?"} | Total: $${data.totalCharged ?? "?"} | ${data.isPaid ? "PAID via App" : "Free Estimate"}`,
+          }),
         });
-
-        if (gdResponse.ok) {
-          console.log("[GorillaDesk] Successfully pushed customer to CRM");
-        } else {
-          const gdError = await gdResponse.text();
-          console.error("[GorillaDesk] API returned error:", gdResponse.status, gdError);
-        }
-      } catch (gdError) {
-        console.error("[GorillaDesk Error]", gdError);
-      }
+        if (!gdResponse.ok) console.error("[GorillaDesk]", gdResponse.status, await gdResponse.text());
+        else console.log("[GorillaDesk] Customer pushed to CRM");
+      } catch (e) { console.error("[GorillaDesk Error]", e); }
     }
 
-    // 4. Award PestPoints server-side (only for paid)
+    // ── 5. Award PestPoints ────────────────────────────────────────────────
     let pointsAwarded = false;
     let earnedAmount = 0;
-    const userId = data.userId;
-    
-    // Don't award points for free estimates
-    if (data.isPaid && userId && typeof userId === "string" && userId.length > 0) {
-      try {
-        const basePoints = determinePoints(data.service);
-        const reason = basePoints >= 150 ? "Signed up for a premium service or plan" : "Booked a service";
 
-        if (basePoints > 0) {
-          const pointsResult = await awardPoints(userId, basePoints, reason, {
-          source: data.isStripeWebhook ? "stripe_webhook" : "booking_form",
-          service: data.service,
-          address: data.address,
-        });
-        if (pointsResult && "success" in pointsResult && pointsResult.success) {
-          pointsAwarded = true;
-          earnedAmount = pointsResult.earnedAmount;
-          console.log(`[Points] Awarded ${pointsResult.earnedAmount} points to user ${userId} (50 base × ${pointsResult.multiplier}x ${pointsResult.newTier})`);
-        } else if (pointsResult && "duplicate" in pointsResult) {
-          console.warn("[Points] Duplicate booking submission blocked");
-        } else {
-           console.warn("[Points] Award failed:", pointsResult);
+    if (supabase && data.isPaid && userId && typeof userId === "string" && userId.length > 0) {
+      const basePoints = determinePoints(data.service);
+      if (basePoints > 0) {
+        try {
+          // Dedup check (60s window)
+          const cutoff = new Date(Date.now() - 60_000).toISOString();
+          const { data: recentTx } = await supabase
+            .from("points_transactions")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("reason", "Booked a service")
+            .eq("type", "earn")
+            .gte("created_at", cutoff)
+            .limit(1);
+
+          if (recentTx && recentTx.length > 0) {
+            console.warn("[Points] Duplicate blocked for user", userId);
+          } else {
+            // Get profile with service role (bypasses RLS)
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("total_points, redeemable_points")
+              .eq("id", userId)
+              .single();
+
+            if (profile) {
+              const { multiplier, tier } = getTierMultiplier(profile.total_points || 0);
+              const multiplied = Math.round(basePoints * multiplier);
+              const newTotal = (profile.total_points || 0) + multiplied;
+              const newRedeemable = (profile.redeemable_points ?? profile.total_points ?? 0) + multiplied;
+
+              await supabase.from("points_transactions").insert({
+                user_id: userId,
+                amount: multiplied,
+                type: "earn",
+                reason: "Booked a service",
+                metadata: { base_amount: basePoints, multiplier, tier_at_earn: tier, service: data.service, source: "stripe_webhook" },
+              });
+
+              await supabase.from("profiles").update({
+                total_points: newTotal,
+                redeemable_points: newRedeemable,
+                tier: getTierMultiplier(newTotal).tier,
+                updated_at: new Date().toISOString(),
+              }).eq("id", userId);
+
+              pointsAwarded = true;
+              earnedAmount = multiplied;
+              console.log(`[Points] Awarded ${multiplied} points (${basePoints} × ${multiplier}x ${tier}) to ${userId}`);
+            }
           }
-        } else {
-          console.log(`[Points] Ignored 0 point un-billable estimate for user ${userId}`);
-        }
-      } catch (pointsError) {
-        console.error("[Points Error]", pointsError);
+        } catch (e) { console.error("[Points Error]", e); }
       }
     }
 
     return { ok: true, pointsAwarded, earnedAmount, isPaid: data.isPaid };
   } catch (err: any) {
-    console.error("[Booking Error]", err);
-    return { ok: false, error: "Failed to process booking. Please try again." };
+    console.error("[BookingEngine]", err);
+    return { ok: false, error: err.message || "Failed to process booking" };
   }
 }
