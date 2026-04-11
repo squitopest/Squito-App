@@ -739,7 +739,7 @@ function AuthenticatedProfile() {
                         desc: "General Pest, Wasps, Ticks, etc.",
                         pts: "50 - 150 pts",
                         icon: "🗓️",
-                        route: "/book",
+                        route: "/plans",
                       },
                       {
                         title: "Sign up for a plan",
