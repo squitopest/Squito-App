@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
 
 // ── Bug Avatar Options (same as OnboardingWizard) ──
 const BUG_AVATARS = [
@@ -38,10 +39,13 @@ export default function PersonalInfoPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
-  const [streetAddress, setStreetAddress] = useState("");
-  const [cityStateZip, setCityStateZip] = useState("");
+  const [serviceAddress, setServiceAddress] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const addressInputRef = usePlacesAutocomplete({
+    onSelect: (address) => setServiceAddress(address),
+  });
 
   // ── Avatar state ──
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -55,22 +59,10 @@ export default function PersonalInfoPage() {
       setFirstName(nameParts[0] || "");
       setLastName(nameParts.slice(1).join(" ") || "");
       setPhone(profile.phone || "");
-      setCurrentAvatarUrl(profile.avatar_url || null);
-
-      // Parse service address
-      if (profile.service_address) {
-        const parts = profile.service_address.split(", ");
-        if (parts.length >= 2) {
-          setStreetAddress(parts[0]);
-          setCityStateZip(parts.slice(1).join(", "));
-        } else {
-          setStreetAddress(profile.service_address);
-        }
-      } else if (profile.address) {
-        setStreetAddress(profile.address);
-      }
+      setServiceAddress(profile.service_address || profile.address || "");
     }
   }, [profile]);
+
 
   // ── Photo Upload ──
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,17 +112,14 @@ export default function PersonalInfoPage() {
     const displayName = [firstName.trim(), lastName.trim()]
       .filter(Boolean)
       .join(" ");
-    const serviceAddress = [streetAddress.trim(), cityStateZip.trim()]
-      .filter(Boolean)
-      .join(", ");
 
     const { error } = await supabase
       .from("profiles")
       .update({
         display_name: displayName || null,
         phone: phone.trim() || null,
-        address: streetAddress.trim() || null,
-        service_address: serviceAddress || null,
+        address: serviceAddress.trim() || null,
+        service_address: serviceAddress.trim() || null,
         avatar_url: currentAvatarUrl,
         updated_at: new Date().toISOString(),
       })
@@ -256,27 +245,17 @@ export default function PersonalInfoPage() {
           Service Address
         </h2>
         <div className="overflow-hidden rounded-[20px] bg-white border border-gray-200 shadow-sm">
-          <div className="flex flex-col px-5 py-3 border-b border-gray-100">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-              Street Address
-            </span>
-            <input
-              type="text"
-              value={streetAddress}
-              onChange={(e) => setStreetAddress(e.target.value)}
-              placeholder="123 Main Street"
-              className={inputClasses}
-            />
-          </div>
           <div className="flex flex-col px-5 py-3">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-              City, State, ZIP
+              Full Address
             </span>
             <input
+              ref={addressInputRef}
               type="text"
-              value={cityStateZip}
-              onChange={(e) => setCityStateZip(e.target.value)}
-              placeholder="Hamptons, NY 11937"
+              autoComplete="off"
+              value={serviceAddress}
+              onChange={(e) => setServiceAddress(e.target.value)}
+              placeholder="Start typing your address…"
               className={inputClasses}
             />
           </div>

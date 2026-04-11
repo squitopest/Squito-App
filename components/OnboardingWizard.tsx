@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { GlassButton } from "@/components/ui/GlassButton";
+import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
 
 // ── Bug Avatar Options ──
 const BUG_AVATARS = [
@@ -30,17 +31,20 @@ export function OnboardingWizard() {
   // ── Step 1 fields ──
   const [fullName, setFullName] = useState(profile?.display_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
-  const [streetAddress, setStreetAddress] = useState("");
-  const [cityStateZip, setCityStateZip] = useState("");
+  const [serviceAddress, setServiceAddress] = useState("");
+
+  const addressInputRef = usePlacesAutocomplete({
+    onSelect: (address) => setServiceAddress(address),
+  });
+
+  // ── Step 1 validation ──
+  const step1Valid = fullName.trim().length > 0 && serviceAddress.trim().length > 0;
 
   // ── Step 2 fields ──
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Step 1 validation ──
-  const step1Valid = fullName.trim().length > 0 && streetAddress.trim().length > 0;
 
   // ── Step 2: get display avatar ──
   const getAvatarDisplay = () => {
@@ -94,10 +98,6 @@ export function OnboardingWizard() {
     if (!supabase || !user) return;
     setSaving(true);
 
-    const serviceAddress = [streetAddress, cityStateZip]
-      .filter(Boolean)
-      .join(", ");
-
     // Determine avatar_url to save
     let avatarUrl = customAvatarUrl || null;
     if (!avatarUrl && selectedAvatar) {
@@ -110,8 +110,8 @@ export function OnboardingWizard() {
       .update({
         display_name: fullName.trim(),
         phone: phone.trim() || null,
-        address: streetAddress.trim(),
-        service_address: serviceAddress,
+        address: serviceAddress.trim(),
+        service_address: serviceAddress.trim(),
         avatar_url: avatarUrl,
         onboarding_complete: true,
         updated_at: new Date().toISOString(),
@@ -228,22 +228,15 @@ export function OnboardingWizard() {
                   <h2 className="mb-3 pl-1 text-[12px] font-bold uppercase tracking-wider text-gray-500">
                     Service Address <span className="text-red-400">*</span>
                   </h2>
-                  <div className="flex flex-col gap-3">
-                    <input
-                      type="text"
-                      value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
-                      placeholder="123 Main Street"
-                      className={inputClasses}
-                    />
-                    <input
-                      type="text"
-                      value={cityStateZip}
-                      onChange={(e) => setCityStateZip(e.target.value)}
-                      placeholder="City, State ZIP"
-                      className={inputClasses}
-                    />
-                  </div>
+                  <input
+                    ref={addressInputRef}
+                    type="text"
+                    autoComplete="off"
+                    value={serviceAddress}
+                    onChange={(e) => setServiceAddress(e.target.value)}
+                    placeholder="Start typing your address…"
+                    className={inputClasses}
+                  />
                 </div>
               </div>
 
@@ -519,8 +512,7 @@ export function OnboardingWizard() {
                         Service Address
                       </p>
                       <p className="text-[15px] font-semibold text-gray-900">
-                        {streetAddress}
-                        {cityStateZip && `, ${cityStateZip}`}
+                        {serviceAddress}
                       </p>
                     </div>
                   </div>

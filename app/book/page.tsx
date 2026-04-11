@@ -1,12 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
 import { haptics } from "@/lib/haptics";
 import { Capacitor } from "@capacitor/core";
+import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
 
 // ── Phone number formatting ─────────────────────────────────────────────────
 function formatPhone(value: string): string {
@@ -64,13 +65,18 @@ function BookForm() {
 
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [pointsAwarded, setPointsAwarded] = useState(false);
-  const [earnedAmount, setEarnedAmount] = useState(0);
   const [locating, setLocating] = useState(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-  const { user, isGuest, profile, refreshProfile } = useAuth();
-  const addressInputRef = useRef<HTMLInputElement>(null);
+  const { user, isGuest, profile } = useAuth();
+
+  const addressInputRef = usePlacesAutocomplete({
+    onSelect: (address, coords) => {
+      setFormData((f) => ({ ...f, address }));
+      if (coords) setCoordinates(coords);
+      setGpsAccuracy(null);
+    },
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -122,56 +128,6 @@ function BookForm() {
     }
   }, [initialPlan, initialService, billingCycle]);
 
-  // ── Google Places Autocomplete ──────────────────────────────────────────────
-  useEffect(() => {
-    const GMAP_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!GMAP_KEY || !addressInputRef.current) return;
-
-    // Only load once
-    if ((window as any).__googleMapsLoaded) {
-      attachAutocomplete();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GMAP_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      (window as any).__googleMapsLoaded = true;
-      attachAutocomplete();
-    };
-    document.head.appendChild(script);
-
-    function attachAutocomplete() {
-      if (!addressInputRef.current || !(window as any).google) return;
-      const autocomplete = new (window as any).google.maps.places.Autocomplete(
-        addressInputRef.current,
-        {
-          componentRestrictions: { country: "us" },
-          fields: ["formatted_address", "geometry", "address_components"],
-          // Bias results toward Long Island
-          bounds: new (window as any).google.maps.LatLngBounds(
-            { lat: 40.5, lng: -73.9 }, // SW corner (Nassau/Brooklyn border)
-            { lat: 41.1, lng: -71.8 }  // NE corner (Montauk)
-          ),
-          strictBounds: false,
-        }
-      );
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (!place.formatted_address) return;
-        setFormData((f) => ({ ...f, address: place.formatted_address }));
-        if (place.geometry?.location) {
-          setCoordinates({
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-          });
-          setGpsAccuracy(null); // GPS chip not used
-        }
-      });
-    }
-  }, []);
 
   const useMyLocation = useCallback(() => {
     if (!navigator.geolocation) {
