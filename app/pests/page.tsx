@@ -603,9 +603,9 @@ export default function PestsPage() {
                             View Full Pest Profile →
                           </button>
                         )}
-                        <Link href="/book" className="block mt-2">
-                          <GlassButton variant="primary" className="w-full py-3 text-[13px]">
-                            Book Treatment Now
+                        <Link href="/plans" className="block mt-2">
+                          <GlassButton variant="primary" className="w-full py-3 text-[13px] bg-squito-green dark:bg-squito-green text-white font-bold">
+                            View Treatment Options 🛡️
                           </GlassButton>
                         </Link>
                       </motion.div>

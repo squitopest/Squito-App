@@ -175,13 +175,12 @@ export function WelcomeCarousel() {
             </div>
 
             {/* Button */}
-            <GlassButton
-              variant="primary"
+            <button
               onClick={handleNext}
-              className="w-full py-4 text-[16px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
+              className="w-full py-4 rounded-2xl text-[16px] font-bold text-white bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.30)] active:scale-[0.98] transition-transform select-none"
             >
               {currentSlide === slides.length - 1 ? "Let's Go! 🚀" : "Next"}
-            </GlassButton>
+            </button>
           </div>
         </motion.div>
       )}

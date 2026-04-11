@@ -480,6 +480,22 @@ export default function TikTokFeed() {
 
   const toggleMute = useCallback(() => setIsMuted((m) => !m), []);
 
+  // Lock body scroll while comments drawer is open to prevent feed losing snap
+  useEffect(() => {
+    const el = document.querySelector(".snap-y") as HTMLElement | null;
+    if (commentsOpen) {
+      document.body.style.overflow = "hidden";
+      if (el) el.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      if (el) el.style.overflowY = "scroll";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      if (el) el.style.overflowY = "scroll";
+    };
+  }, [commentsOpen]);
+
 
   return (
     <>

@@ -21,8 +21,8 @@ function BottomNavContent() {
   const currentPath = `${pathname}${query}`;
 
   return (
-    <div className="fixed bottom-2 pb-[env(safe-area-inset-bottom)] left-0 right-0 z-[9000] flex justify-center px-4 pointer-events-none">
-      <nav className="flex h-16 w-full max-w-sm items-center justify-around rounded-full border border-squito-greenLight/30 bg-squito-green/85 backdrop-blur-2xl shadow-[0_8px_32px_rgba(107,158,17,0.4)] pointer-events-auto px-2">
+    <div className="fixed bottom-0 left-0 right-0 z-[9000] flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-none">
+      <nav className="flex h-12 w-full max-w-xs items-center justify-around rounded-full border border-squito-greenLight/30 bg-squito-green/90 backdrop-blur-2xl shadow-[0_4px_20px_rgba(107,158,17,0.35)] pointer-events-auto px-2">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -73,8 +73,8 @@ export function BottomNav() {
   return (
     <Suspense
       fallback={
-        <nav className="fixed bottom-2 pb-[env(safe-area-inset-bottom)] left-0 right-0 z-[9000] flex justify-center px-4">
-          <div className="h-16 w-full max-w-sm rounded-full bg-squito-green/85 backdrop-blur-2xl" />
+        <nav className="fixed bottom-0 left-0 right-0 z-[9000] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+          <div className="h-12 w-full max-w-xs rounded-full bg-squito-green/90 backdrop-blur-2xl" />
         </nav>
       }
     >
