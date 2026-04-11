@@ -149,22 +149,40 @@ export async function processBooking(data: Record<string, any>) {
       else console.log(`[BookingEngine] service_bookings row created for user ${userId}`);
     }
 
-    // ── 4. GorillaDesk CRM ──────────────────────────────────────────────────
+    // ── 4. CRM Integration (Zapier / GorillaDesk) ───────────────────────────
+    const zapierWebhook = process.env.ZAPIER_WEBHOOK_URL;
     const gorillaDeskApiKey = process.env.GORILLADESK_API_KEY;
-    if (gorillaDeskApiKey) {
+    
+    // Formatting the lead payload
+    const leadPayload = {
+      first_name: data.name.split(" ")[0] || data.name,
+      last_name: data.name.split(" ").slice(1).join(" ") || "",
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      service: data.service,
+      source: "app_booking",
+      notes: `Service: ${data.service} | Date: ${data.preferredDate || "TBD"} ${data.preferredTime || ""} | County: ${data.county || "?"} | Tax: $${data.taxAmount ?? "?"} | Total: $${data.totalCharged ?? "?"} | ${data.isPaid ? "PAID via App" : "Free Estimate"}`,
+    };
+
+    if (zapierWebhook) {
+      try {
+        const zapierResponse = await fetch(zapierWebhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(leadPayload),
+        });
+        if (!zapierResponse.ok) console.error("[Zapier]", zapierResponse.status);
+        else console.log("[Zapier] Lead pushed successfully");
+      } catch (e) {
+        console.error("[Zapier Error]", e);
+      }
+    } else if (gorillaDeskApiKey) {
       try {
         const gdResponse = await fetch("https://app.gorilladesk.com/api/v1/customers", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${gorillaDeskApiKey}` },
-          body: JSON.stringify({
-            first_name: data.name.split(" ")[0] || data.name,
-            last_name: data.name.split(" ").slice(1).join(" ") || "",
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            source: "app_booking",
-            notes: `Service: ${data.service} | Date: ${data.preferredDate || "TBD"} ${data.preferredTime || ""} | County: ${data.county || "?"} | Tax: $${data.taxAmount ?? "?"} | Total: $${data.totalCharged ?? "?"} | ${data.isPaid ? "PAID via App" : "Free Estimate"}`,
-          }),
+          body: JSON.stringify(leadPayload),
         });
         if (!gdResponse.ok) console.error("[GorillaDesk]", gdResponse.status, await gdResponse.text());
         else console.log("[GorillaDesk] Customer pushed to CRM");
@@ -228,6 +246,68 @@ export async function processBooking(data: Record<string, any>) {
           }
         } catch (e) { console.error("[Points Error]", e); }
       }
+    }
+
+    // ── 6. Send Confirmation Emails (Resend) ───────────────────────────────
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      try {
+        const resend = new Resend(resendApiKey);
+
+        // A. Customer Confirmation Email
+        await resend.emails.send({
+          from: "Squito <service@getsquito.com>",
+          to: data.email,
+          subject: data.isPaid ? "Payment Verified & Service Scheduled" : "Squito Estimate Request Received",
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #6a9c1e;">${data.isPaid ? "You're all set!" : "Waitlist Confirmed"}</h2>
+              <p>Hi ${data.name.split(" ")[0]},</p>
+              <p>${data.isPaid ? "Your payment was successful and your service is officially booked." : "We've received your request for a free estimate."}</p>
+              
+              <div style="background-color: #f7fbe8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #333;">Service Details</h3>
+                <p><strong>Service:</strong> ${data.service}</p>
+                <p><strong>Address:</strong> ${data.address}</p>
+                ${data.preferredDate ? `<p><strong>Preferred:</strong> ${data.preferredDate} ${data.preferredTime ? `at ${data.preferredTime}` : ""}</p>` : ""}
+                ${data.isPaid && data.totalCharged ? `
+                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <p><strong>Subtotal:</strong> $${data.subtotal}</p>
+                    <p><strong>${data.county} County Tax:</strong> $${data.taxAmount}</p>
+                    <p><strong>Total Charged:</strong> $${data.totalCharged}</p>
+                    ${pointsAwarded ? `<p style="color: #6a9c1e; font-weight: bold; margin-top: 10px;">🎁 You earned ${earnedAmount} PestPoints!</p>` : ""}
+                  </div>
+                ` : ""}
+              </div>
+              
+              <p>Our team will reach out shortly. If you have questions, reply directly to this email or call (631) 203-1000.</p>
+              <p>Best regards,<br>The Squito Team</p>
+            </div>
+          `,
+        });
+
+        // B. Admin Notification Email
+        await resend.emails.send({
+          from: "Squito App <app@getsquito.com>",
+          to: "service@getsquito.com",
+          subject: `New ${data.isPaid ? "PAID BOOKING" : "Estimate Lead"}: ${data.service}`,
+          html: `
+            <h2>New Request via App</h2>
+            <p><strong>Customer:</strong> ${data.name}</p>
+            <p><strong>Phone:</strong> ${data.phone}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Address:</strong> ${data.address}</p>
+            <p><strong>Service:</strong> ${data.service}</p>
+            <p><strong>Status:</strong> ${data.isPaid ? `PAID ($${data.totalCharged})` : "FREE ESTIMATE"}</p>
+            ${pointsAwarded ? `<p><strong>Points Awarded:</strong> ${earnedAmount}</p>` : ""}
+          `,
+        });
+        console.log(`[Email] Confirmations sent for ${data.email}`);
+      } catch (err: any) {
+        console.error("[Email Error] Failed to send Resend emails:", err);
+      }
+    } else {
+      console.warn("[Email] RESEND_API_KEY missing, skipping email delivery");
     }
 
     return { ok: true, pointsAwarded, earnedAmount, isPaid: data.isPaid };
