@@ -602,24 +602,7 @@ export default function PestsPage() {
                           </div>
                         )}
 
-                        {/* Actions */}
-                        {identifyResult.matchedPestId && (
-                          <button
-                            onClick={() => {
-                              const match = pestsData.find(p => p.id === identifyResult.matchedPestId);
-                              if (match) {
-                                setIdentifyMode(false);
-                                setIdentifyImage(null);
-                                setIdentifyResult(null);
-                                setSelectedPest(match);
-                              }
-                            }}
-                            className="mt-4 w-full rounded-xl bg-squito-green/10 py-3 text-[13px] font-bold text-squito-green transition hover:bg-squito-green/20"
-                          >
-                            View Full Pest Profile →
-                          </button>
-                        )}
-                        <Link href="/plans" className="block mt-2">
+                        <Link href="/plans" className="block mt-4">
                           <GlassButton variant="primary" className="w-full py-3 text-[13px] bg-squito-green dark:bg-squito-green text-white font-bold">
                             View Treatment Options 🛡️
                           </GlassButton>
