@@ -499,6 +499,11 @@ function AuthenticatedProfile() {
                   icon: "🔒",
                   route: "/me/security",
                 },
+                {
+                  name: "Privacy Policy",
+                  icon: "📄",
+                  route: "/privacy",
+                },
               ].map((setting, idx) => (
                 <Link
                   key={idx}

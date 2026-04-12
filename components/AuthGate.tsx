@@ -397,6 +397,13 @@ export function AuthGate() {
                   Sign up now and earn <strong>50 bonus PestPoints</strong> instantly!
                 </p>
               </div>
+
+              <p className="mt-2 text-center text-[11px] text-gray-400">
+                By creating an account, you agree to our{" "}
+                <a href="/privacy" className="text-squito-green underline underline-offset-2 font-semibold">
+                  Privacy Policy
+                </a>
+              </p>
             </motion.form>
           )}
         </AnimatePresence>

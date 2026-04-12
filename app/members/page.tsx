@@ -43,9 +43,12 @@ export default function MembersPage() {
             members.
           </p>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <span className="inline-flex items-center justify-center rounded-full border border-squito-pine/20 bg-white px-6 py-3 text-sm font-semibold text-squito-forest">
-              Coming soon: in-app signup
-            </span>
+            <Link
+              href="/me"
+              className="inline-flex items-center justify-center rounded-full border border-squito-pine/20 bg-white px-6 py-3 text-sm font-semibold text-squito-forest transition hover:bg-squito-mist"
+            >
+              Create your account
+            </Link>
             <Link
               href="/book"
               className="inline-flex items-center justify-center rounded-full bg-squito-forest px-8 py-3 text-sm font-semibold text-white transition hover:bg-squito-pine"

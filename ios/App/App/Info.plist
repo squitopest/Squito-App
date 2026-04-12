@@ -50,8 +50,14 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Squito uses your camera to identify pests and recommend the right treatment.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Used to quickly and securely log you into your Squito account.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Squito uses your location to auto-fill your service address for faster booking.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Squito needs access to your photo library so you can upload pest images for identification.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
