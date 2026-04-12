@@ -256,7 +256,7 @@ export async function processBooking(data: Record<string, any>) {
 
         // A. Customer Confirmation Email
         await resend.emails.send({
-          from: "Squito <service@getsquito.com>",
+          from: "Squito <onboarding@resend.dev>",
           to: data.email,
           subject: data.isPaid ? "Payment Verified & Service Scheduled" : "Squito Estimate Request Received",
           html: `
@@ -288,7 +288,7 @@ export async function processBooking(data: Record<string, any>) {
 
         // B. Admin Notification Email
         await resend.emails.send({
-          from: "Squito App <app@getsquito.com>",
+          from: "Squito App <onboarding@resend.dev>",
           to: "service@getsquito.com",
           subject: `New ${data.isPaid ? "PAID BOOKING" : "Estimate Lead"}: ${data.service}`,
           html: `
