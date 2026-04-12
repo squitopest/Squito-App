@@ -13,12 +13,6 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (sessionStorage.getItem("squito_splash_shown")) {
-      setShowSplash(false);
-      return;
-    }
-    sessionStorage.setItem("squito_splash_shown", "true");
-
     const timer = setTimeout(() => {
       setShowSplash(false);
       onComplete?.();

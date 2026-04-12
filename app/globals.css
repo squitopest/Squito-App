@@ -19,9 +19,6 @@ html, body {
 body {
   color: var(--foreground);
   background: var(--background);
-  position: fixed;
-  inset: 0;
-  width: 100%;
 }
 
 /* Prevent any child from pushing the page wider */
