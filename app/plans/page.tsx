@@ -305,32 +305,68 @@ export default function ServicesPage() {
 
                   {isFreeEstimate ? (
                     <Link href={`/book?service=${service.id}`} onClick={() => haptics.light()}>
-                      <GlassButton variant="secondary" className="text-[13px] py-2.5 px-5 border-gray-200 text-gray-900">
-                        Schedule
-                      </GlassButton>
+                      <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-xl px-5 py-2.5 text-[13px] font-bold text-gray-900 shadow-sm transition-all hover:shadow-md hover:border-gray-300"
+                      >
+                        <span className="relative z-10">Schedule →</span>
+                      </motion.button>
                     </Link>
                   ) : inCart ? (
-                    <GlassButton
-                      variant="secondary"
-                      className="text-[13px] py-2.5 px-5 border-squito-green/30 text-squito-green bg-squito-green/5"
+                    <motion.button
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
                       disabled
+                      className="relative overflow-hidden rounded-2xl border border-squito-green/40 bg-squito-green/10 backdrop-blur-xl px-5 py-2.5 text-[13px] font-bold text-squito-green shadow-[0_0_12px_rgba(107,158,17,0.15)]"
                     >
-                      ✓ In Cart
-                    </GlassButton>
-                  ) : (
-                    <motion.div animate={wasJustAdded ? { scale: [1, 1.1, 1] } : {}} transition={{ duration: 0.3 }}>
-                      <GlassButton
-                        variant={service.popular ? "primary" : "secondary"}
-                        className={`text-[13px] py-2.5 px-5 ${
-                          service.popular
-                            ? "bg-squito-green/90 dark:bg-squito-green shadow-sm"
-                            : "border-gray-200 text-gray-900"
-                        }`}
-                        onClick={() => handleAddToCart(service.serviceKey)}
+                      <motion.span
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative z-10"
                       >
-                        {wasJustAdded ? "✓ Added!" : "Add to Cart"}
-                      </GlassButton>
-                    </motion.div>
+                        ✓ In Cart
+                      </motion.span>
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.06, y: -1 }}
+                      whileTap={{ scale: 0.93 }}
+                      animate={wasJustAdded
+                        ? { scale: [1, 1.15, 1], boxShadow: ["0 0 0px rgba(107,158,17,0)", "0 0 20px rgba(107,158,17,0.5)", "0 0 0px rgba(107,158,17,0)"] }
+                        : {}}
+                      transition={wasJustAdded ? { duration: 0.5 } : { type: "spring", stiffness: 400, damping: 15 }}
+                      onClick={() => handleAddToCart(service.serviceKey)}
+                      className={`relative overflow-hidden rounded-2xl px-5 py-2.5 text-[13px] font-bold transition-all ${
+                        service.popular
+                          ? "bg-gradient-to-r from-squito-green via-[#7db818] to-squito-green text-white shadow-[0_4px_16px_rgba(107,158,17,0.35)] hover:shadow-[0_6px_24px_rgba(107,158,17,0.45)] border border-squito-green/50"
+                          : "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.25)] border border-gray-700/50"
+                      }`}
+                    >
+                      {/* Animated shimmer sweep */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                        initial={{ x: "-100%" }}
+                        animate={{ x: "200%" }}
+                        transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 3 }}
+                      />
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        {wasJustAdded ? (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 500 }}
+                          >
+                            ✓ Added!
+                          </motion.span>
+                        ) : (
+                          <>
+                            <span className="text-[14px]">🛒</span>
+                            Add to Cart
+                          </>
+                        )}
+                      </span>
+                    </motion.button>
                   )}
                 </div>
               </div>
@@ -491,28 +527,38 @@ export default function ServicesPage() {
                       className="flex-1"
                       onClick={() => haptics.light()}
                     >
-                      <GlassButton
-                        variant="secondary"
-                        className="w-full py-3 text-[13px] border-gray-200 text-gray-700"
+                      <motion.button
+                        whileHover={{ scale: 1.03, y: -1 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-full relative overflow-hidden rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-xl py-3 text-[13px] font-bold text-gray-700 shadow-sm transition-all hover:shadow-md hover:border-gray-300"
                       >
-                        View Details
-                      </GlassButton>
+                        <span className="relative z-10">View Details</span>
+                      </motion.button>
                     </Link>
                     <Link
                       href={`/book?plan=${plan.id}&billing=${billingCycle}`}
                       className="flex-1"
                       onClick={() => haptics.light()}
                     >
-                      <GlassButton
-                        variant={plan.popular ? "primary" : "secondary"}
-                        className={`w-full py-3 text-[13px] ${
+                      <motion.button
+                        whileHover={{ scale: 1.06, y: -1 }}
+                        whileTap={{ scale: 0.93 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                        className={`w-full relative overflow-hidden rounded-2xl py-3 text-[13px] font-bold transition-all ${
                           plan.popular
-                            ? "bg-squito-green/90 dark:bg-squito-green shadow-lg shadow-squito-green/20"
-                            : "border-squito-green text-squito-green"
+                            ? "bg-gradient-to-r from-squito-green via-[#7db818] to-squito-green text-white shadow-[0_4px_16px_rgba(107,158,17,0.35)] hover:shadow-[0_6px_24px_rgba(107,158,17,0.5)] border border-squito-green/50"
+                            : "bg-gradient-to-r from-squito-green/90 to-[#5a8c10] text-white shadow-[0_4px_12px_rgba(107,158,17,0.2)] hover:shadow-[0_6px_20px_rgba(107,158,17,0.35)] border border-squito-green/40"
                         }`}
                       >
-                        Get Plan
-                      </GlassButton>
+                        {/* Shimmer sweep */}
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                          initial={{ x: "-100%" }}
+                          animate={{ x: "200%" }}
+                          transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 4 }}
+                        />
+                        <span className="relative z-10">Get Plan →</span>
+                      </motion.button>
                     </Link>
                   </div>
                 </div>
