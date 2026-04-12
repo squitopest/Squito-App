@@ -45,8 +45,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Unknown service: ${service}` }, { status: 400 });
   }
 
-  // Apply PestPoints discount (cap at service price — never go below $0)
-  const validDiscount = Math.min(Math.max(Number(discountCents) || 0, 0), priceInCents);
+  // ── Server-side discount validation ──
+  // NEVER trust the client's discountCents — always verify against the database.
+  let validDiscount = 0;
+  let verifiedRedemptionId = "";
+
+  if (redemptionId && userId) {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } }
+      );
+
+      const { data: redemption } = await supabaseAdmin
+        .from("redemptions")
+        .select("id, user_id, discount_cents, status, expires_at")
+        .eq("id", redemptionId)
+        .eq("user_id", userId)         // must belong to this user
+        .eq("status", "pending")       // must not be already used
+        .gt("expires_at", new Date().toISOString()) // must not be expired
+        .single();
+
+      if (redemption && redemption.discount_cents > 0) {
+        // Use the DATABASE value — not the client's claimed amount
+        validDiscount = Math.min(redemption.discount_cents, priceInCents);
+        verifiedRedemptionId = redemption.id;
+        console.log(`[Checkout] Verified discount: ${validDiscount} cents for user ${userId}`);
+      } else {
+        console.warn(`[Checkout] Discount rejected — invalid/expired/used redemption ${redemptionId}`);
+      }
+    } catch (err) {
+      console.error("[Checkout] Discount validation error:", err);
+      // Fail safe — charge full price if validation errors
+    }
+  }
+
   const discountedPriceInCents = priceInCents - validDiscount;
 
   // Calculate NYS county-level sales tax on the DISCOUNTED price
@@ -132,7 +167,7 @@ export async function POST(request: Request) {
         // Discount tracking — used by success page to mark redemption as "used"
         discountCents: String(validDiscount),
         originalPriceCents: String(priceInCents),
-        redemptionId: redemptionId || "",
+        redemptionId: verifiedRedemptionId,
       },
       success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/book?cancelled=true`,
