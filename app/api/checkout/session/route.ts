@@ -33,6 +33,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Parse cart items if this is a cart order
+    const isCartOrder = meta.isCartOrder === "true";
+    let cartItems: Array<{ service: string; priceCents: number; points: number }> | null = null;
+    if (isCartOrder && meta.cartItems) {
+      try {
+        cartItems = JSON.parse(meta.cartItems);
+      } catch {
+        console.error("[Checkout Session] Failed to parse cartItems");
+      }
+    }
+
     return NextResponse.json({
       sessionId: session.id,
       paymentStatus: session.payment_status,
@@ -49,6 +60,9 @@ export async function GET(request: NextRequest) {
       preferredTime: meta.preferredTime ?? "",
       // Discount info for UI display
       discountCents: meta.discountCents ? Number(meta.discountCents) : 0,
+      // Cart order data
+      isCartOrder,
+      cartItems,
     });
   } catch (err: any) {
     console.error("[GET /api/checkout/session]", err);

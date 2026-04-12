@@ -4,13 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GlassButton } from "@/components/ui/GlassButton";
 import Link from "next/link";
 import { haptics } from "@/lib/haptics";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
+import { useCart } from "@/lib/CartContext";
 
 // ── One-time services (Starbucks model: buy one, earn points) ───────────────
 const services = [
   {
     id: "mosquito-barrier",
+    serviceKey: "Mosquito Barrier Spray ($119)",
     name: "Mosquito Barrier Spray",
     image: "/images/services/mosquito-spray.png",
     price: "$119",
@@ -21,6 +23,7 @@ const services = [
   },
   {
     id: "organic-treatment",
+    serviceKey: "Organic Mosquito & Tick Treatment ($99)",
     name: "Organic Mosquito & Tick Treatment",
     image: "/images/services/organic-treatment.png",
     price: "$99",
@@ -30,6 +33,7 @@ const services = [
   },
   {
     id: "tick-treatment",
+    serviceKey: "Tick Treatment ($99)",
     name: "Tick Treatment",
     image: "/images/services/tick-treatment.png",
     price: "$99",
@@ -39,6 +43,7 @@ const services = [
   },
   {
     id: "general-pest",
+    serviceKey: "General & Full Property Pest Control ($299)",
     name: "General & Full Property Pest Control",
     image: "/images/services/general-pest.png",
     price: "$299",
@@ -48,6 +53,7 @@ const services = [
   },
   {
     id: "hornet-wasp",
+    serviceKey: "Hornet & Wasp Removal ($349)",
     name: "Hornet & Wasp Removal",
     image: "/images/services/hornet-wasp.png",
     price: "$349",
@@ -57,6 +63,7 @@ const services = [
   },
   {
     id: "termite-inspection",
+    serviceKey: "Termite Inspection ($199)",
     name: "Termite Inspection",
     image: "/images/services/termite-inspection.png",
     price: "$199",
@@ -66,6 +73,7 @@ const services = [
   },
   {
     id: "free-estimate",
+    serviceKey: "Free Estimate / Custom Quote",
     name: "Free Estimate",
     image: "/images/services/free-estimate.png",
     price: "Free",
@@ -136,6 +144,22 @@ const plans = [
 export default function ServicesPage() {
   const [showPlans, setShowPlans] = useState(false);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const { addItem, isInCart, hasItems, itemCount, subtotal, openDrawer } = useCart();
+
+  // Track "just added" animation state per service
+  const [justAdded, setJustAdded] = useState<Record<string, boolean>>({});
+
+  const handleAddToCart = useCallback((serviceKey: string) => {
+    const result = addItem(serviceKey);
+    haptics.medium();
+
+    if (result.success) {
+      setJustAdded((prev) => ({ ...prev, [serviceKey]: true }));
+      setTimeout(() => {
+        setJustAdded((prev) => ({ ...prev, [serviceKey]: false }));
+      }, 1500);
+    }
+  }, [addItem]);
 
   return (
     <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8">
@@ -152,7 +176,7 @@ export default function ServicesPage() {
           Our Services
         </h1>
         <p className="mt-2 text-[13px] font-medium leading-relaxed text-gray-500">
-          Every service earns you PestPoints toward free treatments.
+          Add services to your cart and book them all at once.
         </p>
       </motion.div>
 
@@ -163,109 +187,150 @@ export default function ServicesPage() {
         transition={{ delay: 0.15 }}
         className="mt-8 flex flex-col gap-5"
       >
-        {services.map((service, idx) => (
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 200,
-              damping: 20,
-              delay: idx * 0.06,
-            }}
-            key={service.id}
-            className={`relative overflow-hidden rounded-[28px] border transition-all ${
-              service.popular
-                ? "border-squito-green bg-white shadow-[0_8px_24px_rgba(107,158,17,0.12)]"
-                : "border-gray-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
-            }`}
-          >
-            {service.popular && (
-              <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-squito-green px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-white shadow-md">
-                ⭐ Popular
-              </div>
-            )}
+        {services.map((service, idx) => {
+          const inCart = isInCart(service.serviceKey);
+          const wasJustAdded = justAdded[service.serviceKey];
+          const isFreeEstimate = service.priceNum === 0;
 
-            {/* Service Image */}
-            <div className="relative h-44 w-full overflow-hidden">
-              <Image
-                src={service.image}
-                alt={service.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 100vw, 500px"
-              />
-              {/* Dark gradient overlay for readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              {/* Price badge on image */}
-              <div className="absolute bottom-3 left-4">
-                <span className="rounded-full bg-white/95 backdrop-blur-sm px-4 py-1.5 text-[18px] font-bold text-gray-900 shadow-md">
-                  {service.price}
-                </span>
-              </div>
-            </div>
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 20,
+                delay: idx * 0.06,
+              }}
+              key={service.id}
+              className={`relative overflow-hidden rounded-[28px] border transition-all ${
+                service.popular
+                  ? "border-squito-green bg-white shadow-[0_8px_24px_rgba(107,158,17,0.12)]"
+                  : inCart
+                  ? "border-squito-green/50 bg-white shadow-[0_4px_16px_rgba(107,158,17,0.08)]"
+                  : "border-gray-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
+              }`}
+            >
+              {service.popular && (
+                <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-squito-green px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-white shadow-md">
+                  ⭐ Popular
+                </div>
+              )}
 
-            {/* Content */}
-            <div className="p-5 pt-4">
-              <h3 className="font-display text-[16px] font-bold text-gray-900 leading-snug">
-                {service.name}
-              </h3>
+              {/* In Cart indicator */}
+              {inCart && !service.popular && (
+                <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-squito-green/15 px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-squito-green">
+                  ✓ In Cart
+                </div>
+              )}
 
-              <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-gray-500">
-                {service.desc}
-              </p>
-
-              <div className="mt-4 flex items-center justify-between">
-                {service.points > 0 ? (
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      delay: 0.3 + idx * 0.06,
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 15,
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-3.5 py-1.5 text-[12px] font-bold text-squito-green"
-                  >
-                    <motion.span
-                      animate={{ scale: [1, 1.3, 1] }}
-                      transition={{
-                        repeat: Infinity,
-                        repeatDelay: 3,
-                        duration: 0.6,
-                        delay: idx * 0.5,
-                      }}
-                    >
-                      ⭐
-                    </motion.span>
-                    Earn {service.points} pts
-                  </motion.span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-100 px-3 py-1.5 text-[12px] font-bold text-gray-400">
-                    No commitment
+              {/* Service Image */}
+              <div className="relative h-44 w-full overflow-hidden">
+                <Image
+                  src={service.image}
+                  alt={service.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, 500px"
+                />
+                {/* Dark gradient overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                {/* Price badge on image */}
+                <div className="absolute bottom-3 left-4">
+                  <span className="rounded-full bg-white/95 backdrop-blur-sm px-4 py-1.5 text-[18px] font-bold text-gray-900 shadow-md">
+                    {service.price}
                   </span>
-                )}
-
-                <Link
-                  href={`/book?service=${service.id}`}
-                  onClick={() => haptics.light()}
-                >
-                  <GlassButton
-                    variant={service.popular ? "primary" : "secondary"}
-                    className={`text-[13px] py-2.5 px-5 ${
-                      service.popular
-                        ? "bg-squito-green/90 dark:bg-squito-green shadow-sm"
-                        : "border-gray-200 text-gray-900"
-                    }`}
-                  >
-                    {service.priceNum === 0 ? "Schedule" : "Book Now"}
-                  </GlassButton>
-                </Link>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+
+              {/* Content */}
+              <div className="p-5 pt-4">
+                <h3 className="font-display text-[16px] font-bold text-gray-900 leading-snug">
+                  {service.name}
+                </h3>
+
+                <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-gray-500">
+                  {service.desc}
+                </p>
+
+                <div className="mt-4 flex items-center justify-between">
+                  {service.points > 0 ? (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        delay: 0.3 + idx * 0.06,
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 15,
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-3.5 py-1.5 text-[12px] font-bold text-squito-green"
+                    >
+                      <motion.span
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{
+                          repeat: Infinity,
+                          repeatDelay: 3,
+                          duration: 0.6,
+                          delay: idx * 0.5,
+                        }}
+                      >
+                        ⭐
+                      </motion.span>
+                      Earn {service.points} pts
+                    </motion.span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-100 px-3 py-1.5 text-[12px] font-bold text-gray-400">
+                      No commitment
+                    </span>
+                  )}
+
+                  {isFreeEstimate ? (
+                    // Free Estimate goes directly to booking — no cart
+                    <Link
+                      href={`/book?service=${service.id}`}
+                      onClick={() => haptics.light()}
+                    >
+                      <GlassButton
+                        variant="secondary"
+                        className="text-[13px] py-2.5 px-5 border-gray-200 text-gray-900"
+                      >
+                        Schedule
+                      </GlassButton>
+                    </Link>
+                  ) : inCart ? (
+                    // Already in cart
+                    <GlassButton
+                      variant="secondary"
+                      className="text-[13px] py-2.5 px-5 border-squito-green/30 text-squito-green bg-squito-green/5"
+                      disabled
+                    >
+                      ✓ In Cart
+                    </GlassButton>
+                  ) : (
+                    // Add to cart button
+                    <motion.div
+                      animate={wasJustAdded ? { scale: [1, 1.1, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <GlassButton
+                        variant={service.popular ? "primary" : "secondary"}
+                        className={`text-[13px] py-2.5 px-5 ${
+                          service.popular
+                            ? "bg-squito-green/90 dark:bg-squito-green shadow-sm"
+                            : "border-gray-200 text-gray-900"
+                        }`}
+                        onClick={() => handleAddToCart(service.serviceKey)}
+                      >
+                        {wasJustAdded ? "✓ Added!" : "Add to Cart"}
+                      </GlassButton>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
       </motion.div>
 
       {/* Plans Upsell Section */}
@@ -418,6 +483,44 @@ export default function ServicesPage() {
           </GlassButton>
         </Link>
       </motion.div>
+
+      {/* Sticky Cart Bar */}
+      <AnimatePresence>
+        {hasItems && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed bottom-16 left-0 right-0 z-[8500] flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-none"
+          >
+            <button
+              onClick={() => {
+                openDrawer();
+                haptics.medium();
+              }}
+              className="pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl border border-squito-green/30 bg-white/95 backdrop-blur-xl px-5 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-squito-green text-white text-[13px] font-bold">
+                  {itemCount}
+                </span>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-gray-900">
+                    {itemCount} {itemCount === 1 ? "service" : "services"} in cart
+                  </p>
+                  <p className="text-[11px] font-medium text-gray-500">
+                    Tap to review & checkout
+                  </p>
+                </div>
+              </div>
+              <span className="text-[16px] font-bold text-squito-green">
+                ${subtotal.toLocaleString("en-US", { minimumFractionDigits: subtotal % 1 === 0 ? 0 : 2 })}
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

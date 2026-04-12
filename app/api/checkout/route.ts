@@ -21,6 +21,23 @@ const SERVICE_PRICES: Record<string, number> = {
   "Ultimate Fortress (yearly)": 140389,
 };
 
+// Points per service (mirrors bookingEngine)
+const SERVICE_POINTS: Record<string, number> = {
+  "Mosquito Barrier Spray ($119)": 75,
+  "Organic Mosquito & Tick Treatment ($99)": 75,
+  "Tick Treatment ($99)": 75,
+  "General & Full Property Pest Control ($299)": 125,
+  "Hornet & Wasp Removal ($349)": 150,
+  "Termite Inspection ($199)": 100,
+  "Free Estimate / Custom Quote": 0,
+  "Essential Defense (monthly)": 150,
+  "Premium Shield (monthly)": 200,
+  "Ultimate Fortress (monthly)": 300,
+  "Essential Defense (yearly)": 150,
+  "Premium Shield (yearly)": 200,
+  "Ultimate Fortress (yearly)": 300,
+};
+
 export async function POST(request: Request) {
   let body: Record<string, any>;
   try {
@@ -29,21 +46,75 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, phone, address, service, preferredDate, preferredTime, coordinates, userId, discountCents, redemptionId } = body;
+  const {
+    name, email, phone, address, service, preferredDate, preferredTime,
+    coordinates, userId, discountCents, redemptionId,
+    // Cart-specific fields
+    cartItems: clientCartItems,
+  } = body;
 
-  if (!name || !email || !phone || !address || !service) {
+  if (!name || !email || !phone || !address) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Free estimates don't need payment
-  if (service === "Free Estimate / Custom Quote") {
+  // ── Determine if this is a cart order or single-service order ──
+  const isCartOrder = Array.isArray(clientCartItems) && clientCartItems.length > 0;
+
+  // For single-service, require the service field
+  if (!isCartOrder && !service) {
+    return NextResponse.json({ error: "Missing service or cartItems" }, { status: 400 });
+  }
+
+  // Free estimates don't need payment (single-service only)
+  if (!isCartOrder && service === "Free Estimate / Custom Quote") {
     return NextResponse.json({ free: true });
   }
 
-  const priceInCents = SERVICE_PRICES[service];
-  if (!priceInCents) {
-    return NextResponse.json({ error: `Unknown service: ${service}` }, { status: 400 });
+  // ── Build cart items with verified prices ──
+  interface VerifiedCartItem {
+    service: string;
+    priceCents: number;
+    points: number;
   }
+
+  let verifiedCartItems: VerifiedCartItem[] = [];
+
+  if (isCartOrder) {
+    // Cart mode — validate each item against server-side price list
+    for (const item of clientCartItems) {
+      const serviceKey = item.serviceKey || item.service;
+      const serverPrice = SERVICE_PRICES[serviceKey];
+      if (serverPrice === undefined || serverPrice === 0) {
+        return NextResponse.json(
+          { error: `Unknown or free service in cart: ${serviceKey}` },
+          { status: 400 }
+        );
+      }
+      verifiedCartItems.push({
+        service: serviceKey,
+        priceCents: serverPrice,
+        points: SERVICE_POINTS[serviceKey] || 0,
+      });
+    }
+
+    if (verifiedCartItems.length === 0) {
+      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
+    }
+  } else {
+    // Single-service mode (backward compatible)
+    const priceCents = SERVICE_PRICES[service];
+    if (!priceCents) {
+      return NextResponse.json({ error: `Unknown service: ${service}` }, { status: 400 });
+    }
+    verifiedCartItems = [{
+      service,
+      priceCents,
+      points: SERVICE_POINTS[service] || 0,
+    }];
+  }
+
+  // ── Calculate subtotal ──
+  const subtotalCents = verifiedCartItems.reduce((sum, item) => sum + item.priceCents, 0);
 
   // ── Server-side discount validation ──
   // NEVER trust the client's discountCents — always verify against the database.
@@ -70,7 +141,7 @@ export async function POST(request: Request) {
 
       if (redemption && redemption.discount_cents > 0) {
         // Use the DATABASE value — not the client's claimed amount
-        validDiscount = Math.min(redemption.discount_cents, priceInCents);
+        validDiscount = Math.min(redemption.discount_cents, subtotalCents);
         verifiedRedemptionId = redemption.id;
         console.log(`[Checkout] Verified discount: ${validDiscount} cents for user ${userId}`);
       } else {
@@ -82,10 +153,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const discountedPriceInCents = priceInCents - validDiscount;
+  const discountedSubtotalCents = subtotalCents - validDiscount;
 
   // Calculate NYS county-level sales tax on the DISCOUNTED price
-  const priceUSD = discountedPriceInCents / 100;
+  const priceUSD = discountedSubtotalCents / 100;
   const tax = calculateTax(priceUSD, address);
   const taxInCents = Math.round(tax.taxAmount * 100);
 
@@ -98,20 +169,26 @@ export async function POST(request: Request) {
       origin = "https://squito-app.vercel.app";
     }
 
-    // Build line items
-    const line_items: any[] = [
-      {
+    // ── Build line items ──
+    const line_items: any[] = verifiedCartItems.map((item) => {
+      // If there's a discount, spread it proportionally across items for Stripe display
+      const itemDiscountCents = validDiscount > 0
+        ? Math.round((item.priceCents / subtotalCents) * validDiscount)
+        : 0;
+      const itemChargedCents = item.priceCents - itemDiscountCents;
+
+      return {
         price_data: {
           currency: "usd",
           product_data: {
-            name: service.replace(/\s*\(.*\)$/, ""),
+            name: item.service.replace(/\s*\(.*\)$/, ""),
             description: `Service at ${address}${preferredDate ? ` on ${preferredDate}` : ""}${preferredTime ? ` at ${preferredTime}` : ""}`,
           },
-          unit_amount: discountedPriceInCents,
+          unit_amount: itemChargedCents,
         },
         quantity: 1,
-      },
-    ];
+      };
+    });
 
     // Show the PestPoints discount as a visible $0 line item for transparency
     if (validDiscount > 0) {
@@ -143,32 +220,48 @@ export async function POST(request: Request) {
       });
     }
 
+    // ── Build metadata ──
+    // Stripe metadata values must be strings and max 500 chars each
+    const cartItemsForMeta = verifiedCartItems.map((item) => ({
+      service: item.service,
+      priceCents: item.priceCents,
+      points: item.points,
+    }));
+
+    const metadata: Record<string, string> = {
+      name,
+      email,
+      phone,
+      address,
+      preferredDate: preferredDate || "",
+      preferredTime: preferredTime || "",
+      userId: userId || "",
+      coordinates: coordinates ? JSON.stringify(coordinates) : "",
+      county: tax.county,
+      taxRate: String(tax.taxRate),
+      subtotal: String(priceUSD),
+      taxAmount: String(tax.taxAmount),
+      totalCharged: String(tax.total),
+      discountCents: String(validDiscount),
+      originalPriceCents: String(subtotalCents),
+      redemptionId: verifiedRedemptionId,
+    };
+
+    if (isCartOrder) {
+      metadata.isCartOrder = "true";
+      metadata.cartItems = JSON.stringify(cartItemsForMeta);
+      // Also store the primary service name for backward compat
+      metadata.service = verifiedCartItems.map((i) => i.service.replace(/\s*\(.*\)$/, "")).join(", ");
+    } else {
+      metadata.service = service;
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       customer_email: email,
       line_items,
-      // Store all booking + tax + discount data in metadata for webhook processing
-      metadata: {
-        name,
-        email,
-        phone,
-        address,
-        service,
-        preferredDate: preferredDate || "",
-        preferredTime: preferredTime || "",
-        userId: userId || "",
-        coordinates: coordinates ? JSON.stringify(coordinates) : "",
-        county: tax.county,
-        taxRate: String(tax.taxRate),
-        subtotal: String(priceUSD),
-        taxAmount: String(tax.taxAmount),
-        totalCharged: String(tax.total),
-        // Discount tracking — used by success page to mark redemption as "used"
-        discountCents: String(validDiscount),
-        originalPriceCents: String(priceInCents),
-        redemptionId: verifiedRedemptionId,
-      },
+      metadata,
       success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/book?cancelled=true`,
     });
@@ -182,4 +275,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

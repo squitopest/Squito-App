@@ -2,10 +2,11 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
+import { useCart, SERVICE_CATALOG } from "@/lib/CartContext";
 import { haptics } from "@/lib/haptics";
 import { Capacitor } from "@capacitor/core";
 import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
@@ -76,6 +77,7 @@ const SERVICE_POINTS: Record<string, number> = {
 
 function BookForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialPlan = searchParams.get("plan");
   const initialService = searchParams.get("service");
   const billingCycle = searchParams.get("billing") || "monthly";
@@ -87,6 +89,11 @@ function BookForm() {
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const { user, isGuest, profile } = useAuth();
+  const { items: cartItems, subtotal: cartSubtotal, totalPoints: cartTotalPoints, hasItems, clearCart, removeItem } = useCart();
+
+  // ── Determine mode: "cart" or "single" ──
+  const isSingleServiceMode = !!initialService || !!initialPlan;
+  const isCartMode = hasItems && !isSingleServiceMode;
 
   // ── PestPoints Discount ──
   const [pendingDiscount, setPendingDiscount] = useState<{
@@ -141,7 +148,7 @@ function BookForm() {
     }
   }, [profile, user]);
 
-  // Set service from query params
+  // Set service from query params (single-service mode only)
   const SERVICE_MAP: Record<string, string> = {
     "mosquito-barrier": "Mosquito Barrier Spray ($119)",
     "organic-treatment": "Organic Mosquito & Tick Treatment ($99)",
@@ -161,6 +168,17 @@ function BookForm() {
       if (initialPlan === "ultimate-fortress") setFormData((f) => ({ ...f, service: `Ultimate Fortress (${billingCycle})` }));
     }
   }, [initialPlan, initialService, billingCycle]);
+
+  // Redirect to services if cart is empty and no single-service param
+  useEffect(() => {
+    if (!isSingleServiceMode && !hasItems && status === "idle") {
+      // Small delay to prevent flash during initial load
+      const t = setTimeout(() => {
+        if (!hasItems) router.replace("/plans");
+      }, 500);
+      return () => clearTimeout(t);
+    }
+  }, [isSingleServiceMode, hasItems, status, router]);
 
   // Trigger confetti when a Free Estimate completes successfully!
   useEffect(() => {
@@ -243,6 +261,65 @@ function BookForm() {
 
     try {
       const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+
+      if (isCartMode) {
+        // ── Cart checkout ──
+        // Separate free estimates from paid services
+        const freeEstimateInCart = cartItems.find((i) => i.serviceKey === "Free Estimate / Custom Quote");
+        const paidItems = cartItems.filter((i) => i.serviceKey !== "Free Estimate / Custom Quote");
+
+        // Submit free estimate separately (no Stripe needed)
+        if (freeEstimateInCart) {
+          await fetch(`${API_BASE}/api/book`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...formData,
+              service: "Free Estimate / Custom Quote",
+              coordinates: coordinates || undefined,
+              userId: user && !isGuest ? user.id : undefined,
+            }),
+          });
+        }
+
+        if (paidItems.length === 0) {
+          // All items were free estimates
+          clearCart();
+          setStatus("success");
+          return;
+        }
+
+        // Create Stripe Checkout session with cart items
+        const res = await fetch(`${API_BASE}/api/checkout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            cartItems: paidItems.map((item) => ({
+              serviceKey: item.serviceKey,
+              service: item.serviceKey,
+            })),
+            coordinates: coordinates || undefined,
+            userId: user && !isGuest ? user.id : undefined,
+            ...(pendingDiscount ? {
+              discountCents: pendingDiscount.discountCents,
+              redemptionId: pendingDiscount.redemptionId,
+            } : {}),
+          }),
+        });
+
+        const result = await res.json();
+        if (!res.ok || result.error) {
+          throw new Error(result.error || "Failed to start checkout");
+        }
+
+        // Clear cart before redirecting to Stripe
+        clearCart();
+        window.location.href = result.url;
+        return;
+      }
+
+      // ── Single-service checkout (existing flow) ──
       const isFreeEstimate = formData.service === "Free Estimate / Custom Quote";
 
       if (isFreeEstimate) {
@@ -321,10 +398,10 @@ function BookForm() {
     );
   }
 
-  // Derived price + NYS tax for the selected service
-  const selectedPrice = SERVICE_PRICES[formData.service] ?? 0;
-  const isFree = formData.service === "Free Estimate / Custom Quote";
-  const isRecurring = formData.service.includes("monthly") || formData.service.includes("yearly");
+  // Derived price + NYS tax for the selected service (single-service mode)
+  const selectedPrice = isCartMode ? cartSubtotal : (SERVICE_PRICES[formData.service] ?? 0);
+  const isFree = !isCartMode && formData.service === "Free Estimate / Custom Quote";
+  const isRecurring = !isCartMode && (formData.service.includes("monthly") || formData.service.includes("yearly"));
 
   // PestPoints discount (only applies to paid services)
   const discountDollars = (!isFree && pendingDiscount) ? Math.min(pendingDiscount.discountDollars, selectedPrice) : 0;
@@ -342,6 +419,8 @@ function BookForm() {
   const taxAmount = !isFree ? Math.round(priceAfterDiscount * taxRate * 100) / 100 : 0;
   const totalWithTax = priceAfterDiscount + taxAmount;
 
+  // Points preview
+  const pointsPreview = isCartMode ? cartTotalPoints : (SERVICE_POINTS[formData.service] ?? 50);
 
   return (
     <>
@@ -352,7 +431,7 @@ function BookForm() {
         className="mt-2 text-sm font-medium text-gray-500"
       >
         {user && !isGuest
-          ? `Earn ${SERVICE_POINTS[formData.service] ?? 50} PestPoints with this booking! 🎉`
+          ? `Earn ${pointsPreview} PestPoints with this booking! 🎉`
           : "Fast guest routing. No account required."}
       </motion.p>
 
@@ -378,6 +457,45 @@ function BookForm() {
           className="mt-4 rounded-xl bg-red-50 p-4 border border-red-100"
         >
           <p className="text-sm font-bold text-red-600">{errorMessage}</p>
+        </motion.div>
+      )}
+
+      {/* ── Cart Summary (cart mode only) ── */}
+      {isCartMode && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 20 }}
+          className="mt-6 rounded-2xl border border-squito-green/25 bg-gradient-to-br from-[#f7fbe8] to-[#eef6d6] px-5 py-4"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-squito-green/60 mb-3">
+            🛒 Cart ({cartItems.length} {cartItems.length === 1 ? "service" : "services"})
+          </p>
+          <div className="divide-y divide-squito-green/10">
+            {cartItems.map((item) => (
+              <div key={item.serviceKey} className="flex items-center justify-between py-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-gray-900 truncate">{item.serviceName}</p>
+                  {item.points > 0 && (
+                    <span className="text-[10px] font-bold text-squito-green">⭐ +{item.points} pts</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[14px] font-bold text-gray-900">${item.price}</span>
+                  <button
+                    type="button"
+                    onClick={() => { removeItem(item.serviceKey); haptics.light(); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-red-50 text-red-400 text-[11px] active:scale-90 transition-transform"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Link href="/plans" className="mt-3 block text-center text-[12px] font-bold text-squito-green active:opacity-70">
+            + Add more services
+          </Link>
         </motion.div>
       )}
 
@@ -489,36 +607,39 @@ function BookForm() {
           )}
         </div>
 
-        <div>
-          <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
-            Service Needed
-          </label>
-          <select
-            id="booking-service"
-            required
-            value={formData.service}
-            onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
-          >
-            <optgroup label="One-Time Services">
-              <option value="Mosquito Barrier Spray ($119)">Mosquito Barrier Spray — $119</option>
-              <option value="Organic Mosquito & Tick Treatment ($99)">Organic Mosquito & Tick Treatment — $99</option>
-              <option value="Tick Treatment ($99)">Tick Treatment — $99</option>
-              <option value="General & Full Property Pest Control ($299)">General & Full Property Pest Control — $299</option>
-              <option value="Hornet & Wasp Removal ($349)">Hornet & Wasp Removal — $349</option>
-              <option value="Termite Inspection ($199)">Termite Inspection — $199</option>
-              <option value="Free Estimate / Custom Quote">Free Estimate / Custom Quote</option>
-            </optgroup>
-            <optgroup label="Seasonal Plans (Save More)">
-              <option value="Essential Defense (monthly)">Essential Defense ($49.99/mo)</option>
-              <option value="Premium Shield (monthly)">Premium Shield ($79.99/mo)</option>
-              <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo)</option>
-              <option value="Essential Defense (yearly)">Essential Defense ($539.89/yr)</option>
-              <option value="Premium Shield (yearly)">Premium Shield ($863.89/yr)</option>
-              <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1,403.89/yr)</option>
-            </optgroup>
-          </select>
-        </div>
+        {/* Service selector (single-service mode only) */}
+        {!isCartMode && (
+          <div>
+            <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+              Service Needed
+            </label>
+            <select
+              id="booking-service"
+              required
+              value={formData.service}
+              onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
+            >
+              <optgroup label="One-Time Services">
+                <option value="Mosquito Barrier Spray ($119)">Mosquito Barrier Spray — $119</option>
+                <option value="Organic Mosquito & Tick Treatment ($99)">Organic Mosquito & Tick Treatment — $99</option>
+                <option value="Tick Treatment ($99)">Tick Treatment — $99</option>
+                <option value="General & Full Property Pest Control ($299)">General & Full Property Pest Control — $299</option>
+                <option value="Hornet & Wasp Removal ($349)">Hornet & Wasp Removal — $349</option>
+                <option value="Termite Inspection ($199)">Termite Inspection — $199</option>
+                <option value="Free Estimate / Custom Quote">Free Estimate / Custom Quote</option>
+              </optgroup>
+              <optgroup label="Seasonal Plans (Save More)">
+                <option value="Essential Defense (monthly)">Essential Defense ($49.99/mo)</option>
+                <option value="Premium Shield (monthly)">Premium Shield ($79.99/mo)</option>
+                <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo)</option>
+                <option value="Essential Defense (yearly)">Essential Defense ($539.89/yr)</option>
+                <option value="Premium Shield (yearly)">Premium Shield ($863.89/yr)</option>
+                <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1,403.89/yr)</option>
+              </optgroup>
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
@@ -627,10 +748,12 @@ function BookForm() {
                     className="inline-block text-[15px]"
                     animate={{ scale: [1, 1.15, 1] }}
                     transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 4 }}
-                  >+{SERVICE_POINTS[formData.service] ?? 50} PestPoints</motion.span> on this booking!
+                  >+{pointsPreview} PestPoints</motion.span> on this booking!
                 </p>
                 <p className="text-[11px] font-medium text-squito-green/70 mt-0.5">
-                  Points increase with your tier. Higher tier = bigger rewards!
+                  {isCartMode
+                    ? `Earn points for each of your ${cartItems.length} services!`
+                    : "Points increase with your tier. Higher tier = bigger rewards!"}
                 </p>
               </div>
             </div>
@@ -640,32 +763,61 @@ function BookForm() {
       {/* Live Order Summary Card */}
       {!isFree && (
         <motion.div
-          key={formData.service + formData.address}
+          key={isCartMode ? "cart-summary" : formData.service + formData.address}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 28 }}
           className="mt-2 rounded-2xl border border-squito-green/25 bg-gradient-to-br from-[#f7fbe8] to-[#eef6d6] px-5 py-4"
         >
           <p className="text-[10px] font-bold uppercase tracking-widest text-squito-green/60 mb-3">Order Summary</p>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <p className="text-[14px] font-bold text-gray-900 leading-snug">
-                {formData.service.replace(/\s*\(.*\)$/, "")}
-              </p>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                {SERVICE_DESCRIPTIONS[formData.service]}
-              </p>
-              {isRecurring && (
-                <span className="mt-1.5 inline-block rounded-full bg-squito-green/15 px-2 py-0.5 text-[10px] font-bold text-squito-green">
-                  🔄 Recurring plan
-                </span>
-              )}
+          
+          {isCartMode ? (
+            // Cart mode: show all items
+            <div className="space-y-2">
+              {cartItems.map((item) => (
+                <div key={item.serviceKey} className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-[13px] font-bold text-gray-900 leading-snug">
+                      {item.serviceName}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[14px] font-bold text-gray-900">${item.price}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="border-t border-squito-green/10 pt-2 mt-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[12px] text-gray-500">Subtotal ({cartItems.length} services)</p>
+                  <p className="text-[14px] font-bold text-gray-900">
+                    ${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="text-right shrink-0">
-              <p className="text-[22px] font-bold text-gray-900">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
-              <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "subtotal"}</p>
+          ) : (
+            // Single-service mode: show one item
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-[14px] font-bold text-gray-900 leading-snug">
+                  {formData.service.replace(/\s*\(.*\)$/, "")}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {SERVICE_DESCRIPTIONS[formData.service]}
+                </p>
+                {isRecurring && (
+                  <span className="mt-1.5 inline-block rounded-full bg-squito-green/15 px-2 py-0.5 text-[10px] font-bold text-squito-green">
+                    🔄 Recurring plan
+                  </span>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[22px] font-bold text-gray-900">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
+                <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "subtotal"}</p>
+              </div>
             </div>
-          </div>
+          )}
+
           {/* PestPoints discount line */}
           {discountDollars > 0 && (
             <motion.div
@@ -711,6 +863,8 @@ function BookForm() {
             ? "Processing..."
             : isFree
             ? "Schedule Free Estimate →"
+            : isCartMode
+            ? `Pay $${(formData.address.length > 5 ? totalWithTax : priceAfterDiscount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} for ${cartItems.length} Services →`
             : `Pay $${(formData.address.length > 5 ? totalWithTax : priceAfterDiscount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Securely →`}
         </GlassButton>
         {!isFree && (

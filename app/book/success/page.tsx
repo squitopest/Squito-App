@@ -9,6 +9,12 @@ import Link from "next/link";
 import { haptics } from "@/lib/haptics";
 import { Capacitor } from "@capacitor/core";
 
+interface CartItemDetails {
+  service: string;
+  priceCents: number;
+  points: number;
+}
+
 interface BookingDetails {
   name: string;
   email: string;
@@ -18,6 +24,10 @@ interface BookingDetails {
   preferredTime: string;
   amountTotal: number;
   currency: string;
+  // Cart order fields
+  isCartOrder?: boolean;
+  cartItems?: CartItemDetails[] | null;
+  discountCents?: number;
 }
 
 /** Format cents → "$119.00" */
@@ -32,9 +42,16 @@ function formatAmount(cents: number, currency: string) {
 function googleCalendarUrl(details: BookingDetails): string {
   if (!details.preferredDate) return "";
   const dateStr = details.preferredDate.replace(/-/g, ""); // YYYYMMDD
-  const title = encodeURIComponent(`Squito Pest Control — ${details.service.replace(/\s*\(.*\)$/, "")}`);
+  const serviceLabel = details.isCartOrder && details.cartItems
+    ? `${details.cartItems.length} Services`
+    : details.service.replace(/\s*\(.*\)$/, "");
+  const title = encodeURIComponent(`Squito Pest Control — ${serviceLabel}`);
   const loc = encodeURIComponent(details.address);
-  const desc = encodeURIComponent(`Service: ${details.service}\nAddress: ${details.address}\nContact: ${details.email}`);
+  const desc = encodeURIComponent(
+    details.isCartOrder && details.cartItems
+      ? `Services: ${details.cartItems.map((i) => i.service.replace(/\s*\(.*\)$/, "")).join(", ")}\nAddress: ${details.address}\nContact: ${details.email}`
+      : `Service: ${details.service}\nAddress: ${details.address}\nContact: ${details.email}`
+  );
   // Use all-day event (no time component) if time not provided
   const dates = `${dateStr}/${dateStr}`;
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${desc}`;
@@ -44,9 +61,12 @@ function googleCalendarUrl(details: BookingDetails): string {
 function appleCalendarUrl(details: BookingDetails): string {
   if (!details.preferredDate) return "";
   const dateStr = details.preferredDate.replace(/-/g, "");
-  const title = encodeURIComponent(`Squito Pest Control — ${details.service.replace(/\s*\(.*\)$/, "")}`);
+  const serviceLabel = details.isCartOrder && details.cartItems
+    ? `${details.cartItems.length} Services`
+    : details.service.replace(/\s*\(.*\)$/, "");
+  const title = encodeURIComponent(`Squito Pest Control — ${serviceLabel}`);
   const loc = encodeURIComponent(details.address);
-  const desc = encodeURIComponent(`Service: ${details.service}`);
+  const desc = encodeURIComponent(`Services booked via Squito App`);
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&location=${loc}&details=${desc}`;
 }
 
@@ -106,6 +126,9 @@ function SuccessContent() {
     );
   }
 
+  const isCartOrder = details?.isCartOrder && details?.cartItems && details.cartItems.length > 1;
+  const totalCartPoints = details?.cartItems?.reduce((sum, item) => sum + (item.points || 0), 0) || 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -143,7 +166,9 @@ function SuccessContent() {
         transition={{ delay: 0.4 }}
         className="mt-2 text-sm font-medium text-gray-500 text-center max-w-xs"
       >
-        A receipt has been sent to your email. We&apos;ll be in touch shortly!
+        {isCartOrder
+          ? `A receipt for your ${details.cartItems!.length} services has been sent to your email.`
+          : "A receipt has been sent to your email. We\u0027ll be in touch shortly!"}
       </motion.p>
 
       {/* Booking Details Card */}
@@ -156,9 +181,13 @@ function SuccessContent() {
         >
           {/* Card Header */}
           <div className="bg-gradient-to-r from-squito-green to-[#5a8c10] px-5 py-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Booking Confirmed</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">
+              {isCartOrder ? `${details.cartItems!.length} Services Booked` : "Booking Confirmed"}
+            </p>
             <p className="text-[17px] font-bold text-white mt-0.5 leading-snug">
-              {details.service.replace(/\s*\(.*\)$/, "")}
+              {isCartOrder
+                ? details.cartItems!.map((i) => i.service.replace(/\s*\(.*\)$/, "")).join(", ")
+                : details.service.replace(/\s*\(.*\)$/, "")}
             </p>
           </div>
 
@@ -185,6 +214,39 @@ function SuccessContent() {
                 </span>
               </div>
             )}
+
+            {/* Cart items breakdown */}
+            {isCartOrder && details.cartItems && (
+              <div className="py-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Services</p>
+                {details.cartItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1.5">
+                    <span className="text-[12px] font-medium text-gray-700">
+                      {item.service.replace(/\s*\(.*\)$/, "")}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {item.points > 0 && (
+                        <span className="text-[10px] font-bold text-squito-green">+{item.points} pts</span>
+                      )}
+                      <span className="text-[12px] font-bold text-gray-800">
+                        ${(item.priceCents / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Discount applied */}
+            {details.discountCents && details.discountCents > 0 && (
+              <div className="flex items-center justify-between py-3">
+                <span className="text-[12px] text-emerald-600 font-medium">🎁 PestPoints Discount</span>
+                <span className="text-[13px] font-bold text-emerald-600">
+                  -{formatAmount(details.discountCents, details.currency)}
+                </span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between py-3">
               <span className="text-[12px] text-gray-400 font-medium">Amount Paid</span>
               <span className="text-[14px] font-bold text-squito-green">
@@ -210,7 +272,9 @@ function SuccessContent() {
         >
           <span className="text-xl">🎉</span>
           <p className="text-[12px] font-medium text-squito-green">
-            Your <strong>PestPoints</strong> will be awarded automatically! Check your profile shortly.
+            {isCartOrder && totalCartPoints > 0
+              ? <>You&apos;re earning <strong>{totalCartPoints} PestPoints</strong> across all {details!.cartItems!.length} services! Check your profile shortly.</>
+              : <>Your <strong>PestPoints</strong> will be awarded automatically! Check your profile shortly.</>}
           </p>
         </motion.div>
       ) : (

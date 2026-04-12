@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
-import { processBooking } from "@/lib/bookingEngine";
+import { processBooking, processCartBooking } from "@/lib/bookingEngine";
 
 export async function POST(req: Request) {
   const stripe = getStripe();
@@ -67,32 +67,78 @@ export async function POST(req: Request) {
 
       // 2. Extract booking data from metadata
       const meta = session.metadata || {};
-      const bookingData = {
-        name: meta.name || "",
-        email: meta.email || session.customer_details?.email || "",
-        phone: meta.phone || "",
-        address: meta.address || "",
-        service: meta.service || "",
-        preferredDate: meta.preferredDate || "",
-        preferredTime: meta.preferredTime || "",
-        userId: meta.userId || "",
-        coordinates: meta.coordinates ? JSON.parse(meta.coordinates) : null,
-        // Tax fields
-        county: meta.county || "",
-        taxRate: meta.taxRate ? parseFloat(meta.taxRate) : null,
-        subtotal: meta.subtotal || null,
-        taxAmount: meta.taxAmount || null,
-        totalCharged: meta.totalCharged || null,
-        isPaid: true,
-        isStripeWebhook: true,
-      };
+      const isCartOrder = meta.isCartOrder === "true";
 
-      // 3. Process backend (CRM, Emails, Points)
-      const result = await processBooking(bookingData);
-      
-      if (!result.ok) {
-        console.error("[Stripe Webhook] Booking processor failed:", result.error);
-        return NextResponse.json({ error: "Booking processing failed" }, { status: 500 });
+      if (isCartOrder && meta.cartItems) {
+        // ── Cart order: process all services ──
+        console.log(`[Stripe Webhook] Processing CART order with session ${session.id}`);
+
+        let cartItems: Array<{ service: string; priceCents: number; points: number }>;
+        try {
+          cartItems = JSON.parse(meta.cartItems);
+        } catch {
+          console.error("[Stripe Webhook] Failed to parse cartItems metadata");
+          cartItems = [];
+        }
+
+        if (cartItems.length > 0) {
+          const customerData = {
+            name: meta.name || "",
+            email: meta.email || session.customer_details?.email || "",
+            phone: meta.phone || "",
+            address: meta.address || "",
+            preferredDate: meta.preferredDate || "",
+            preferredTime: meta.preferredTime || "",
+            userId: meta.userId || "",
+            coordinates: meta.coordinates ? JSON.parse(meta.coordinates) : null,
+            county: meta.county || "",
+            taxRate: meta.taxRate ? parseFloat(meta.taxRate) : null,
+            subtotal: meta.subtotal || null,
+            taxAmount: meta.taxAmount || null,
+            totalCharged: meta.totalCharged || null,
+            discountCents: meta.discountCents ? parseInt(meta.discountCents) : 0,
+            isPaid: true,
+            isStripeWebhook: true,
+          };
+
+          const result = await processCartBooking(customerData, cartItems);
+
+          if (!result.ok) {
+            console.error("[Stripe Webhook] Cart booking processor failed:", result.error);
+            return NextResponse.json({ error: "Booking processing failed" }, { status: 500 });
+          }
+
+          console.log(`[Stripe Webhook] Successfully processed cart order with ${cartItems.length} services`);
+        }
+      } else {
+        // ── Single-service order (backward compatible) ──
+        const bookingData = {
+          name: meta.name || "",
+          email: meta.email || session.customer_details?.email || "",
+          phone: meta.phone || "",
+          address: meta.address || "",
+          service: meta.service || "",
+          preferredDate: meta.preferredDate || "",
+          preferredTime: meta.preferredTime || "",
+          userId: meta.userId || "",
+          coordinates: meta.coordinates ? JSON.parse(meta.coordinates) : null,
+          // Tax fields
+          county: meta.county || "",
+          taxRate: meta.taxRate ? parseFloat(meta.taxRate) : null,
+          subtotal: meta.subtotal || null,
+          taxAmount: meta.taxAmount || null,
+          totalCharged: meta.totalCharged || null,
+          isPaid: true,
+          isStripeWebhook: true,
+        };
+
+        // 3. Process backend (CRM, Emails, Points)
+        const result = await processBooking(bookingData);
+        
+        if (!result.ok) {
+          console.error("[Stripe Webhook] Booking processor failed:", result.error);
+          return NextResponse.json({ error: "Booking processing failed" }, { status: 500 });
+        }
       }
 
       console.log(`[Stripe Webhook] Successfully processed session ${session.id}`);

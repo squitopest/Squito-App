@@ -266,3 +266,234 @@ export async function processBooking(data: Record<string, any>) {
     return { ok: false, error: err.message || "Failed to process booking" };
   }
 }
+
+// ── Cart order processing ────────────────────────────────────────────────────
+// Handles multi-service cart orders: creates N booking rows, awards points per
+// service, pushes to CRM once, sends one combined confirmation email.
+export async function processCartBooking(
+  data: Record<string, any>,
+  cartItems: Array<{ service: string; priceCents: number; points: number }>
+) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const supabase = getServiceSupabase();
+
+  if (!resendApiKey) {
+    console.warn("[BookingEngine] RESEND_API_KEY not found — logging cart booking only");
+    console.log({ data, cartItems });
+    return { ok: true, notice: "Logged locally" };
+  }
+
+  const resend = new Resend(resendApiKey);
+  const userId = data.userId;
+  const serviceNames = cartItems.map((i) => i.service.replace(/\s*\(.*\)$/, ""));
+
+  console.log(`[BookingEngine] Processing CART: ${serviceNames.join(", ")} for ${data.email}`);
+
+  try {
+    // ── 1. Write service_bookings rows (one per service) ──────────────────
+    if (supabase && userId && typeof userId === "string" && userId.length > 0) {
+      for (const item of cartItems) {
+        const { error: bookingErr } = await supabase.from("service_bookings").insert({
+          user_id: userId,
+          service_type: item.service,
+          status: "scheduled",
+          scheduled_date: data.preferredDate || null,
+          notes: [
+            data.preferredTime ? `Time: ${data.preferredTime}` : null,
+            data.address ? `Address: ${data.address}` : null,
+            data.county ? `County: ${data.county} (${((data.taxRate || 0) * 100).toFixed(3)}% tax)` : null,
+            `Cart order — $${(item.priceCents / 100).toFixed(2)} | Total: $${data.totalCharged}`,
+          ].filter(Boolean).join(" | "),
+        });
+        if (bookingErr) console.error(`[BookingEngine] service_bookings insert failed for ${item.service}:`, bookingErr.message);
+        else console.log(`[BookingEngine] service_bookings row created: ${item.service}`);
+      }
+    }
+
+    // ── 2. CRM Integration (Zapier / GorillaDesk) — one push with all services ──
+    const zapierWebhook = process.env.ZAPIER_WEBHOOK_URL;
+    const gorillaDeskApiKey = process.env.GORILLADESK_API_KEY;
+
+    const leadPayload = {
+      first_name: data.name.split(" ")[0] || data.name,
+      last_name: data.name.split(" ").slice(1).join(" ") || "",
+      email: data.email,
+      phone: data.phone,
+      address: data.address,
+      service: serviceNames.join(", "),
+      source: "app_cart_booking",
+      notes: `Cart Order: ${serviceNames.join(", ")} | Date: ${data.preferredDate || "TBD"} ${data.preferredTime || ""} | County: ${data.county || "?"} | Tax: $${data.taxAmount ?? "?"} | Total: $${data.totalCharged ?? "?"} | PAID via App`,
+    };
+
+    if (zapierWebhook) {
+      try {
+        const zapierResponse = await fetch(zapierWebhook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(leadPayload),
+        });
+        if (!zapierResponse.ok) console.error("[Zapier]", zapierResponse.status);
+        else console.log("[Zapier] Cart lead pushed successfully");
+      } catch (e) {
+        console.error("[Zapier Error]", e);
+      }
+    } else if (gorillaDeskApiKey) {
+      try {
+        const gdResponse = await fetch("https://app.gorilladesk.com/api/v1/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${gorillaDeskApiKey}` },
+          body: JSON.stringify(leadPayload),
+        });
+        if (!gdResponse.ok) console.error("[GorillaDesk]", gdResponse.status, await gdResponse.text());
+        else console.log("[GorillaDesk] Cart customer pushed to CRM");
+      } catch (e) { console.error("[GorillaDesk Error]", e); }
+    }
+
+    // ── 3. Award PestPoints per service ───────────────────────────────────
+    let totalPointsAwarded = 0;
+    const pointsBreakdown: Array<{ service: string; earned: number }> = [];
+
+    if (supabase && data.isPaid && userId && typeof userId === "string" && userId.length > 0) {
+      for (const item of cartItems) {
+        const basePoints = item.points || determinePoints(item.service);
+        if (basePoints <= 0) continue;
+
+        try {
+          // Get current profile for tier multiplier
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("total_points, redeemable_points")
+            .eq("id", userId)
+            .single();
+
+          if (profile) {
+            const { multiplier, tier } = getTierMultiplier(profile.total_points || 0);
+            const multiplied = Math.round(basePoints * multiplier);
+            const newTotal = (profile.total_points || 0) + multiplied;
+            const newRedeemable = (profile.redeemable_points ?? profile.total_points ?? 0) + multiplied;
+
+            // Use the service name as a unique reason for dedup purposes
+            await supabase.from("points_transactions").insert({
+              user_id: userId,
+              amount: multiplied,
+              type: "earn",
+              reason: `Booked: ${item.service.replace(/\s*\(.*\)$/, "")}`,
+              metadata: {
+                base_amount: basePoints,
+                multiplier,
+                tier_at_earn: tier,
+                service: item.service,
+                source: "stripe_webhook_cart",
+              },
+            });
+
+            await supabase.from("profiles").update({
+              total_points: newTotal,
+              redeemable_points: newRedeemable,
+              tier: getTierMultiplier(newTotal).tier,
+              updated_at: new Date().toISOString(),
+            }).eq("id", userId);
+
+            totalPointsAwarded += multiplied;
+            pointsBreakdown.push({ service: item.service.replace(/\s*\(.*\)$/, ""), earned: multiplied });
+            console.log(`[Points] Awarded ${multiplied} points for ${item.service} to ${userId}`);
+          }
+        } catch (e) {
+          console.error(`[Points Error] Failed for ${item.service}:`, e);
+        }
+      }
+    }
+
+    // ── 4. Send combined confirmation emails ─────────────────────────────
+    try {
+      // Build service line items HTML
+      const serviceRowsHtml = cartItems.map((item) => {
+        const pointsForService = pointsBreakdown.find(
+          (p) => p.service === item.service.replace(/\s*\(.*\)$/, "")
+        );
+        return `
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #eee;">
+              <strong>${item.service.replace(/\s*\(.*\)$/, "")}</strong>
+              ${pointsForService ? `<br/><span style="color: #6a9c1e; font-size: 12px;">+${pointsForService.earned} PestPoints</span>` : ""}
+            </td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">
+              $${(item.priceCents / 100).toFixed(2)}
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      const discountCents = data.discountCents || 0;
+
+      // A. Customer Confirmation Email
+      await resend.emails.send({
+        from: "Squito <service@squitopestcontrol.com>",
+        to: data.email,
+        subject: "Payment Verified & Services Scheduled",
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #6a9c1e;">You're all set!</h2>
+            <p>Hi ${data.name.split(" ")[0]},</p>
+            <p>Your payment was successful and your ${cartItems.length} services are officially booked.</p>
+            
+            <div style="background-color: #f7fbe8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #333;">Services Booked</h3>
+              <p><strong>Address:</strong> ${data.address}</p>
+              ${data.preferredDate ? `<p><strong>Preferred:</strong> ${data.preferredDate} ${data.preferredTime ? `at ${data.preferredTime}` : ""}</p>` : ""}
+              
+              <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <thead>
+                  <tr>
+                    <th style="text-align: left; padding-bottom: 8px; border-bottom: 2px solid #6a9c1e;">Service</th>
+                    <th style="text-align: right; padding-bottom: 8px; border-bottom: 2px solid #6a9c1e;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${serviceRowsHtml}
+                </tbody>
+              </table>
+              
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                ${discountCents > 0 ? `<p><strong>🎁 PestPoints Discount:</strong> -$${(discountCents / 100).toFixed(2)}</p>` : ""}
+                <p><strong>${data.county} County Tax:</strong> $${data.taxAmount}</p>
+                <p style="font-size: 18px;"><strong>Total Charged:</strong> $${data.totalCharged}</p>
+                ${totalPointsAwarded > 0 ? `<p style="color: #6a9c1e; font-weight: bold; margin-top: 10px;">🎁 You earned ${totalPointsAwarded} PestPoints total!</p>` : ""}
+              </div>
+            </div>
+            
+            <p>Our team will reach out shortly. If you have questions, reply directly to this email or call (631) 203-1000.</p>
+            <p>Best regards,<br>The Squito Team</p>
+          </div>
+        `,
+      });
+
+      // B. Admin Notification Email
+      await resend.emails.send({
+        from: "Squito App <app@squitopestcontrol.com>",
+        to: "service@getsquito.com",
+        subject: `New PAID CART ORDER: ${serviceNames.join(", ")}`,
+        html: `
+          <h2>New Cart Order via App (${cartItems.length} services)</h2>
+          <p><strong>Customer:</strong> ${data.name}</p>
+          <p><strong>Phone:</strong> ${data.phone}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Address:</strong> ${data.address}</p>
+          <p><strong>Services:</strong></p>
+          <ul>${serviceNames.map((s) => `<li>${s}</li>`).join("")}</ul>
+          <p><strong>Status:</strong> PAID ($${data.totalCharged})</p>
+          ${totalPointsAwarded > 0 ? `<p><strong>Points Awarded:</strong> ${totalPointsAwarded}</p>` : ""}
+        `,
+      });
+
+      console.log(`[Email] Cart confirmations sent for ${data.email}`);
+    } catch (emailErr: any) {
+      console.error("[Email Error] Failed to send cart confirmation emails:", emailErr);
+    }
+
+    return { ok: true, totalPointsAwarded, pointsBreakdown, isPaid: true };
+  } catch (err: any) {
+    console.error("[BookingEngine] Cart processing error:", err);
+    return { ok: false, error: err.message || "Failed to process cart booking" };
+  }
+}
