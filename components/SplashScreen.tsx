@@ -8,49 +8,6 @@ interface SplashScreenProps {
   onComplete?: () => void;
 }
 
-const letterAnimationTop = {
-  hidden: { y: "-100%" },
-  visible: {
-    y: "0%",
-    transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
-
-const letterAnimationBottom = {
-  hidden: { y: "100%" },
-  visible: {
-    y: "0%",
-    transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
-  },
-};
-
-const SplitLetter = ({ letter }: { letter: string }) => {
-  return (
-    <span className="relative inline-block leading-none">
-      {/* Invisible anchor for layout sizing */}
-      <span className="opacity-0">{letter}</span>
-
-      {/* Top Half */}
-      <motion.span
-        variants={letterAnimationTop}
-        className="absolute inset-0 flex text-white"
-        style={{ clipPath: "polygon(0 0, 100% 0, 100% 50%, 0 50%)" }}
-      >
-        {letter}
-      </motion.span>
-
-      {/* Bottom Half */}
-      <motion.span
-        variants={letterAnimationBottom}
-        className="absolute inset-0 flex text-white"
-        style={{ clipPath: "polygon(0 50%, 100% 50%, 100% 100%, 0 100%)" }}
-      >
-        {letter}
-      </motion.span>
-    </span>
-  );
-};
-
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [showSplash, setShowSplash] = useState(true);
   const router = useRouter();
@@ -70,16 +27,6 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
     return () => clearTimeout(timer);
   }, [onComplete, router]);
 
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: 0.06,
-        delayChildren: 0.5, // Start 'quito' right after 'S' pops in
-      },
-    },
-  };
-
   return (
     <AnimatePresence>
       {showSplash && (
@@ -93,33 +40,35 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         >
           {/* Logo Container */}
           <div className="relative flex flex-col items-center justify-center -mt-10">
-            <div className="flex items-center">
-              {/* Anchor "S" */}
+            <div className="relative flex h-[8rem] w-[70vw] max-w-[250px] items-center justify-center">
+              {/* Top Half of PNG */}
               <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 250,
-                  damping: 18,
-                  delay: 0.1,
-                }}
-                className="font-display text-[5.5rem] font-black tracking-tighter text-squito-green leading-none mr-0.5"
-                style={{ textShadow: "0px 0px 20px rgba(107,158,17,0.4)" }}
+                initial={{ y: "-50%", opacity: 0 }}
+                animate={{ y: "0%", opacity: 1 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                className="absolute inset-0 z-10"
+                style={{ clipPath: "polygon(0 0, 100% 0, 100% 50%, 0 50%)" }}
               >
-                S
+                <img
+                  src="/squito_logo_v2.png"
+                  alt="Squito Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(107,158,17,0.2)]"
+                />
               </motion.div>
 
-              {/* The "quito" Staggered Split Letters */}
+              {/* Bottom Half of PNG */}
               <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex font-display text-[5.5rem] font-bold tracking-tight text-white leading-none relative overflow-hidden"
+                initial={{ y: "50%", opacity: 0 }}
+                animate={{ y: "0%", opacity: 1 }}
+                transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                className="absolute inset-0 z-10"
+                style={{ clipPath: "polygon(0 50%, 100% 50%, 100% 100%, 0 100%)" }}
               >
-                {"quito".split("").map((letter, i) => (
-                  <SplitLetter key={i} letter={letter} />
-                ))}
+                <img
+                  src="/squito_logo_v2.png"
+                  alt="Squito Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(107,158,17,0.2)]"
+                />
               </motion.div>
             </div>
 
