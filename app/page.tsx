@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/haptics";
 import { GlassButton } from "@/components/ui/GlassButton";
@@ -378,12 +379,14 @@ const FeedItem = memo(function FeedItem({
 
         {/* Gamified Book Action */}
         <div className="mt-4 flex flex-col items-center gap-1.5">
-          <GlassButton
-            variant="primary"
-            className="flex h-[60px] w-[60px] !rounded-full items-center justify-center !p-0 bg-squito-green/80 dark:bg-squito-green/80 border-white/40 shadow-[0_0_20px_rgba(107,158,17,0.5)]"
-          >
-            <span className="text-[26px]">🗓️</span>
-          </GlassButton>
+          <Link href="/plans" className="outline-none" onClick={() => haptics.selection()}>
+            <GlassButton
+              variant="primary"
+              className="flex h-[60px] w-[60px] !rounded-full items-center justify-center !p-0 bg-squito-green/80 dark:bg-squito-green/80 border-white/40 shadow-[0_0_20px_rgba(107,158,17,0.5)]"
+            >
+              <span className="text-[26px]">🗓️</span>
+            </GlassButton>
+          </Link>
           <span className="text-[10px] font-bold text-squito-green drop-shadow-md uppercase tracking-wider">
             Book Now
           </span>
