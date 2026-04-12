@@ -34,12 +34,21 @@ const SERVICE_PRICES: Record<string, number> = {
   "Hornet & Wasp Removal ($349)": 349,
   "Termite Inspection ($199)": 199,
   "Free Estimate / Custom Quote": 0,
+  // Plans — monthly (corrected to match squitopestcontrol.com)
   "Essential Defense (monthly)": 49.99,
-  "Premium Shield (monthly)": 79.99,
+  "Premium Shield (monthly)": 89.99,
   "Ultimate Fortress (monthly)": 129.99,
-  "Essential Defense (yearly)": 539.89,
-  "Premium Shield (yearly)": 863.89,
-  "Ultimate Fortress (yearly)": 1403.89,
+  // Plans — yearly
+  "Essential Defense (yearly)": 479.88,
+  "Premium Shield (yearly)": 863.88,
+  "Ultimate Fortress (yearly)": 1247.88,
+};
+
+// Initial fees for monthly plans (waived for yearly)
+const PLAN_INITIAL_FEES: Record<string, number> = {
+  "Essential Defense (monthly)": 199.99,
+  "Premium Shield (monthly)": 299.99,
+  "Ultimate Fortress (monthly)": 399.99,
 };
 
 const SERVICE_DESCRIPTIONS: Record<string, string> = {
@@ -50,15 +59,15 @@ const SERVICE_DESCRIPTIONS: Record<string, string> = {
   "Hornet & Wasp Removal ($349)": "Professional nest removal, zero risk to family",
   "Termite Inspection ($199)": "Full property inspection with written report",
   "Free Estimate / Custom Quote": "A technician will assess & quote on-site",
-  "Essential Defense (monthly)": "Monthly recurring — core protection plan",
-  "Premium Shield (monthly)": "Monthly recurring — expanded coverage",
-  "Ultimate Fortress (monthly)": "Monthly recurring — all-inclusive platinum",
-  "Essential Defense (yearly)": "Annual plan — save 10% vs monthly",
-  "Premium Shield (yearly)": "Annual plan — save 10% vs monthly",
-  "Ultimate Fortress (yearly)": "Annual plan — save 10% vs monthly",
+  "Essential Defense (monthly)": "Quarterly exterior protection — 15+ pests covered",
+  "Premium Shield (monthly)": "Interior & exterior — 30+ pests, rodent exclusion",
+  "Ultimate Fortress (monthly)": "Total coverage — mosquito/tick + quarterly pest",
+  "Essential Defense (yearly)": "Annual plan — save $120 vs monthly, fee waived",
+  "Premium Shield (yearly)": "Annual plan — save $216 vs monthly, fee waived",
+  "Ultimate Fortress (yearly)": "Annual plan — save $312 vs monthly, fee waived",
 };
 
-// ── Points per service (mirrors bookingEngine.ts determinePoints) ────────────
+// ── Points per service (subscription model: earn per payment cycle) ──────────
 const SERVICE_POINTS: Record<string, number> = {
   "Mosquito Barrier Spray ($119)": 75,
   "Organic Mosquito & Tick Treatment ($99)": 75,
@@ -67,12 +76,14 @@ const SERVICE_POINTS: Record<string, number> = {
   "Hornet & Wasp Removal ($349)": 150,
   "Termite Inspection ($199)": 100,
   "Free Estimate / Custom Quote": 0,
-  "Essential Defense (monthly)": 150,
-  "Premium Shield (monthly)": 200,
-  "Ultimate Fortress (monthly)": 300,
-  "Essential Defense (yearly)": 150,
-  "Premium Shield (yearly)": 200,
-  "Ultimate Fortress (yearly)": 300,
+  // Plans — monthly: earn points every month
+  "Essential Defense (monthly)": 75,
+  "Premium Shield (monthly)": 125,
+  "Ultimate Fortress (monthly)": 200,
+  // Plans — yearly: bulk point bonus upfront
+  "Essential Defense (yearly)": 800,
+  "Premium Shield (yearly)": 1350,
+  "Ultimate Fortress (yearly)": 2100,
 };
 
 function BookForm() {
@@ -416,8 +427,12 @@ function BookForm() {
   const taxCounty = !formData.address ? "" :
     formData.address.toLowerCase().includes("nassau") || NASSAU_CITIES.test(formData.address) ? "Nassau" :
     formData.address.toLowerCase().includes("suffolk") || SUFFOLK_CITIES.test(formData.address) ? "Suffolk" : "NY";
-  const taxAmount = !isFree ? Math.round(priceAfterDiscount * taxRate * 100) / 100 : 0;
-  const totalWithTax = priceAfterDiscount + taxAmount;
+  // Initial fee for monthly plans (waived for yearly)
+  const initialFee = !isCartMode ? (PLAN_INITIAL_FEES[formData.service] ?? 0) : 0;
+  const isMonthlyPlan = !isCartMode && formData.service.includes("(monthly)");
+
+  const taxAmount = !isFree ? Math.round((priceAfterDiscount + initialFee) * taxRate * 100) / 100 : 0;
+  const totalWithTax = priceAfterDiscount + initialFee + taxAmount;
 
   // Points preview
   const pointsPreview = isCartMode ? cartTotalPoints : (SERVICE_POINTS[formData.service] ?? 50);
@@ -629,13 +644,13 @@ function BookForm() {
                 <option value="Termite Inspection ($199)">Termite Inspection — $199</option>
                 <option value="Free Estimate / Custom Quote">Free Estimate / Custom Quote</option>
               </optgroup>
-              <optgroup label="Seasonal Plans (Save More)">
-                <option value="Essential Defense (monthly)">Essential Defense ($49.99/mo)</option>
-                <option value="Premium Shield (monthly)">Premium Shield ($79.99/mo)</option>
-                <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo)</option>
-                <option value="Essential Defense (yearly)">Essential Defense ($539.89/yr)</option>
-                <option value="Premium Shield (yearly)">Premium Shield ($863.89/yr)</option>
-                <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1,403.89/yr)</option>
+              <optgroup label="Protection Plans">
+                <option value="Essential Defense (monthly)">Essential Defense ($49.99/mo + $199.99 setup)</option>
+                <option value="Premium Shield (monthly)">Premium Shield ($89.99/mo + $299.99 setup)</option>
+                <option value="Ultimate Fortress (monthly)">Ultimate Fortress ($129.99/mo + $399.99 setup)</option>
+                <option value="Essential Defense (yearly)">Essential Defense ($479.88/yr — fee waived)</option>
+                <option value="Premium Shield (yearly)">Premium Shield ($863.88/yr — fee waived)</option>
+                <option value="Ultimate Fortress (yearly)">Ultimate Fortress ($1,247.88/yr — fee waived)</option>
               </optgroup>
             </select>
           </div>
@@ -829,6 +844,20 @@ function BookForm() {
                 <p className="text-[11px] font-semibold text-emerald-600">🎁 PestPoints Discount</p>
                 <p className="text-[11px] font-bold text-emerald-600">-${discountDollars.toFixed(2)}</p>
               </div>
+            </motion.div>
+          )}
+          {/* Initial fee line for monthly plans */}
+          {initialFee > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mt-2"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-amber-700">📋 One-Time Setup Fee</p>
+                <p className="text-[11px] font-bold text-amber-700">+${initialFee.toFixed(2)}</p>
+              </div>
+              <p className="text-[9px] text-gray-400 mt-0.5">First payment only — covers initial assessment & setup</p>
             </motion.div>
           )}
           {/* Tax breakdown — shown once address has enough data */}

@@ -83,66 +83,97 @@ const services = [
   },
 ];
 
-// ── Seasonal plans (optional upsell) ────────────────────────────────────────
+// ── Protection Plans (corrected pricing from squitopestcontrol.com) ──────────
 type BillingCycle = "monthly" | "yearly";
 
 const plans = [
   {
     id: "essential-defense",
     name: "Essential Defense",
+    icon: "🛡️",
     prices: {
       monthly: "$49.99",
-      yearly: "$539.89",
+      yearly: "$479.88",
     },
-    desc: "Quarterly service for smaller homes.",
-    savings: "Save ~10%",
+    initialFee: "$199.99",
+    desc: "Great for first-time customers & smaller homes.",
+    yearSavings: "Save $120",
+    pestsCount: "15+",
+    coverage: "Exterior",
+    frequency: "Quarterly",
+    monthlyPoints: 75,
+    yearlyPoints: 800,
     features: [
-      "Interior/Exterior Defense",
-      "Granular repellent application",
-      "Crack and crevice treatment",
-      "Quarterly service visits",
-      "100% Satisfaction Guarantee",
+      "Quarterly exterior perimeter treatments",
+      "Coverage for 15+ pest types",
+      "Free re-service guarantee",
+      "Digital inspection reports",
+      "24/7 online portal access",
     ],
   },
   {
     id: "premium-shield",
     name: "Premium Shield",
+    icon: "⭐",
     prices: {
-      monthly: "$79.99",
-      yearly: "$863.89",
+      monthly: "$89.99",
+      yearly: "$863.88",
     },
-    desc: "Full protection — most popular for families.",
-    savings: "Save ~15%",
+    initialFee: "$299.99",
+    desc: "Our most popular plan — full protection, inside and out.",
+    yearSavings: "Save $216",
     popular: true,
+    pestsCount: "30+",
+    coverage: "Interior & Exterior",
+    frequency: "Quarterly",
+    monthlyPoints: 125,
+    yearlyPoints: 1350,
     features: [
-      "Everything in Essential",
-      "Rodent Exclusion/Baiting",
-      "Bi-Monthly Mosquito/Tick (Apr–Sept)",
-      "Termite Monitoring",
-      "Routine web brushing",
+      "Everything in Essential Defense",
+      "Interior & exterior treatments",
+      "Rodent baiting & exclusion",
+      "Free yearly termite inspection ($150 value)",
+      "Priority scheduling",
+      "Unlimited re-service",
     ],
   },
   {
     id: "ultimate-fortress",
     name: "Ultimate Fortress",
+    icon: "⚡",
     prices: {
       monthly: "$129.99",
-      yearly: "$1,403.89",
+      yearly: "$1,247.88",
     },
-    desc: "Total coverage — yard, interior, and everything.",
-    savings: "Save ~20%",
+    initialFee: "$399.99",
+    desc: "Total domination — yard, interior, and everything in between.",
+    yearSavings: "Save $312",
+    pestsCount: "40+",
+    coverage: "Interior, Exterior & Yard",
+    frequency: "Monthly + Quarterly",
+    monthlyPoints: 200,
+    yearlyPoints: 2100,
     features: [
-      "Everything in Premium",
-      "Targeted Flea Treatment",
-      "Stink Bug/Overwintering Barrier",
-      "Monthly Check-Ins",
-      "Free emergency callbacks",
+      "Everything in Premium Shield",
+      "Monthly mosquito & tick barrier spray",
+      "Termite monitoring system",
+      "Bed bug alert service",
+      "Same-day service guarantee",
+      "Dedicated personal technician",
+      "Priority emergency response",
     ],
   },
 ];
 
+// ── Trust badges ─────────────────────────────────────────────────────────────
+const trustBadges = [
+  { icon: "📝", label: "No Contracts" },
+  { icon: "🔄", label: "Free Re-Service" },
+  { icon: "✅", label: "100% Satisfaction" },
+  { icon: "🐾", label: "Pet & Kid Safe" },
+];
+
 export default function ServicesPage() {
-  const [showPlans, setShowPlans] = useState(false);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const { addItem, isInCart, hasItems, itemCount, subtotal, openDrawer } = useCart();
 
@@ -160,6 +191,8 @@ export default function ServicesPage() {
       }, 1500);
     }
   }, [addItem]);
+
+  const isMonthly = billingCycle === "monthly";
 
   return (
     <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8">
@@ -180,7 +213,9 @@ export default function ServicesPage() {
         </p>
       </motion.div>
 
-      {/* One-time Services */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+           ONE-TIME SERVICES
+         ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -217,14 +252,12 @@ export default function ServicesPage() {
                 </div>
               )}
 
-              {/* In Cart indicator */}
               {inCart && !service.popular && (
                 <div className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-full bg-squito-green/15 px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-squito-green">
                   ✓ In Cart
                 </div>
               )}
 
-              {/* Service Image */}
               <div className="relative h-44 w-full overflow-hidden">
                 <Image
                   src={service.image}
@@ -233,9 +266,7 @@ export default function ServicesPage() {
                   className="object-cover"
                   sizes="(max-width: 640px) 100vw, 500px"
                 />
-                {/* Dark gradient overlay for readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                {/* Price badge on image */}
                 <div className="absolute bottom-3 left-4">
                   <span className="rounded-full bg-white/95 backdrop-blur-sm px-4 py-1.5 text-[18px] font-bold text-gray-900 shadow-md">
                     {service.price}
@@ -243,37 +274,24 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              {/* Content */}
               <div className="p-5 pt-4">
                 <h3 className="font-display text-[16px] font-bold text-gray-900 leading-snug">
                   {service.name}
                 </h3>
-
                 <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-gray-500">
                   {service.desc}
                 </p>
-
                 <div className="mt-4 flex items-center justify-between">
                   {service.points > 0 ? (
                     <motion.span
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        delay: 0.3 + idx * 0.06,
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 15,
-                      }}
+                      transition={{ delay: 0.3 + idx * 0.06, type: "spring", stiffness: 300, damping: 15 }}
                       className="inline-flex items-center gap-1.5 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-3.5 py-1.5 text-[12px] font-bold text-squito-green"
                     >
                       <motion.span
                         animate={{ scale: [1, 1.3, 1] }}
-                        transition={{
-                          repeat: Infinity,
-                          repeatDelay: 3,
-                          duration: 0.6,
-                          delay: idx * 0.5,
-                        }}
+                        transition={{ repeat: Infinity, repeatDelay: 3, duration: 0.6, delay: idx * 0.5 }}
                       >
                         ⭐
                       </motion.span>
@@ -286,20 +304,12 @@ export default function ServicesPage() {
                   )}
 
                   {isFreeEstimate ? (
-                    // Free Estimate goes directly to booking — no cart
-                    <Link
-                      href={`/book?service=${service.id}`}
-                      onClick={() => haptics.light()}
-                    >
-                      <GlassButton
-                        variant="secondary"
-                        className="text-[13px] py-2.5 px-5 border-gray-200 text-gray-900"
-                      >
+                    <Link href={`/book?service=${service.id}`} onClick={() => haptics.light()}>
+                      <GlassButton variant="secondary" className="text-[13px] py-2.5 px-5 border-gray-200 text-gray-900">
                         Schedule
                       </GlassButton>
                     </Link>
                   ) : inCart ? (
-                    // Already in cart
                     <GlassButton
                       variant="secondary"
                       className="text-[13px] py-2.5 px-5 border-squito-green/30 text-squito-green bg-squito-green/5"
@@ -308,11 +318,7 @@ export default function ServicesPage() {
                       ✓ In Cart
                     </GlassButton>
                   ) : (
-                    // Add to cart button
-                    <motion.div
-                      animate={wasJustAdded ? { scale: [1, 1.1, 1] } : {}}
-                      transition={{ duration: 0.3 }}
-                    >
+                    <motion.div animate={wasJustAdded ? { scale: [1, 1.1, 1] } : {}} transition={{ duration: 0.3 }}>
                       <GlassButton
                         variant={service.popular ? "primary" : "secondary"}
                         className={`text-[13px] py-2.5 px-5 ${
@@ -333,148 +339,211 @@ export default function ServicesPage() {
         })}
       </motion.div>
 
-      {/* Plans Upsell Section */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+           PROTECTION PLANS
+         ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="mt-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="mt-14"
       >
-        <button
-          onClick={() => {
-            setShowPlans(!showPlans);
-            haptics.light();
-          }}
-          className="w-full flex items-center justify-between rounded-2xl border border-squito-green/20 bg-[#f7fbe8] px-5 py-4 transition-all active:scale-[0.98]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">💰</span>
-            <div className="text-left">
-              <h3 className="text-[14px] font-bold text-gray-900">
-                Want to save more?
-              </h3>
-              <p className="text-[11px] font-medium text-squito-green">
-                Seasonal plans save up to 20% + earn bonus points
-              </p>
-            </div>
-          </div>
-          <motion.span
-            animate={{ rotate: showPlans ? 180 : 0 }}
-            className="text-squito-green font-bold text-lg"
-          >
-            ▾
-          </motion.span>
-        </button>
+        {/* Section Header */}
+        <div className="text-center mb-6">
+          <span className="inline-flex items-center gap-2 rounded-full bg-squito-green/10 border border-squito-green/20 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-squito-green">
+            🛡️ Protection Plans
+          </span>
+          <h2 className="mt-4 font-display text-[1.75rem] font-bold text-gray-900 leading-tight">
+            Pick your plan.<br/>
+            <span className="text-squito-green">We handle the rest.</span>
+          </h2>
+          <p className="mt-2 text-[12px] font-medium text-gray-500 max-w-xs mx-auto leading-relaxed">
+            Every plan includes free re-service, no contracts, and the Squito Pest Control guarantee.
+          </p>
+        </div>
 
-        <AnimatePresence>
-          {showPlans && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
+        {/* Billing Toggle */}
+        <div className="mx-auto flex items-center rounded-full bg-gray-100 p-1 shadow-inner max-w-xs w-full mb-6">
+          {(["monthly", "yearly"] as const).map((cycle) => (
+            <button
+              key={cycle}
+              onClick={() => { setBillingCycle(cycle); haptics.light(); }}
+              className={`flex-1 rounded-full py-2.5 text-[12px] font-bold transition-all duration-300 ${
+                billingCycle === cycle
+                  ? "bg-white text-squito-green shadow-sm"
+                  : "text-gray-500"
+              }`}
             >
-              {/* Billing Toggle */}
-              <div className="mt-6 mx-auto flex items-center rounded-full bg-gray-100 p-1 shadow-inner max-w-xs w-full">
-                {(["monthly", "yearly"] as const).map((cycle) => (
-                  <button
-                    key={cycle}
-                    onClick={() => {
-                      setBillingCycle(cycle);
-                      haptics.light();
-                    }}
-                    className={`flex-1 rounded-full py-2.5 text-[12px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      billingCycle === cycle
-                        ? "bg-white text-squito-green shadow-sm"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {cycle}
-                  </button>
-                ))}
-              </div>
+              {cycle === "monthly" ? "Monthly" : (
+                <span className="flex items-center justify-center gap-1.5">
+                  Yearly
+                  <span className="rounded-full bg-squito-green/15 px-1.5 py-0.5 text-[9px] font-bold text-squito-green">
+                    SAVE 20%
+                  </span>
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-              <div className="mt-6 flex flex-col gap-5">
-                {plans.map((plan, idx) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    key={plan.id}
-                    className={`relative rounded-[28px] border p-6 ${
-                      plan.popular
-                        ? "border-squito-green bg-white shadow-[0_8px_24px_rgba(107,158,17,0.12)]"
-                        : "border-gray-100 bg-white shadow-sm"
-                    }`}
-                  >
-                    {plan.popular && (
-                      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-squito-green px-3 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white shadow-sm">
-                        ⭐ Most Popular
+        {/* Plan Cards */}
+        <div className="flex flex-col gap-5">
+          {plans.map((plan, idx) => {
+            const price = isMonthly ? plan.prices.monthly : plan.prices.yearly;
+            const points = isMonthly ? plan.monthlyPoints : plan.yearlyPoints;
+            const billingLabel = isMonthly ? "/mo" : "/yr";
+
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55 + idx * 0.1, type: "spring", stiffness: 200, damping: 20 }}
+                key={plan.id}
+                className={`relative rounded-[28px] border overflow-hidden ${
+                  plan.popular
+                    ? "border-squito-green bg-white shadow-[0_8px_24px_rgba(107,158,17,0.15)]"
+                    : "border-gray-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]"
+                }`}
+              >
+                {plan.popular && (
+                  <div className="bg-gradient-to-r from-squito-green to-[#5a8c10] px-5 py-2.5 text-center">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-white">
+                      ⭐ Most Popular — Recommended
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-5">
+                  {/* Plan header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{plan.icon}</span>
+                        <h3 className="font-display text-xl font-bold text-gray-900">{plan.name}</h3>
+                      </div>
+                      <p className="mt-1 text-[12px] font-medium text-gray-500 max-w-[200px]">{plan.desc}</p>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="mt-4">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[2.2rem] font-bold text-gray-900 tabular-nums tracking-tight">{price}</span>
+                      <span className="text-[13px] font-bold text-gray-400">{billingLabel}</span>
+                    </div>
+
+                    {isMonthly ? (
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+                          <span className="line-through opacity-60">{plan.initialFee}</span> Initial fee
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                          ✓ Initial fee waived · {plan.yearSavings}
+                        </span>
                       </div>
                     )}
+                  </div>
 
-                    <div className="text-center">
-                      <h3 className="font-display text-xl font-bold text-gray-900">
-                        {plan.name}
-                      </h3>
-                      <div className="mt-2">
-                        <span className="text-[2rem] font-bold text-gray-900 tabular-nums">
-                          {plan.prices[billingCycle]}
+                  {/* Quick stats */}
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                      <p className="text-[14px] font-bold text-squito-green">{plan.pestsCount}</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase">Pests</p>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                      <p className="text-[11px] font-bold text-gray-900">{plan.coverage}</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase">Coverage</p>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 px-3 py-2 text-center">
+                      <p className="text-[11px] font-bold text-gray-900">{plan.frequency}</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase">Visits</p>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div className="mt-4 flex flex-col gap-2">
+                    {plan.features.map((feat, fidx) => (
+                      <div key={fidx} className="flex items-start gap-2.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f4fae6] text-[10px] text-squito-green mt-0.5">
+                          ✓
                         </span>
-                        <span className="text-[11px] font-bold uppercase text-gray-400 ml-1">
-                          /{billingCycle === "monthly" ? "mo" : "yr"}
-                        </span>
+                        <span className="text-[12px] font-medium text-gray-700 leading-snug">{feat}</span>
                       </div>
-                      <span className="mt-2 inline-block rounded-full bg-squito-green/10 px-3 py-1 text-[11px] font-bold text-squito-green">
-                        {plan.savings} vs. one-time
-                      </span>
-                      <p className="mt-3 text-[12px] font-medium text-gray-500">
-                        {plan.desc}
-                      </p>
-                    </div>
+                    ))}
+                  </div>
 
-                    <div className="mt-5 flex flex-col gap-2.5 border-t border-gray-100 pt-5">
-                      {plan.features.map((feat, fidx) => (
-                        <div key={fidx} className="flex items-start gap-2.5">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f4fae6] text-[10px] text-squito-green mt-0.5">
-                            ✓
-                          </span>
-                          <span className="text-[12px] font-medium text-gray-700 leading-snug">
-                            {feat}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                  {/* Points preview */}
+                  <div className="mt-4 rounded-xl bg-[#f7fbe8] border border-squito-green/10 px-3.5 py-2.5 flex items-center gap-2">
+                    <span className="text-sm">⭐</span>
+                    <span className="text-[11px] font-bold text-squito-green">
+                      Earn {points} PestPoints {isMonthly ? "every month" : "upfront"}
+                      {isMonthly && <span className="text-squito-green/50"> ({points * 12}/yr)</span>}
+                    </span>
+                  </div>
 
+                  {/* CTAs */}
+                  <div className="mt-5 flex gap-3">
+                    <Link
+                      href={`/plans/${plan.id}`}
+                      className="flex-1"
+                      onClick={() => haptics.light()}
+                    >
+                      <GlassButton
+                        variant="secondary"
+                        className="w-full py-3 text-[13px] border-gray-200 text-gray-700"
+                      >
+                        View Details
+                      </GlassButton>
+                    </Link>
                     <Link
                       href={`/book?plan=${plan.id}&billing=${billingCycle}`}
-                      className="mt-6 block w-full"
+                      className="flex-1"
                       onClick={() => haptics.light()}
                     >
                       <GlassButton
                         variant={plan.popular ? "primary" : "secondary"}
-                        className={`w-full py-3.5 text-[14px] ${
+                        className={`w-full py-3 text-[13px] ${
                           plan.popular
                             ? "bg-squito-green/90 dark:bg-squito-green shadow-lg shadow-squito-green/20"
-                            : "border-gray-200 text-gray-900"
+                            : "border-squito-green text-squito-green"
                         }`}
                       >
                         Get Plan
                       </GlassButton>
                     </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Trust badges */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
+          className="mt-6 flex justify-center gap-3 flex-wrap"
+        >
+          {trustBadges.map((badge) => (
+            <span
+              key={badge.label}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 border border-gray-100 px-3.5 py-2 text-[11px] font-bold text-gray-600"
+            >
+              {badge.icon} {badge.label}
+            </span>
+          ))}
+        </motion.div>
       </motion.div>
 
       {/* Call CTA */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
+        transition={{ delay: 1.0 }}
         className="mt-10 text-center"
       >
         <Link href="tel:6312031000" onClick={() => haptics.light()}>
@@ -495,10 +564,7 @@ export default function ServicesPage() {
             className="fixed bottom-16 left-0 right-0 z-[8500] flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-none"
           >
             <button
-              onClick={() => {
-                openDrawer();
-                haptics.medium();
-              }}
+              onClick={() => { openDrawer(); haptics.medium(); }}
               className="pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl border border-squito-green/30 bg-white/95 backdrop-blur-xl px-5 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-transform"
             >
               <div className="flex items-center gap-3">

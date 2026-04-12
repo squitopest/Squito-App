@@ -50,9 +50,15 @@ export function calculateTax(priceUSD: number, address: string): {
 function determinePoints(serviceName: string): number {
   if (!serviceName) return 50;
   const svc = serviceName.toLowerCase();
-  if (svc.includes("ultimate")) return 300;
-  if (svc.includes("premium")) return 200;
-  if (svc.includes("essential") || svc.includes("plan")) return 150;
+  // Plans — monthly: earn points every payment cycle
+  if (svc.includes("ultimate") && svc.includes("monthly")) return 200;
+  if (svc.includes("premium") && svc.includes("monthly")) return 125;
+  if ((svc.includes("essential") || svc.includes("plan")) && svc.includes("monthly")) return 75;
+  // Plans — yearly: bulk point bonus upfront
+  if (svc.includes("ultimate") && svc.includes("yearly")) return 2100;
+  if (svc.includes("premium") && svc.includes("yearly")) return 1350;
+  if ((svc.includes("essential") || svc.includes("plan")) && svc.includes("yearly")) return 800;
+  // One-time services
   if (svc.includes("hornet") || svc.includes("wasp")) return 150;
   if (svc.includes("general") || svc.includes("property")) return 125;
   if (svc.includes("termite")) return 100;

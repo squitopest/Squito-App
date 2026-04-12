@@ -11,17 +11,24 @@ const SERVICE_PRICES: Record<string, number> = {
   "Hornet & Wasp Removal ($349)": 34900,
   "Termite Inspection ($199)": 19900,
   "Free Estimate / Custom Quote": 0,
-  // Plans — monthly
+  // Plans — monthly (corrected to match squitopestcontrol.com)
   "Essential Defense (monthly)": 4999,
-  "Premium Shield (monthly)": 7999,
+  "Premium Shield (monthly)": 8999,
   "Ultimate Fortress (monthly)": 12999,
-  // Plans — yearly
-  "Essential Defense (yearly)": 53989,
-  "Premium Shield (yearly)": 86389,
-  "Ultimate Fortress (yearly)": 140389,
+  // Plans — yearly (corrected to match squitopestcontrol.com)
+  "Essential Defense (yearly)": 47988,
+  "Premium Shield (yearly)": 86388,
+  "Ultimate Fortress (yearly)": 124788,
 };
 
-// Points per service (mirrors bookingEngine)
+// Initial fees for monthly plans (waived for yearly)
+const PLAN_INITIAL_FEES: Record<string, number> = {
+  "Essential Defense (monthly)": 19999,
+  "Premium Shield (monthly)": 29999,
+  "Ultimate Fortress (monthly)": 39999,
+};
+
+// Points per service (subscription model: earn per payment cycle)
 const SERVICE_POINTS: Record<string, number> = {
   "Mosquito Barrier Spray ($119)": 75,
   "Organic Mosquito & Tick Treatment ($99)": 75,
@@ -30,12 +37,14 @@ const SERVICE_POINTS: Record<string, number> = {
   "Hornet & Wasp Removal ($349)": 150,
   "Termite Inspection ($199)": 100,
   "Free Estimate / Custom Quote": 0,
-  "Essential Defense (monthly)": 150,
-  "Premium Shield (monthly)": 200,
-  "Ultimate Fortress (monthly)": 300,
-  "Essential Defense (yearly)": 150,
-  "Premium Shield (yearly)": 200,
-  "Ultimate Fortress (yearly)": 300,
+  // Plans — monthly: earn points every month
+  "Essential Defense (monthly)": 75,
+  "Premium Shield (monthly)": 125,
+  "Ultimate Fortress (monthly)": 200,
+  // Plans — yearly: bulk point bonus upfront
+  "Essential Defense (yearly)": 800,
+  "Premium Shield (yearly)": 1350,
+  "Ultimate Fortress (yearly)": 2100,
 };
 
 export async function POST(request: Request) {
@@ -190,6 +199,29 @@ export async function POST(request: Request) {
       };
     });
 
+    // ── Initial fee for monthly plans ──
+    // Monthly plans have a one-time setup fee that's added as a separate line item.
+    // Yearly plans have the fee waived.
+    let initialFeeCents = 0;
+    if (!isCartOrder && service) {
+      const fee = PLAN_INITIAL_FEES[service];
+      if (fee && fee > 0) {
+        initialFeeCents = fee;
+        const planName = service.replace(/\s*\(.*\)$/, "");
+        line_items.push({
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `${planName} — Initial Setup Fee`,
+              description: "One-time setup & first-visit assessment fee",
+            },
+            unit_amount: initialFeeCents,
+          },
+          quantity: 1,
+        });
+      }
+    }
+
     // Show the PestPoints discount as a visible $0 line item for transparency
     if (validDiscount > 0) {
       line_items.push({
@@ -205,16 +237,22 @@ export async function POST(request: Request) {
       });
     }
 
+    // Recalculate tax including initial fee
+    const totalTaxableCents = discountedSubtotalCents + initialFeeCents;
+    const totalTaxableUSD = totalTaxableCents / 100;
+    const taxWithFee = calculateTax(totalTaxableUSD, address);
+    const taxInCentsWithFee = Math.round(taxWithFee.taxAmount * 100);
+
     // Add tax as a separate transparent line item
-    if (taxInCents > 0) {
+    if (taxInCentsWithFee > 0) {
       line_items.push({
         price_data: {
           currency: "usd",
           product_data: {
-            name: `${tax.county} County Sales Tax (${(tax.taxRate * 100).toFixed(3)}%)`,
+            name: `${taxWithFee.county} County Sales Tax (${(taxWithFee.taxRate * 100).toFixed(3)}%)`,
             description: "New York State + local sales tax",
           },
-          unit_amount: taxInCents,
+          unit_amount: taxInCentsWithFee,
         },
         quantity: 1,
       });
@@ -240,10 +278,11 @@ export async function POST(request: Request) {
       county: tax.county,
       taxRate: String(tax.taxRate),
       subtotal: String(priceUSD),
-      taxAmount: String(tax.taxAmount),
-      totalCharged: String(tax.total),
+      taxAmount: String(initialFeeCents > 0 ? taxWithFee.taxAmount : tax.taxAmount),
+      totalCharged: String(initialFeeCents > 0 ? taxWithFee.total : tax.total),
       discountCents: String(validDiscount),
       originalPriceCents: String(subtotalCents),
+      initialFeeCents: String(initialFeeCents),
       redemptionId: verifiedRedemptionId,
     };
 
