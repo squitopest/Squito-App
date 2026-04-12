@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
 import { haptics } from "@/lib/haptics";
@@ -270,15 +271,14 @@ function BookForm() {
         <p className="mt-4 font-medium text-gray-500">
           We&apos;ve received your request and will contact you at <strong className="text-gray-800">{formData.email}</strong> to schedule your free estimate.
         </p>
-        <GlassButton
-          variant="ghost"
-          onClick={() => {
-            setStatus("idle");
-          }}
-          className="mt-10 text-squito-green dark:text-squito-green py-2 px-6"
-        >
-          Book another service
-        </GlassButton>
+        <Link href="/plans" onClick={() => { if (typeof window !== "undefined" && (window as any).Capacitor) haptics.light() }}>
+          <GlassButton
+            variant="ghost"
+            className="mt-10 text-squito-green dark:text-squito-green py-2 px-6"
+          >
+            Book another service
+          </GlassButton>
+        </Link>
       </motion.div>
     );
   }
