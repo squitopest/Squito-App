@@ -123,7 +123,7 @@ export async function POST(request: Request) {
   }
 
   // ── Calculate subtotal ──
-  const subtotalCents = verifiedCartItems.reduce((sum, item) => sum + item.priceCents, 0);
+  let subtotalCents = verifiedCartItems.reduce((sum, item) => sum + item.priceCents, 0);
 
   // ── Server-side discount validation ──
   // NEVER trust the client's discountCents — always verify against the database.
@@ -200,25 +200,28 @@ export async function POST(request: Request) {
     });
 
     // ── Initial fee for monthly plans ──
-    // Monthly plans have a one-time setup fee that's added as a separate line item.
-    // Yearly plans have the fee waived.
+    // Month 1 = initial setup fee ONLY. Recurring monthly starts month 2.
+    // We REPLACE the plan's monthly price with the initial fee in the line items.
     let initialFeeCents = 0;
     if (!isCartOrder && service) {
       const fee = PLAN_INITIAL_FEES[service];
       if (fee && fee > 0) {
         initialFeeCents = fee;
         const planName = service.replace(/\s*\(.*\)$/, "");
-        line_items.push({
+        // Replace the first (plan) line item with the initial fee instead
+        line_items[0] = {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${planName} — Initial Setup Fee`,
-              description: "One-time setup & first-visit assessment fee",
+              name: `${planName} — Initial Setup & First Month`,
+              description: `One-time setup fee. Recurring ${SERVICE_PRICES[service] ? "$" + (SERVICE_PRICES[service] / 100).toFixed(2) + "/mo" : ""} begins next month.`,
             },
             unit_amount: initialFeeCents,
           },
           quantity: 1,
-        });
+        };
+        // Update subtotal tracking to reflect the initial fee only (not monthly + fee)
+        subtotalCents = initialFeeCents;
       }
     }
 
@@ -237,10 +240,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Recalculate tax including initial fee
-    const totalTaxableCents = discountedSubtotalCents + initialFeeCents;
-    const totalTaxableUSD = totalTaxableCents / 100;
-    const taxWithFee = calculateTax(totalTaxableUSD, address);
+    // Recalculate tax on what's actually being charged
+    const finalChargedCents = subtotalCents - validDiscount;
+    const finalChargedUSD = finalChargedCents / 100;
+    const taxWithFee = calculateTax(finalChargedUSD, address);
     const taxInCentsWithFee = Math.round(taxWithFee.taxAmount * 100);
 
     // Add tax as a separate transparent line item

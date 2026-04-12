@@ -227,9 +227,6 @@ export default function PlanDetailPage() {
   const price = isMonthly ? plan.prices.monthly : plan.prices.yearly;
   const points = isMonthly ? plan.monthlyPoints : plan.yearlyPoints;
   const billingLabel = isMonthly ? "/mo" : "/yr";
-  const firstPayment = isMonthly
-    ? `$${((plan.monthlyCents + plan.initialFeeCents) / 100).toFixed(2)}`
-    : plan.prices.yearly;
 
   // Gradient for each tier
   const gradientClass = plan.tier === 3
@@ -303,26 +300,33 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.25 }}
           className="mt-6 text-center"
         >
-          <div className="inline-flex items-baseline gap-1">
-            <span className="text-[2.8rem] font-bold text-white tabular-nums tracking-tight">{price}</span>
-            <span className="text-[14px] font-bold text-white/60">{billingLabel}</span>
-          </div>
-
           {isMonthly ? (
-            <div className="mt-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3.5 py-1.5 text-[11px] font-bold text-white/90">
-                + {plan.initialFee} one-time setup fee
-              </span>
-              <p className="mt-1.5 text-[10px] text-white/50">
-                First payment: {firstPayment} (incl. setup) • then {plan.prices.monthly}/mo
-              </p>
-            </div>
+            <>
+              <div className="inline-flex items-baseline gap-1">
+                <span className="text-[2.8rem] font-bold text-white tabular-nums tracking-tight">{plan.initialFee}</span>
+                <span className="text-[14px] font-bold text-white/60">due today</span>
+              </div>
+              <div className="mt-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3.5 py-1.5 text-[11px] font-bold text-white/90">
+                  📋 Initial setup fee — first month
+                </span>
+                <p className="mt-1.5 text-[10px] text-white/50">
+                  Then {plan.prices.monthly}/mo starting next month
+                </p>
+              </div>
+            </>
           ) : (
-            <div className="mt-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/25 backdrop-blur-sm px-3.5 py-1.5 text-[11px] font-bold text-emerald-100">
-                ✓ Initial fee waived — {plan.savings}
-              </span>
-            </div>
+            <>
+              <div className="inline-flex items-baseline gap-1">
+                <span className="text-[2.8rem] font-bold text-white tabular-nums tracking-tight">{plan.prices.yearly}</span>
+                <span className="text-[14px] font-bold text-white/60">/yr</span>
+              </div>
+              <div className="mt-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/25 backdrop-blur-sm px-3.5 py-1.5 text-[11px] font-bold text-emerald-100">
+                  ✓ Initial fee waived — {plan.savings}
+                </span>
+              </div>
+            </>
           )}
         </motion.div>
       </div>
@@ -587,7 +591,7 @@ export default function PlanDetailPage() {
               <p className="text-[14px] font-bold text-gray-900">{plan.name}</p>
               <p className="text-[11px] text-gray-500">
                 {isMonthly
-                  ? `${plan.prices.monthly}/mo + ${plan.initialFee} setup`
+                  ? `${plan.initialFee} today · then ${plan.prices.monthly}/mo`
                   : `${plan.prices.yearly}/yr · Fee waived`}
               </p>
             </div>
@@ -607,7 +611,7 @@ export default function PlanDetailPage() {
               className="w-full py-3.5 text-[14px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
             >
               {isMonthly
-                ? `Subscribe · First payment ${firstPayment}`
+                ? `Subscribe · ${plan.initialFee} today`
                 : `Subscribe · ${plan.prices.yearly}/yr`}
             </GlassButton>
           </Link>

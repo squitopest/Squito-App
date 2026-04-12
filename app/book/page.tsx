@@ -428,11 +428,14 @@ function BookForm() {
     formData.address.toLowerCase().includes("nassau") || NASSAU_CITIES.test(formData.address) ? "Nassau" :
     formData.address.toLowerCase().includes("suffolk") || SUFFOLK_CITIES.test(formData.address) ? "Suffolk" : "NY";
   // Initial fee for monthly plans (waived for yearly)
+  // Month 1 = initial fee ONLY. Monthly recurring starts month 2.
   const initialFee = !isCartMode ? (PLAN_INITIAL_FEES[formData.service] ?? 0) : 0;
   const isMonthlyPlan = !isCartMode && formData.service.includes("(monthly)");
 
-  const taxAmount = !isFree ? Math.round((priceAfterDiscount + initialFee) * taxRate * 100) / 100 : 0;
-  const totalWithTax = priceAfterDiscount + initialFee + taxAmount;
+  // For monthly plans: charge only initial fee. For everything else: charge the service price.
+  const chargedPrice = isMonthlyPlan ? initialFee : priceAfterDiscount;
+  const taxAmount = !isFree ? Math.round(chargedPrice * taxRate * 100) / 100 : 0;
+  const totalWithTax = chargedPrice + taxAmount;
 
   // Points preview
   const pointsPreview = isCartMode ? cartTotalPoints : (SERVICE_POINTS[formData.service] ?? 50);
@@ -820,21 +823,32 @@ function BookForm() {
                 <p className="text-[11px] text-gray-500 mt-0.5">
                   {SERVICE_DESCRIPTIONS[formData.service]}
                 </p>
-                {isRecurring && (
+                {isMonthlyPlan && (
+                  <span className="mt-1.5 inline-block rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                    📋 Initial setup — first month
+                  </span>
+                )}
+                {isRecurring && !isMonthlyPlan && (
                   <span className="mt-1.5 inline-block rounded-full bg-squito-green/15 px-2 py-0.5 text-[10px] font-bold text-squito-green">
-                    🔄 Recurring plan
+                    🔄 Annual plan
                   </span>
                 )}
               </div>
               <div className="text-right shrink-0">
-                <p className="text-[22px] font-bold text-gray-900">${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}</p>
-                <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "subtotal"}</p>
+                <p className="text-[22px] font-bold text-gray-900">
+                  ${isMonthlyPlan
+                    ? initialFee.toFixed(2)
+                    : selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  {isMonthlyPlan ? "due today" : isRecurring ? "/year" : "subtotal"}
+                </p>
               </div>
             </div>
           )}
 
           {/* PestPoints discount line */}
-          {discountDollars > 0 && (
+          {discountDollars > 0 && !isMonthlyPlan && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -846,18 +860,18 @@ function BookForm() {
               </div>
             </motion.div>
           )}
-          {/* Initial fee line for monthly plans */}
-          {initialFee > 0 && (
+          {/* Recurring note for monthly plans */}
+          {isMonthlyPlan && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               className="mt-2"
             >
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-amber-700">📋 One-Time Setup Fee</p>
-                <p className="text-[11px] font-bold text-amber-700">+${initialFee.toFixed(2)}</p>
+                <p className="text-[11px] font-medium text-gray-500">🔄 Recurring starts next month</p>
+                <p className="text-[11px] font-bold text-gray-500">${selectedPrice.toFixed(2)}/mo</p>
               </div>
-              <p className="text-[9px] text-gray-400 mt-0.5">First payment only — covers initial assessment & setup</p>
+              <p className="text-[9px] text-gray-400 mt-0.5">Today you only pay the initial fee. Monthly billing begins next month.</p>
             </motion.div>
           )}
           {/* Tax breakdown — shown once address has enough data */}
