@@ -22,6 +22,17 @@ export async function GET(request: NextRequest) {
     const lineItem = session.line_items?.data[0];
     const amountTotal = session.amount_total ?? 0;
 
+    // Mark PestPoints discount as "used" if one was applied to this session
+    if (meta.redemptionId) {
+      try {
+        const { markRedemptionUsed } = await import("@/lib/pointsEngine");
+        await markRedemptionUsed(meta.redemptionId);
+        console.log(`[Checkout Session] Marked redemption ${meta.redemptionId} as used`);
+      } catch (err) {
+        console.error("[Checkout Session] Failed to mark redemption used:", err);
+      }
+    }
+
     return NextResponse.json({
       sessionId: session.id,
       paymentStatus: session.payment_status,
@@ -36,6 +47,8 @@ export async function GET(request: NextRequest) {
       service: meta.service ?? (lineItem as any)?.description ?? "",
       preferredDate: meta.preferredDate ?? "",
       preferredTime: meta.preferredTime ?? "",
+      // Discount info for UI display
+      discountCents: meta.discountCents ? Number(meta.discountCents) : 0,
     });
   } catch (err: any) {
     console.error("[GET /api/checkout/session]", err);

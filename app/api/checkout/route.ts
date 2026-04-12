@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, phone, address, service, preferredDate, preferredTime, coordinates, userId } = body;
+  const { name, email, phone, address, service, preferredDate, preferredTime, coordinates, userId, discountCents, redemptionId } = body;
 
   if (!name || !email || !phone || !address || !service) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -45,8 +45,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Unknown service: ${service}` }, { status: 400 });
   }
 
-  // Calculate NYS county-level sales tax
-  const priceUSD = priceInCents / 100;
+  // Apply PestPoints discount (cap at service price — never go below $0)
+  const validDiscount = Math.min(Math.max(Number(discountCents) || 0, 0), priceInCents);
+  const discountedPriceInCents = priceInCents - validDiscount;
+
+  // Calculate NYS county-level sales tax on the DISCOUNTED price
+  const priceUSD = discountedPriceInCents / 100;
   const tax = calculateTax(priceUSD, address);
   const taxInCents = Math.round(tax.taxAmount * 100);
 
@@ -59,36 +63,57 @@ export async function POST(request: Request) {
       origin = "https://squito-app.vercel.app";
     }
 
+    // Build line items
+    const line_items: any[] = [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: service.replace(/\s*\(.*\)$/, ""),
+            description: `Service at ${address}${preferredDate ? ` on ${preferredDate}` : ""}${preferredTime ? ` at ${preferredTime}` : ""}`,
+          },
+          unit_amount: discountedPriceInCents,
+        },
+        quantity: 1,
+      },
+    ];
+
+    // Show the PestPoints discount as a visible $0 line item for transparency
+    if (validDiscount > 0) {
+      line_items.push({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "🎁 PestPoints Discount Applied",
+            description: `$${(validDiscount / 100).toFixed(2)} off — redeemed from your PestPoints balance`,
+          },
+          unit_amount: 0,
+        },
+        quantity: 1,
+      });
+    }
+
+    // Add tax as a separate transparent line item
+    if (taxInCents > 0) {
+      line_items.push({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `${tax.county} County Sales Tax (${(tax.taxRate * 100).toFixed(3)}%)`,
+            description: "New York State + local sales tax",
+          },
+          unit_amount: taxInCents,
+        },
+        quantity: 1,
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: service.replace(/\s*\(.*\)$/, ""),
-              description: `Service at ${address}${preferredDate ? ` on ${preferredDate}` : ""}${preferredTime ? ` at ${preferredTime}` : ""}`,
-            },
-            unit_amount: priceInCents,
-          },
-          quantity: 1,
-        },
-        {
-          // Sales tax as a transparent separate line item
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `${tax.county} County Sales Tax (${(tax.taxRate * 100).toFixed(3)}%)`,
-              description: "New York State + local sales tax",
-            },
-            unit_amount: taxInCents,
-          },
-          quantity: 1,
-        },
-      ],
-      // Store all booking + tax data in metadata for webhook processing
+      line_items,
+      // Store all booking + tax + discount data in metadata for webhook processing
       metadata: {
         name,
         email,
@@ -104,6 +129,10 @@ export async function POST(request: Request) {
         subtotal: String(priceUSD),
         taxAmount: String(tax.taxAmount),
         totalCharged: String(tax.total),
+        // Discount tracking — used by success page to mark redemption as "used"
+        discountCents: String(validDiscount),
+        originalPriceCents: String(priceInCents),
+        redemptionId: redemptionId || "",
       },
       success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/book?cancelled=true`,
@@ -118,3 +147,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

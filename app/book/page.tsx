@@ -88,6 +88,22 @@ function BookForm() {
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const { user, isGuest, profile } = useAuth();
 
+  // ── PestPoints Discount ──
+  const [pendingDiscount, setPendingDiscount] = useState<{
+    redemptionId: string;
+    discountCents: number;
+    discountDollars: number;
+    expiresAt: string;
+    rewardName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!user || isGuest) return;
+    import("@/lib/pointsEngine").then(({ getPendingDiscount }) => {
+      getPendingDiscount(user.id).then((d) => setPendingDiscount(d));
+    });
+  }, [user, isGuest]);
+
   const addressInputRef = usePlacesAutocomplete({
     onSelect: (address, coords) => {
       setFormData((f) => ({ ...f, address }));
@@ -253,6 +269,11 @@ function BookForm() {
           ...formData,
           coordinates: coordinates || undefined,
           userId: user && !isGuest ? user.id : undefined,
+          // Pass pending PestPoints discount if available
+          ...(pendingDiscount ? {
+            discountCents: pendingDiscount.discountCents,
+            redemptionId: pendingDiscount.redemptionId,
+          } : {}),
         }),
       });
 
@@ -305,6 +326,10 @@ function BookForm() {
   const isFree = formData.service === "Free Estimate / Custom Quote";
   const isRecurring = formData.service.includes("monthly") || formData.service.includes("yearly");
 
+  // PestPoints discount (only applies to paid services)
+  const discountDollars = (!isFree && pendingDiscount) ? Math.min(pendingDiscount.discountDollars, selectedPrice) : 0;
+  const priceAfterDiscount = selectedPrice - discountDollars;
+
   // Client-side tax preview (mirrors bookingEngine.detectCountyTax)
   const NASSAU_CITIES = /\b(garden city|hempstead|long beach|great neck|mineola|valley stream|freeport|oceanside|lynbrook|malverne|rockville centre|hewlett|merrick|bellmore|wantagh|seaford|massapequa|levittown|hicksville|syosset|plainview|farmingdale|bethpage|westbury|new hyde park|floral park|elmont|uniondale|east meadow|franklin square|north valley stream)\b/i;
   const SUFFOLK_CITIES = /\b(brentwood|central islip|bay shore|islip|patchogue|riverhead|smithtown|hauppauge|commack|north babylon|babylon|west babylon|deer park|amityville|lindenhurst|copiague|huntington|melville|bohemia|ronkonkoma|holbrook|lake grove|stony brook|port jefferson|setauket|centereach|coram|ridge|moriches|hampton bays|southampton|east hampton|montauk|greenport|cutchogue|mattituck|shelter island)\b/i;
@@ -314,8 +339,8 @@ function BookForm() {
   const taxCounty = !formData.address ? "" :
     formData.address.toLowerCase().includes("nassau") || NASSAU_CITIES.test(formData.address) ? "Nassau" :
     formData.address.toLowerCase().includes("suffolk") || SUFFOLK_CITIES.test(formData.address) ? "Suffolk" : "NY";
-  const taxAmount = !isFree ? Math.round(selectedPrice * taxRate * 100) / 100 : 0;
-  const totalWithTax = selectedPrice + taxAmount;
+  const taxAmount = !isFree ? Math.round(priceAfterDiscount * taxRate * 100) / 100 : 0;
+  const totalWithTax = priceAfterDiscount + taxAmount;
 
 
   return (
@@ -540,6 +565,40 @@ function BookForm() {
           </div>
         </div>
 
+        {/* PestPoints Discount Applied Banner */}
+        {pendingDiscount && !isFree && (
+          <motion.div
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 18 }}
+            className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 px-5 py-4"
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+              initial={{ x: "-100%" }}
+              animate={{ x: "200%" }}
+              transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 2 }}
+            />
+            <div className="relative flex items-center gap-3">
+              <motion.span
+                className="text-2xl"
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 3 }}
+              >
+                🎁
+              </motion.span>
+              <div>
+                <p className="text-[13px] font-bold text-emerald-700">
+                  ${discountDollars} PestPoints discount applied!
+                </p>
+                <p className="text-[11px] font-medium text-emerald-600/70 mt-0.5">
+                  From: {pendingDiscount.rewardName} &mdash; expires {new Date(pendingDiscount.expiresAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {user && !isGuest && (
           <motion.div
             initial={{ opacity: 0, y: 15, scale: 0.95 }}
@@ -607,6 +666,19 @@ function BookForm() {
               <p className="text-[10px] text-gray-400">{isRecurring ? (formData.service.includes("yearly") ? "/year" : "/month") : "subtotal"}</p>
             </div>
           </div>
+          {/* PestPoints discount line */}
+          {discountDollars > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mt-2"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold text-emerald-600">🎁 PestPoints Discount</p>
+                <p className="text-[11px] font-bold text-emerald-600">-${discountDollars.toFixed(2)}</p>
+              </div>
+            </motion.div>
+          )}
           {/* Tax breakdown — shown once address has enough data */}
           {formData.address.length > 5 && taxRate > 0 && (
             <motion.div
@@ -623,7 +695,7 @@ function BookForm() {
           <div className="mt-3 border-t border-squito-green/15 pt-3 flex items-center justify-between">
             <p className="text-[11px] text-gray-500">Total charged today</p>
             <p className="text-[14px] font-bold text-squito-green">
-              ${formData.address.length > 5 ? totalWithTax.toFixed(2) : selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })} {formData.address.length > 5 && taxRate > 0 ? "(incl. tax)" : ""}
+              ${formData.address.length > 5 ? totalWithTax.toFixed(2) : priceAfterDiscount.toLocaleString("en-US", { minimumFractionDigits: priceAfterDiscount % 1 === 0 ? 0 : 2 })} {formData.address.length > 5 && taxRate > 0 ? "(incl. tax)" : ""}
             </p>
           </div>
         </motion.div>
@@ -639,7 +711,7 @@ function BookForm() {
             ? "Processing..."
             : isFree
             ? "Schedule Free Estimate →"
-            : `Pay $${(formData.address.length > 5 ? totalWithTax : selectedPrice).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Securely →`}
+            : `Pay $${(formData.address.length > 5 ? totalWithTax : priceAfterDiscount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Securely →`}
         </GlassButton>
         {!isFree && (
           <p className="mt-2 text-center text-[11px] font-medium text-gray-400">

@@ -188,6 +188,7 @@ export async function awardPoints(
 /**
  * Redeem points — deducts from redeemable_points only.
  * total_points is never reduced, so tier status is preserved.
+ * Monetary rewards (discount_value > 0) are saved as "pending" with a 90-day expiry.
  */
 export async function redeemPoints(userId: string, rewardId: string) {
   if (!supabase) return { error: "Supabase not configured" };
@@ -245,11 +246,22 @@ export async function redeemPoints(userId: string, rewardId: string) {
     return { error: "Failed to record ledger transaction: " + txError.message };
   }
 
-  // 5. Record the redemption
+  // 5. Record the redemption with status + expiration
+  const discountDollars = Number(reward.discount_value) || 0;
+  const discountCents = Math.round(discountDollars * 100);
+  const isMonetary = discountCents > 0;
+
+  // 90-day expiration for monetary rewards
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 90);
+
   const { error: rError } = await supabase.from("redemptions").insert({
     user_id: userId,
     reward_id: rewardId,
     points_spent: reward.cost_points,
+    status: isMonetary ? "pending" : "used",  // non-monetary rewards are fulfilled immediately
+    discount_cents: discountCents,
+    expires_at: isMonetary ? expiresAt.toISOString() : null,
   });
 
   if (rError) {
@@ -257,7 +269,58 @@ export async function redeemPoints(userId: string, rewardId: string) {
     return { error: "Failed to secure redemption log: " + rError.message };
   }
 
-  return { success: true, newRedeemable, reward };
+  return { success: true, newRedeemable, reward, isMonetary, discountCents };
+}
+
+/**
+ * Get the oldest pending monetary discount for a user.
+ * Returns null if no pending discount exists or all are expired.
+ * Only returns ONE — no stacking allowed.
+ */
+export async function getPendingDiscount(userId: string) {
+  if (!supabase) return null;
+
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("redemptions")
+    .select("id, discount_cents, expires_at, points_spent, reward_id, rewards(name)")
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .gt("discount_cents", 0)
+    .gt("expires_at", now)   // not expired
+    .order("created_at", { ascending: true })  // oldest first
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    redemptionId: data.id,
+    discountCents: data.discount_cents,
+    discountDollars: data.discount_cents / 100,
+    expiresAt: data.expires_at,
+    rewardName: (data as any).rewards?.name || "PestPoints Discount",
+  };
+}
+
+/**
+ * Mark a redemption as "used" after successful Stripe payment.
+ */
+export async function markRedemptionUsed(redemptionId: string) {
+  if (!supabase) return { error: "Supabase not configured" };
+
+  const { error } = await supabase
+    .from("redemptions")
+    .update({ status: "used" })
+    .eq("id", redemptionId);
+
+  if (error) {
+    console.error("[PointsEngine] Failed to mark redemption used:", error);
+    return { error: error.message };
+  }
+
+  return { success: true };
 }
 
 export async function getPointsHistory(userId: string) {

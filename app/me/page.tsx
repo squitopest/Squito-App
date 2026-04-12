@@ -322,7 +322,16 @@ function AuthenticatedProfile() {
       }
 
       setConfirmModal({ isOpen: false, reward: null });
-      setTimeout(() => alert("🎉 Reward Redeemed! The Squito team has been notified."), 500);
+
+      // Different message for monetary vs non-monetary rewards
+      const isMonetaryReward = res.isMonetary;
+      setTimeout(() => {
+        if (isMonetaryReward) {
+          alert("🎁 Discount Redeemed! Your discount will automatically apply at checkout on your next booking. You have 90 days to use it.");
+        } else {
+          alert("🎉 Reward Redeemed! The Squito team has been notified.");
+        }
+      }, 500);
 
       await refreshProfile();
       getPointsHistory(user.id).then(setPointsHistory);
@@ -839,11 +848,19 @@ function AuthenticatedProfile() {
                     Use your PestPoints to redeem exclusive rewards and services.
                   </p>
 
-                  <div className="mt-2 mb-6 inline-flex items-center gap-2 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-4 py-2">
+                  <div className="mt-2 mb-2 inline-flex items-center gap-2 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-4 py-2">
                     <span className="text-sm">💰</span>
                     <span className="text-[13px] font-bold text-squito-green">
                       Redeemable: {redeemablePoints} pts
                     </span>
+                  </div>
+
+                  {/* 90-day expiration notice */}
+                  <div className="mb-6 flex items-start gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
+                    <span className="text-base mt-0.5">⏳</span>
+                    <p className="text-[11px] font-medium text-amber-700 leading-relaxed">
+                      Redeemed discounts expire <strong>90 days</strong> after redemption. One discount per booking. Discounts automatically apply at checkout.
+                    </p>
                   </div>
 
                   {rewards.length === 0 ? (
