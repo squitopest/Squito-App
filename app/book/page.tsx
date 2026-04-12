@@ -680,26 +680,10 @@ function BookForm() {
               onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
               className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
             >
-              <option value="" disabled>Time</option>
-              <option value="8:00 AM">8:00 AM</option>
-              <option value="8:30 AM">8:30 AM</option>
-              <option value="9:00 AM">9:00 AM</option>
-              <option value="9:30 AM">9:30 AM</option>
-              <option value="10:00 AM">10:00 AM</option>
-              <option value="10:30 AM">10:30 AM</option>
-              <option value="11:00 AM">11:00 AM</option>
-              <option value="11:30 AM">11:30 AM</option>
-              <option value="12:00 PM">12:00 PM</option>
-              <option value="12:30 PM">12:30 PM</option>
-              <option value="1:00 PM">1:00 PM</option>
-              <option value="1:30 PM">1:30 PM</option>
-              <option value="2:00 PM">2:00 PM</option>
-              <option value="2:30 PM">2:30 PM</option>
-              <option value="3:00 PM">3:00 PM</option>
-              <option value="3:30 PM">3:30 PM</option>
-              <option value="4:00 PM">4:00 PM</option>
-              <option value="4:30 PM">4:30 PM</option>
-              <option value="5:00 PM">5:00 PM</option>
+              <option value="" disabled>Window</option>
+              <option value="Morning (8am - 12pm)">Morning (8am - 12pm)</option>
+              <option value="Afternoon (12pm - 4pm)">Afternoon (12pm - 4pm)</option>
+              <option value="Evening (4pm - 8pm)">Evening (4pm - 8pm)</option>
             </select>
           </div>
         </div>
