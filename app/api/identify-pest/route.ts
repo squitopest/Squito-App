@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 
 const SYSTEM_PROMPT = `You are a board-certified entomologist and senior pest control specialist with 20+ years of field experience across Long Island, New York (Nassau and Suffolk Counties). You specialize in identifying insects, arachnids, rodents, and wildlife common to the northeastern United States.
@@ -269,8 +270,6 @@ CRITICAL RULES FOR WASPS/HORNETS:
 
 If the image is not a pest (e.g. a plant, human, food), set name to "Not a Pest" and explain in description.
 If the image is too blurry or unclear, set confidence below 50 and explain in description what would help.`;
-
-
 export async function POST(request: Request) {
   try {
     const { image } = await request.json();
@@ -374,4 +373,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { calculateTax } from "@/lib/bookingEngine";
