@@ -32,10 +32,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       {showSplash && (
         <motion.div
           key="splash"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
+          initial={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
+          transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0a0a0a]"
         >
           {/* Logo Container */}
