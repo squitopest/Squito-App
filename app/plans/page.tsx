@@ -435,7 +435,7 @@ export default function ServicesPage() {
                     {isMonthly ? (
                       <div className="mt-1.5 flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                          <span className="line-through opacity-60">{plan.initialFee}</span> Initial fee
+                          + {plan.initialFee} initial fee
                         </span>
                       </div>
                     ) : (
