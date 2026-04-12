@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("id");
 
