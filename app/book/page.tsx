@@ -128,6 +128,25 @@ function BookForm() {
     }
   }, [initialPlan, initialService, billingCycle]);
 
+  // Trigger confetti when a Free Estimate completes successfully!
+  useEffect(() => {
+    if (status === "success") {
+      if (typeof window !== "undefined" && (window as any).Capacitor) {
+        haptics.success();
+      }
+      import("canvas-confetti").then((module) => {
+        const confetti = module.default;
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ["#6b9e11", "#a3e635", "#eab308"],
+          zIndex: 9999
+        });
+      }).catch(err => console.warn("Confetti load failed", err));
+    }
+  }, [status]);
+
 
   const useMyLocation = useCallback(() => {
     if (!navigator.geolocation) {

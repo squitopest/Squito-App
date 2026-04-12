@@ -62,6 +62,18 @@ function SuccessContent() {
 
     if (Capacitor.isNativePlatform()) haptics.success();
 
+    // Trigger success confetti animation
+    import("canvas-confetti").then((module) => {
+      const confetti = module.default;
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#6b9e11", "#a3e635", "#eab308"],
+        zIndex: 9999
+      });
+    }).catch(err => console.warn("Confetti load failed", err));
+
     // Fetch booking details from Stripe session
     const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
     fetch(`${API_BASE}/api/checkout/session?id=${sessionId}`)
