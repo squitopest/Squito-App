@@ -83,52 +83,8 @@ export async function processBooking(data: Record<string, any>) {
   const resend = new Resend(resendApiKey);
 
   try {
-    // ── 1. Send admin notification ─────────────────────────────────────────
-    await resend.emails.send({
-      from: "Squito App <app@squitopestcontrol.com>",
-      to: "service@squitopestcontrol.com",
-      subject: `New App Booking: ${data.service}`,
-      html: `
-        <h2 style="color: #6B9E11;">New Booking Request from App</h2>
-        <p><strong>Name:</strong> ${data.name}</p>
-        <p><strong>Email:</strong> ${data.email}</p>
-        <p><strong>Phone:</strong> ${data.phone}</p>
-        <p><strong>Address:</strong> ${data.address}</p>
-        ${data.county ? `<p><strong>County:</strong> ${data.county} (Tax rate: ${((data.taxRate || 0) * 100).toFixed(3)}%)</p>` : ""}
-        ${data.coordinates ? `<p><strong>GPS:</strong> <a href="https://maps.google.com/?q=${data.coordinates.lat},${data.coordinates.lng}">${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lng.toFixed(6)}</a></p>` : ""}
-        <p><strong>Service:</strong> ${data.service}</p>
-        <p><strong>Subtotal:</strong> $${data.subtotal ?? "N/A"}</p>
-        <p><strong>Tax:</strong> $${data.taxAmount ?? "N/A"}</p>
-        <p><strong>Total Charged:</strong> $${data.totalCharged ?? "N/A"}</p>
-        <p><strong>Preferred Date:</strong> ${data.preferredDate || "Not specified"}</p>
-        <p><strong>Preferred Time:</strong> ${data.preferredTime || "Not specified"}</p>
-        <p><strong>Payment:</strong> ${data.isPaid ? "✅ Paid via Stripe" : "🆓 Free Estimate Request"}</p>
-      `,
-    });
+    console.log(`[BookingEngine] Processing: ${data.service} for ${data.email} (paid: ${data.isPaid})`);
 
-    // ── 2. Send customer confirmation ──────────────────────────────────────
-    await resend.emails.send({
-      from: "Squito Pest Control <service@squitopestcontrol.com>",
-      to: data.email,
-      subject: "Your Squito booking is confirmed! ✅",
-      html: `
-        <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto;">
-          <h2 style="color: #6B9E11;">Hi ${data.name},</h2>
-          <p>${data.isPaid ? "Your payment has been received and your booking is confirmed." : "Your free estimate request has been received."}</p>
-          <div style="background: #f7fbe8; border-radius: 12px; padding: 16px; margin: 20px 0;">
-            <p style="margin:4px 0;"><strong>Service:</strong> ${data.service.replace(/\s*\(.*\)$/, "")}</p>
-            <p style="margin:4px 0;"><strong>Address:</strong> ${data.address}</p>
-            ${data.preferredDate ? `<p style="margin:4px 0;"><strong>Appointment:</strong> ${data.preferredDate}${data.preferredTime ? ` at ${data.preferredTime}` : ""}</p>` : ""}
-            ${data.isPaid ? `<p style="margin:4px 0;"><strong>Amount Paid:</strong> $${data.totalCharged ?? data.subtotal}</p>` : ""}
-          </div>
-          <p>Our team will contact you shortly at <strong>${data.phone}</strong> to finalize scheduling.</p>
-          <br/>
-          <p>Stay pest-free,</p>
-          <p><strong>The Squito Team</strong></p>
-          <p style="font-size:11px; color:#999;">Squito Pest Control — Long Island, NY | service@squitopestcontrol.com</p>
-        </div>
-      `,
-    });
 
     // ── 3. Write to service_bookings ────────────────────────────────────────
     const userId = data.userId;
@@ -249,10 +205,7 @@ export async function processBooking(data: Record<string, any>) {
     }
 
     // ── 6. Send Confirmation Emails (Resend) ───────────────────────────────
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey) {
-      try {
-        const resend = new Resend(resendApiKey);
+    try {
 
         // A. Customer Confirmation Email
         await resend.emails.send({
@@ -289,7 +242,7 @@ export async function processBooking(data: Record<string, any>) {
         // B. Admin Notification Email
         await resend.emails.send({
           from: "Squito App <app@squitopestcontrol.com>",
-          to: "service@squitopestcontrol.com",
+          to: "service@getsquito.com",
           subject: `New ${data.isPaid ? "PAID BOOKING" : "Estimate Lead"}: ${data.service}`,
           html: `
             <h2>New Request via App</h2>
@@ -303,11 +256,8 @@ export async function processBooking(data: Record<string, any>) {
           `,
         });
         console.log(`[Email] Confirmations sent for ${data.email}`);
-      } catch (err: any) {
-        console.error("[Email Error] Failed to send Resend emails:", err);
-      }
-    } else {
-      console.warn("[Email] RESEND_API_KEY missing, skipping email delivery");
+    } catch (emailErr: any) {
+      console.error("[Email Error] Failed to send Resend emails:", emailErr);
     }
 
     return { ok: true, pointsAwarded, earnedAmount, isPaid: data.isPaid };
