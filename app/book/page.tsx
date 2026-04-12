@@ -57,6 +57,23 @@ const SERVICE_DESCRIPTIONS: Record<string, string> = {
   "Ultimate Fortress (yearly)": "Annual plan — save 10% vs monthly",
 };
 
+// ── Points per service (mirrors bookingEngine.ts determinePoints) ────────────
+const SERVICE_POINTS: Record<string, number> = {
+  "Mosquito Barrier Spray ($119)": 75,
+  "Organic Mosquito & Tick Treatment ($99)": 75,
+  "Tick Treatment ($99)": 75,
+  "General & Full Property Pest Control ($299)": 125,
+  "Hornet & Wasp Removal ($349)": 150,
+  "Termite Inspection ($199)": 100,
+  "Free Estimate / Custom Quote": 0,
+  "Essential Defense (monthly)": 150,
+  "Premium Shield (monthly)": 200,
+  "Ultimate Fortress (monthly)": 300,
+  "Essential Defense (yearly)": 150,
+  "Premium Shield (yearly)": 200,
+  "Ultimate Fortress (yearly)": 300,
+};
+
 function BookForm() {
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan");
@@ -310,7 +327,7 @@ function BookForm() {
         className="mt-2 text-sm font-medium text-gray-500"
       >
         {user && !isGuest
-          ? "Earn 50 PestPoints with every booking! 🎉"
+          ? `Earn ${SERVICE_POINTS[formData.service] ?? 50} PestPoints with this booking! 🎉`
           : "Fast guest routing. No account required."}
       </motion.p>
 
@@ -551,7 +568,7 @@ function BookForm() {
                     className="inline-block text-[15px]"
                     animate={{ scale: [1, 1.15, 1] }}
                     transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 4 }}
-                  >+150 PestPoints</motion.span> on this booking!
+                  >+{SERVICE_POINTS[formData.service] ?? 50} PestPoints</motion.span> on this booking!
                 </p>
                 <p className="text-[11px] font-medium text-squito-green/70 mt-0.5">
                   Points increase with your tier. Higher tier = bigger rewards!

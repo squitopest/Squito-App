@@ -85,8 +85,8 @@ export async function processBooking(data: Record<string, any>) {
   try {
     // ── 1. Send admin notification ─────────────────────────────────────────
     await resend.emails.send({
-      from: "Squito App <onboarding@resend.dev>",
-      to: "service@getsquito.com",
+      from: "Squito App <app@squitopestcontrol.com>",
+      to: "service@squitopestcontrol.com",
       subject: `New App Booking: ${data.service}`,
       html: `
         <h2 style="color: #6B9E11;">New Booking Request from App</h2>
@@ -108,7 +108,7 @@ export async function processBooking(data: Record<string, any>) {
 
     // ── 2. Send customer confirmation ──────────────────────────────────────
     await resend.emails.send({
-      from: "Squito Pest Control <onboarding@resend.dev>",
+      from: "Squito Pest Control <service@squitopestcontrol.com>",
       to: data.email,
       subject: "Your Squito booking is confirmed! ✅",
       html: `
@@ -125,7 +125,7 @@ export async function processBooking(data: Record<string, any>) {
           <br/>
           <p>Stay pest-free,</p>
           <p><strong>The Squito Team</strong></p>
-          <p style="font-size:11px; color:#999;">Squito Pest Control — Long Island, NY | service@getsquito.com</p>
+          <p style="font-size:11px; color:#999;">Squito Pest Control — Long Island, NY | service@squitopestcontrol.com</p>
         </div>
       `,
     });

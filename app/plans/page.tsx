@@ -15,7 +15,7 @@ const services = [
     image: "/images/services/mosquito-spray.png",
     price: "$119",
     priceNum: 119,
-    points: 60,
+    points: 75,
     desc: "Full-yard barrier treatment that keeps mosquitoes away for up to 21 days.",
     popular: true,
   },
@@ -25,7 +25,7 @@ const services = [
     image: "/images/services/organic-treatment.png",
     price: "$99",
     priceNum: 99,
-    points: 50,
+    points: 75,
     desc: "Premium organic treatment for mosquitoes and ticks.",
   },
   {
@@ -34,7 +34,7 @@ const services = [
     image: "/images/services/tick-treatment.png",
     price: "$99",
     priceNum: 99,
-    points: 50,
+    points: 75,
     desc: "Targeted tick elimination for your lawn, garden beds, and wooded border.",
   },
   {
@@ -43,7 +43,7 @@ const services = [
     image: "/images/services/general-pest.png",
     price: "$299",
     priceNum: 299,
-    points: 150,
+    points: 125,
     desc: "Our most comprehensive single visit — full interior, exterior, and yard defense against all pests.",
   },
   {
@@ -52,7 +52,7 @@ const services = [
     image: "/images/services/hornet-wasp.png",
     price: "$349",
     priceNum: 349,
-    points: 175,
+    points: 150,
     desc: "Safe professional removal of hornet nests, wasp nests, and yellow jacket colonies.",
   },
   {
