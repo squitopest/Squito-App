@@ -58,19 +58,25 @@ echo "▶ Step 1/4 — Installing npm dependencies..."
 "$NPM_BIN" install --legacy-peer-deps
 echo "✅ npm install complete"
 
-# ── 4. Inject environment variables for the Next.js build ────────────────────
-# .env.local is gitignored. NEXT_PUBLIC_* vars must be present at build time
-# because Next.js bakes them into the client-side JS bundle.
-# Set these in Xcode Cloud → Environment Variables (mark as secret).
+# ── 4. Write build-time environment variables ────────────────────────────────
+# .env.local is gitignored so it must be created here before next build runs.
+#
+# WHY HARDCODED — NOT Xcode Cloud environment variables:
+# Xcode Cloud rejects URLs and JWT tokens as env var values (invalid value
+# error). This is fine because ALL NEXT_PUBLIC_* variables are intentionally
+# public — Next.js bakes them verbatim into the client JS bundle that any
+# user can read. They are not secrets. The real secrets (Stripe secret key,
+# Supabase service role key, etc.) live only in Vercel and are never needed
+# during this static iOS build.
 echo ""
-echo "▶ Step 2/4 — Injecting build-time environment variables..."
-cat > "$CI_WORKSPACE/.env.local" << EOF
-NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-NEXT_PUBLIC_ONESIGNAL_APP_ID=${NEXT_PUBLIC_ONESIGNAL_APP_ID}
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-EOF
+echo "▶ Step 2/4 — Writing build-time environment variables..."
+cat > "$CI_WORKSPACE/.env.local" << 'ENVEOF'
+NEXT_PUBLIC_SUPABASE_URL=https://gsbakbeoaurgzoodqpgt.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzYmFrYmVvYXVyZ3pvb2RxcGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODc1ODgsImV4cCI6MjA5MDc2MzU4OH0.dj0TtekIkUJoPfm6XZD4rdtymxNFFvI_tHri1uCbxhU
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51RIGNbRv4Y2X5bnMgMhX8iNzqBGcuMu6ayI93BBPZROLLWL13AjgOLFnojlzyt3Ahtbvlm9VOjrJSkHiNLH5QnoH00hKYFii9z
+NEXT_PUBLIC_ONESIGNAL_APP_ID=4512d5e3-d8cc-487d-88e5-eeac22698d0d
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyDRF0_NM0eAneG1ANWEKX9Lr-oCHEyw3uQ
+ENVEOF
 echo "✅ .env.local written for build"
 
 # ── 5. Build the static Next.js web bundle ────────────────────────────────────
