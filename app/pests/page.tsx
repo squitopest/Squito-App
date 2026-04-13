@@ -46,20 +46,20 @@ export default function PestsPage() {
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case "Severe Disease":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "bg-red-500/15 text-red-400 border-red-500/20";
       case "High Risk":
-        return "bg-orange-100 text-orange-800 border-orange-200";
+        return "bg-orange-500/15 text-orange-400 border-orange-500/20";
       case "Stinging":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
       case "Structural":
-        return "bg-amber-100 text-amber-800 border-amber-200";
+        return "bg-amber-500/15 text-amber-400 border-amber-500/20";
       case "Sanitary":
-        return "bg-purple-100 text-purple-800 border-purple-200";
+        return "bg-purple-500/15 text-purple-400 border-purple-500/20";
       case "Protected Species":
-        return "bg-emerald-100 text-emerald-800 border-emerald-300";
+        return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
       case "Nuisance":
       default:
-        return "bg-[#f4fae6] text-squito-green border-squito-green/20";
+        return "bg-squito-green/15 text-squito-green border-squito-green/20";
     }
   };
 
@@ -121,7 +121,7 @@ export default function PestsPage() {
 
 
   return (
-    <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8">
+    <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8 bg-[#0a0a0a]">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -133,10 +133,10 @@ export default function PestsPage() {
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-squito-green">
               Long Island, NY
             </span>
-            <h1 className="mt-1 font-display text-[2rem] font-bold leading-tight text-gray-900">
+            <h1 className="mt-1 font-display text-[2rem] font-bold leading-tight text-white">
               Pest Library
             </h1>
-            <p className="mt-1 text-[13px] text-gray-500 font-medium">
+            <p className="mt-1 text-[13px] text-white/50 font-medium">
               Most commonly identified across Nassau &amp; Suffolk
             </p>
           </div>
@@ -189,7 +189,7 @@ export default function PestsPage() {
               className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-bold transition-all ${
                 activeCategory === cat.value
                   ? "bg-squito-green text-white shadow-md shadow-squito-green/30"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-white/5 border border-white/10 text-white/50 hover:bg-white/10"
               }`}
             >
               {cat.label}
@@ -212,10 +212,10 @@ export default function PestsPage() {
             whileTap={{ scale: 0.94 }}
             onClick={() => setSelectedPest(pest)}
             key={pest.id}
-            className="flex cursor-pointer flex-col items-center p-4 rounded-[24px] bg-white border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] transition hover:border-squito-green/30 hover:shadow-[0_8px_20px_rgba(107,158,17,0.1)] relative overflow-hidden"
+            className="flex cursor-pointer flex-col items-center p-4 rounded-[24px] bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/8 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition hover:border-squito-green/30 hover:shadow-[0_8px_20px_rgba(107,158,17,0.1)] relative overflow-hidden active:scale-[0.96]"
           >
             {/* Circular Image Portrait */}
-            <div className="relative h-[88px] w-[88px] rounded-full overflow-hidden border-[3px] border-gray-100 shadow-md bg-gray-50">
+            <div className="relative h-[88px] w-[88px] rounded-full overflow-hidden border-[3px] border-white/10 shadow-md bg-[#111]">
               <Image
                 src={pest.image}
                 alt={pest.name}
@@ -225,10 +225,10 @@ export default function PestsPage() {
               />
             </div>
 
-            <h3 className="mt-3 font-display text-[14px] font-bold text-gray-900 leading-snug text-center">
+            <h3 className="mt-3 font-display text-[14px] font-bold text-white leading-snug text-center">
               {pest.name}
             </h3>
-            <p className="text-[10px] italic text-gray-400 mt-0.5 text-center truncate w-full">
+            <p className="text-[10px] italic text-white/30 mt-0.5 text-center truncate w-full">
               {pest.scientificName}
             </p>
 
@@ -244,8 +244,8 @@ export default function PestsPage() {
         {filteredPests.length === 0 && (
           <div className="col-span-2 text-center py-10">
             <span className="text-4xl opacity-50 mb-4 block">🧐</span>
-            <h3 className="text-sm font-bold text-gray-900">No pests found</h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <h3 className="text-sm font-bold text-white">No pests found</h3>
+            <p className="text-xs text-white/40 mt-1">
               Try adjusting your search or filter.
             </p>
           </div>
@@ -268,14 +268,14 @@ export default function PestsPage() {
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative flex h-[90vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-white shadow-2xl"
+              className="relative flex h-[90vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
             >
               <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
-                <div className="h-1.5 w-12 rounded-full bg-gray-300"></div>
+                <div className="h-1.5 w-12 rounded-full bg-white/20"></div>
               </div>
 
               {/* Hero Image */}
-              <div className="flex items-center justify-center pt-10 pb-4 bg-gradient-to-b from-gray-50 to-white">
+              <div className="flex items-center justify-center pt-10 pb-4 bg-gradient-to-b from-white/5 to-transparent">
                 <div className="relative h-[120px] w-[120px] rounded-full overflow-hidden border-4 border-white shadow-xl">
                   <Image
                     src={selectedPest.image}
@@ -288,14 +288,14 @@ export default function PestsPage() {
               </div>
 
               <div className="text-center px-6 pb-4">
-                <h2 className="font-display text-xl font-bold text-gray-900 leading-tight">
+                <h2 className="font-display text-xl font-bold text-white leading-tight">
                   {selectedPest.name}
                 </h2>
-                <p className="text-[12px] italic text-gray-500 mt-0.5">
+                <p className="text-[12px] italic text-white/40 mt-0.5">
                   {selectedPest.scientificName}
                 </p>
                 <div className="flex justify-center gap-2 mt-3">
-                  <span className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide bg-gray-100 text-gray-600">
+                  <span className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide bg-white/10 text-white/60">
                     {selectedPest.category}
                   </span>
                   <span
@@ -333,41 +333,41 @@ export default function PestsPage() {
                 <div className="space-y-5">
                   {/* Overview */}
                   <div>
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/30 mb-1.5">
                       Overview
                     </h3>
-                    <p className="text-[14px] leading-relaxed text-gray-700">
+                    <p className="text-[14px] leading-relaxed text-white/70">
                       {selectedPest.description}
                     </p>
                   </div>
 
                   {/* Danger */}
-                  <div className="rounded-2xl bg-red-50 p-4 border border-red-100">
-                    <h3 className="flex items-center text-[12px] font-bold text-red-700 mb-1.5 uppercase tracking-wide">
+                  <div className="rounded-2xl bg-red-500/10 p-4 border border-red-500/20">
+                    <h3 className="flex items-center text-[12px] font-bold text-red-400 mb-1.5 uppercase tracking-wide">
                       <span className="mr-2 text-lg">⚠️</span> Danger to Family
                     </h3>
-                    <p className="text-[13px] font-medium leading-relaxed text-gray-800">
+                    <p className="text-[13px] font-medium leading-relaxed text-white/70">
                       {selectedPest.dangerToFamily}
                     </p>
                   </div>
 
                   {/* Signs of Infestation */}
                   <div>
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/30 mb-2">
                       🔎 Signs of Infestation
                     </h3>
                     <div className="space-y-2">
                       {selectedPest.signs.map((sign, i) => (
                         <div key={i} className="flex items-start gap-2.5">
                           <span className="mt-0.5 text-red-400 text-[12px]">●</span>
-                          <p className="text-[13px] text-gray-700 leading-snug">{sign}</p>
+                          <p className="text-[13px] text-white/70 leading-snug">{sign}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Prevention Tips */}
-                  <div className="rounded-2xl bg-[#f4fae6] p-4 border border-squito-green/20">
+                  <div className="rounded-2xl bg-squito-green/10 p-4 border border-squito-green/20">
                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-squito-green mb-2">
                       ✅ Prevention Tips
                     </h3>
@@ -375,7 +375,7 @@ export default function PestsPage() {
                       {selectedPest.prevention.map((tip, i) => (
                         <div key={i} className="flex items-start gap-2.5">
                           <span className="mt-0.5 text-squito-green text-[12px]">✓</span>
-                          <p className="text-[13px] text-gray-700 leading-snug">{tip}</p>
+                          <p className="text-[13px] text-white/70 leading-snug">{tip}</p>
                         </div>
                       ))}
                     </div>
@@ -383,30 +383,30 @@ export default function PestsPage() {
 
                   {/* Season & Life Cycle */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-gray-100 p-4">
-                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/30 mb-1.5">
                         📅 Seasonality
                       </h3>
-                      <p className="text-[13px] font-medium text-gray-800">
+                      <p className="text-[13px] font-medium text-white/70">
                         {selectedPest.season}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-gray-100 p-4">
-                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/30 mb-1.5">
                         🔄 Life Cycle
                       </h3>
-                      <p className="text-[13px] font-medium text-gray-800">
+                      <p className="text-[13px] font-medium text-white/70">
                         {selectedPest.lifeCycle}
                       </p>
                     </div>
                   </div>
 
                   {/* Fun Fact */}
-                  <div className="rounded-2xl bg-gradient-to-br from-squito-green/5 to-squito-green/10 p-4 border border-squito-green/15">
+                  <div className="rounded-2xl bg-squito-green/5 p-4 border border-squito-green/15">
                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-squito-green mb-1.5">
                       💡 Did You Know?
                     </h3>
-                    <p className="text-[13px] font-medium leading-relaxed text-gray-800 italic">
+                    <p className="text-[13px] font-medium leading-relaxed text-white/60 italic">
                       {selectedPest.funFact}
                     </p>
                   </div>
@@ -438,32 +438,31 @@ export default function PestsPage() {
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative flex h-[80vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-white shadow-2xl"
+              className="relative flex h-[80vh] w-full flex-col overflow-hidden rounded-t-[32px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
             >
               <div className="absolute top-4 left-0 right-0 flex justify-center">
-                <div className="h-1.5 w-12 rounded-full bg-gray-300"></div>
+                <div className="h-1.5 w-12 rounded-full bg-white/20"></div>
               </div>
 
-              <div className="flex items-center justify-between border-b border-gray-100 px-6 pb-4 pt-8">
+              <div className="flex items-center justify-between border-b border-white/10 px-6 pb-4 pt-8">
                 <div>
-                  <h2 className="font-display text-xl font-bold text-gray-900">
+                  <h2 className="font-display text-xl font-bold text-white">
                     Pest Identifier<span className="text-squito-green">✦</span>
                   </h2>
-                  <p className="text-[12px] text-gray-500 mt-0.5">
+                  <p className="text-[12px] text-white/40 mt-0.5">
                     Powered by AI • Photos processed securely
                   </p>
                 </div>
-                <GlassButton
-                  variant="icon"
+                <button
                   onClick={() => {
                     setIdentifyMode(false);
                     setIdentifyImage(null);
                     setIdentifyResult(null);
                   }}
-                  className="!h-8 !w-8 bg-gray-100 !border-transparent text-gray-500 text-sm hover:bg-gray-200 shadow-none"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 transition text-sm"
                 >
                   ✕
-                </GlassButton>
+                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto px-6 py-6 pb-20">
@@ -473,10 +472,10 @@ export default function PestsPage() {
                       <span className="text-7xl">🔬</span>
                     </div>
                     <div className="text-center">
-                      <h3 className="font-display text-lg font-bold text-gray-900">
+                      <h3 className="font-display text-lg font-bold text-white">
                         Snap or upload a photo
                       </h3>
-                      <p className="text-[13px] text-gray-500 mt-1 max-w-[250px]">
+                      <p className="text-[13px] text-white/40 mt-1 max-w-[250px]">
                         Our AI will analyze the image and identify the pest species instantly.
                       </p>
                     </div>
@@ -489,7 +488,7 @@ export default function PestsPage() {
                       </button>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 rounded-2xl bg-gray-100 px-6 py-3.5 text-[14px] font-bold text-gray-700 active:scale-95 transition"
+                        className="flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-6 py-3.5 text-[14px] font-bold text-white active:scale-95 transition"
                       >
                         🖼️ Upload
                       </button>
@@ -515,7 +514,7 @@ export default function PestsPage() {
                 ) : (
                   <div className="flex flex-col items-center gap-6">
                     {/* Preview */}
-                    <div className="relative h-[200px] w-[200px] rounded-3xl overflow-hidden border-2 border-gray-200 shadow-lg">
+                    <div className="relative h-[200px] w-[200px] rounded-3xl overflow-hidden border-2 border-white/10 shadow-lg">
                       <Image
                         src={identifyImage}
                         alt="Uploaded pest"
@@ -542,7 +541,7 @@ export default function PestsPage() {
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="w-full rounded-2xl bg-white border border-gray-200 shadow-lg p-5"
+                        className="w-full rounded-2xl bg-[#1a1a1a] border border-white/10 shadow-lg p-5"
                       >
                         {/* Header */}
                         <div className="flex items-start gap-4">
@@ -550,17 +549,17 @@ export default function PestsPage() {
                             🎯
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-display text-lg font-bold text-gray-900">
+                            <h3 className="font-display text-lg font-bold text-white">
                               {identifyResult.name}
                             </h3>
                             {identifyResult.scientificName && (
-                              <p className="text-[11px] italic text-gray-400 mt-0.5">{identifyResult.scientificName}</p>
+                              <p className="text-[11px] italic text-white/30 mt-0.5">{identifyResult.scientificName}</p>
                             )}
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border ${getRiskColor(identifyResult.dangerLevel || "Nuisance")}`}>
                                 {identifyResult.dangerLevel || "Unknown Risk"}
                               </span>
-                              <span className="text-[11px] text-gray-400 font-medium">
+                              <span className="text-[11px] text-white/30 font-medium">
                                 {identifyResult.confidence}% confidence
                               </span>
                             </div>
@@ -568,7 +567,7 @@ export default function PestsPage() {
                         </div>
 
                         {/* Description */}
-                        <p className="text-[13px] text-gray-600 mt-3 leading-relaxed">
+                        <p className="text-[13px] text-white/60 mt-3 leading-relaxed">
                           {identifyResult.description}
                         </p>
 
@@ -588,17 +587,17 @@ export default function PestsPage() {
 
                         {/* Visual Clues */}
                         {identifyResult.visualClues && (
-                          <div className="mt-3 rounded-xl bg-gray-50 border border-gray-100 px-3.5 py-3">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">🔬 What the AI Observed</p>
-                            <p className="text-[12px] text-gray-600 leading-snug">{identifyResult.visualClues}</p>
+                          <div className="mt-3 rounded-xl bg-white/5 border border-white/10 px-3.5 py-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-1">🔬 What the AI Observed</p>
+                            <p className="text-[12px] text-white/60 leading-snug">{identifyResult.visualClues}</p>
                           </div>
                         )}
 
                         {/* Recommendation */}
                         {identifyResult.recommendation && (
-                          <div className="mt-3 rounded-xl bg-amber-50 border border-amber-100 px-3.5 py-3">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-1">⚠️ Recommendation</p>
-                            <p className="text-[12px] text-gray-700 leading-snug font-medium">{identifyResult.recommendation}</p>
+                          <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1">⚠️ Recommendation</p>
+                            <p className="text-[12px] text-white/70 leading-snug font-medium">{identifyResult.recommendation}</p>
                           </div>
                         )}
 
@@ -612,9 +611,9 @@ export default function PestsPage() {
 
 
                     {identifyResult?.error && (
-                      <div className="w-full rounded-2xl bg-red-50 border border-red-100 p-5 text-center">
+                      <div className="w-full rounded-2xl bg-red-500/10 border border-red-500/20 p-5 text-center">
                         <span className="text-3xl">😕</span>
-                        <p className="text-[13px] text-red-700 mt-2 font-medium">
+                        <p className="text-[13px] text-red-400 mt-2 font-medium">
                           {identifyResult.error}
                         </p>
                       </div>
@@ -626,7 +625,7 @@ export default function PestsPage() {
                           setIdentifyImage(null);
                           setIdentifyResult(null);
                         }}
-                        className="text-[13px] font-bold text-gray-400 hover:text-gray-600 transition"
+                        className="text-[13px] font-bold text-white/30 hover:text-white/60 transition"
                       >
                         Try another photo
                       </button>
