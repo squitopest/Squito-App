@@ -19,31 +19,24 @@ echo "============================================================"
 echo "  Squito — Xcode Cloud post-clone setup"
 echo "============================================================"
 
-# ── 1. Locate Node.js ────────────────────────────────────────────────────────
-# Xcode Cloud agents ship with Node pre-installed. We do NOT use Homebrew —
-# it is slow, unreliable, and often exits non-zero in CI.
+# ── 1. Install / Locate Node.js ──────────────────────────────────────────────
+# Xcode Cloud agents have Homebrew pre-installed but NOT Node.js.
+# We check the PATH first (fast). If missing, we install via Homebrew (reliable).
 
-NODE_BIN=""
-for candidate in \
-    "/usr/local/bin/node" \
-    "/opt/homebrew/bin/node" \
-    "/usr/bin/node"; do
-  if [ -x "$candidate" ]; then
-    NODE_BIN="$candidate"
-    break
-  fi
-done
-
-if [ -z "$NODE_BIN" ]; then
-  echo "❌ ERROR: Node.js not found at any known path."
-  exit 1
+if command -v node > /dev/null 2>&1; then
+  echo "✅ Node already available: $(node --version)"
+else
+  echo "▶ Node.js not found — installing via Homebrew..."
+  brew install node
+  echo "✅ Node installed: $(node --version)"
 fi
 
-NPM_BIN="$(dirname "$NODE_BIN")/npm"
-NPX_BIN="$(dirname "$NODE_BIN")/npx"
+NODE_BIN=$(command -v node)
+NPM_BIN=$(command -v npm)
+NPX_BIN=$(command -v npx)
 
-echo "✅ Node: $("$NODE_BIN" --version)"
-echo "✅ npm:  $("$NPM_BIN" --version)"
+echo "✅ Node: $(node --version)  at $NODE_BIN"
+echo "✅ npm:  $(npm --version)   at $NPM_BIN"
 
 # ── 2. Move to the repository root ───────────────────────────────────────────
 # $CI_WORKSPACE is the Xcode Cloud variable pointing to the cloned repo root.
