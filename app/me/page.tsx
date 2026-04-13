@@ -102,16 +102,16 @@ function GuestCTA() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex min-h-full flex-col px-5 pb-10 pt-12 sm:px-8"
+      className="flex min-h-full flex-col px-5 pb-10 pt-12 sm:px-8 bg-[#0a0a0a]"
     >
       <div className="flex flex-col items-center pt-12">
-        <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full border-4 border-gray-300 bg-gray-100 shadow-md">
+        <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full border-4 border-white/20 bg-white/5 shadow-md">
           <span className="text-[40px]">👤</span>
         </div>
-        <h1 className="mt-4 font-display text-[22px] font-bold text-gray-900">
+        <h1 className="mt-4 font-display text-[22px] font-bold text-white">
           Guest Mode
         </h1>
-        <p className="mt-2 text-center text-[13px] font-medium text-gray-500 max-w-[280px]">
+        <p className="mt-2 text-center text-[13px] font-medium text-white/50 max-w-[280px]">
           You&apos;re browsing as a guest. Create an account to unlock the full
           Squito experience.
         </p>
@@ -126,15 +126,15 @@ function GuestCTA() {
         {/* Points upsell */}
         <motion.div
           variants={itemVariants}
-          className="rounded-3xl border border-squito-green/20 bg-[#f7fbe8] p-6 shadow-sm"
+          className="rounded-3xl border border-squito-green/20 bg-squito-green/10 p-6 shadow-sm"
         >
           <div className="flex items-center gap-3 mb-3">
             <span className="text-2xl">🎁</span>
-            <h2 className="font-bold text-gray-900">
+            <h2 className="font-bold text-white">
               PestPoints Await You
             </h2>
           </div>
-          <p className="text-[13px] text-gray-600 leading-relaxed">
+          <p className="text-[13px] text-white/60 leading-relaxed">
             Members earn points on every service, unlock exclusive rewards, and
             get priority routing. Sign up and get{" "}
             <strong className="text-squito-green">50 bonus points</strong>{" "}
@@ -145,9 +145,9 @@ function GuestCTA() {
         {/* What you're missing */}
         <motion.div
           variants={itemVariants}
-          className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+          className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
         >
-          <h2 className="font-bold text-gray-900 mb-4">
+          <h2 className="font-bold text-white mb-4">
             What you&apos;re missing
           </h2>
           {[
@@ -174,10 +174,10 @@ function GuestCTA() {
           ].map((item, idx) => (
             <div
               key={idx}
-              className={`flex items-center gap-3 py-3 ${idx > 0 ? "border-t border-gray-100" : ""}`}
+              className={`flex items-center gap-3 py-3 ${idx > 0 ? "border-t border-white/5" : ""}`}
             >
               <span className="text-lg">{item.icon}</span>
-              <span className="text-[13px] font-medium text-gray-700">
+              <span className="text-[13px] font-medium text-white/70">
                 {item.text}
               </span>
             </div>
@@ -197,15 +197,15 @@ function GuestCTA() {
         {/* Contact Card (available to guests too) */}
         <motion.div
           variants={itemVariants}
-          className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+          className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
         >
-          <h2 className="font-bold text-gray-900 mb-4">Contact Squito</h2>
+          <h2 className="font-bold text-white mb-4">Contact Squito</h2>
           <div className="flex flex-col gap-3">
             <a href="tel:6312031000" className="block outline-none">
-              <div className="flex items-center gap-4 rounded-2xl bg-[#f4fae6] p-4 text-squito-green transition-transform active:scale-95">
+              <div className="flex items-center gap-4 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-4 text-squito-green transition-transform active:scale-95">
                 <span className="text-xl">📞</span>
                 <div>
-                  <h3 className="font-bold text-[14px] text-gray-900 leading-none mb-1">
+                  <h3 className="font-bold text-[14px] text-white leading-none mb-1">
                     (631) 203-1000
                   </h3>
                   <p className="text-[11px] font-bold text-squito-green uppercase tracking-wide">
@@ -362,10 +362,10 @@ function AuthenticatedProfile() {
             className="flex flex-col items-center pt-8"
           >
             <ProfileAvatar avatarUrl={profile?.avatar_url || null} size={100} />
-            <h1 className="mt-4 font-display text-[22px] font-bold text-gray-900">
+            <h1 className="mt-4 font-display text-[22px] font-bold text-white">
               {displayName}&apos;s Account
             </h1>
-            <p className="text-[13px] font-medium text-gray-500">
+            <p className="text-[13px] font-medium text-white/50">
               {tierInfo.name} Member{" "}
               <span className="mx-1">•</span> {totalPoints} pts
             </p>
@@ -380,21 +380,21 @@ function AuthenticatedProfile() {
             {/* PestPoints Card */}
             <motion.div
               variants={itemVariants}
-              className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+              className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-bold text-gray-900">PestPoints</h2>
+                <h2 className="font-bold text-white">PestPoints</h2>
                 <span className="text-2xl font-bold text-squito-green">
                   {totalPoints} pts
                 </span>
               </div>
-              <p className="mt-3 text-[12px] font-medium text-gray-500">
+              <p className="mt-3 text-[12px] font-medium text-white/50">
                 {progress.nextTier
                   ? `${progress.pointsToNext} pts until ${progress.nextTier.name} tier`
                   : "You've reached the highest tier! 🎉"}
               </p>
 
-              <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-100 border border-gray-200">
+              <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-white/10 border border-white/5">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress.progress * 100}%` }}
@@ -420,9 +420,9 @@ function AuthenticatedProfile() {
             {/* Service History Card */}
             <motion.div
               variants={itemVariants}
-              className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+              className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
             >
-              <h2 className="font-bold text-gray-900 mb-4">Service history</h2>
+              <h2 className="font-bold text-white mb-4">Service history</h2>
 
               {loadingBookings ? (
                 <div className="py-8 text-center">
@@ -432,8 +432,8 @@ function AuthenticatedProfile() {
               ) : serviceBookings.length === 0 ? (
                 <div className="py-8 text-center">
                   <span className="text-4xl">🏠</span>
-                  <p className="mt-3 font-bold text-gray-900">No services yet</p>
-                  <p className="mt-1 text-[12px] text-gray-500">
+                  <p className="mt-3 font-bold text-white">No services yet</p>
+                  <p className="mt-1 text-[12px] text-white/50">
                     Book your first visit and it&apos;ll show here!
                   </p>
                   <Link href="/plans">
@@ -489,7 +489,7 @@ function AuthenticatedProfile() {
             {/* Account Settings Menu */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-col gap-[1px] overflow-hidden rounded-3xl border border-gray-100 bg-gray-100 shadow-sm"
+              className="flex flex-col gap-[1px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-sm"
             >
               {[
                 {
@@ -517,9 +517,9 @@ function AuthenticatedProfile() {
                 <Link
                   key={idx}
                   href={setting.route}
-                  className="flex items-center justify-between bg-white p-5 pr-6 transition-colors hover:bg-gray-50 active:bg-gray-100"
+                  className="flex items-center justify-between bg-[#1a1a1a] p-5 pr-6 transition-colors hover:bg-white/5 active:bg-white/10"
                 >
-                  <div className="flex items-center gap-4 text-gray-900">
+                  <div className="flex items-center gap-4 text-white">
                     <span className="text-[18px] opacity-80">
                       {setting.icon}
                     </span>
@@ -527,7 +527,7 @@ function AuthenticatedProfile() {
                       {setting.name}
                     </span>
                   </div>
-                  <span className="text-gray-300 font-bold text-lg leading-none mb-0.5">
+                  <span className="text-white/20 font-bold text-lg leading-none mb-0.5">
                     ›
                   </span>
                 </Link>
@@ -537,11 +537,11 @@ function AuthenticatedProfile() {
             {/* Sign Out Button (High Visibility) */}
             <motion.div
               variants={itemVariants}
-              className="mt-2 overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm"
+              className="mt-2 overflow-hidden rounded-3xl border border-red-500/20 bg-[#1a1a1a] shadow-sm"
             >
               <button
                 onClick={signOut}
-                className="w-full flex items-center justify-center bg-white p-4 text-[15px] font-bold text-red-500 transition-colors hover:bg-red-50 active:bg-red-100"
+                className="w-full flex items-center justify-center bg-[#1a1a1a] p-4 text-[15px] font-bold text-red-400 transition-colors hover:bg-red-500/10 active:bg-red-500/20"
               >
                 Sign Out
               </button>
@@ -550,15 +550,15 @@ function AuthenticatedProfile() {
             {/* Contact Card */}
             <motion.div
               variants={itemVariants}
-              className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+              className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
             >
-              <h2 className="font-bold text-gray-900 mb-4">Contact Squito</h2>
+              <h2 className="font-bold text-white mb-4">Contact Squito</h2>
               <div className="flex flex-col gap-3">
                 <a href="tel:6312031000" className="block outline-none">
-                  <div className="flex items-center gap-4 rounded-2xl bg-[#f4fae6] p-4 text-squito-green transition-transform active:scale-95">
+                  <div className="flex items-center gap-4 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-4 text-squito-green transition-transform active:scale-95">
                     <span className="text-xl">📞</span>
                     <div>
-                      <h3 className="font-bold text-[14px] text-gray-900 leading-none mb-1">
+                      <h3 className="font-bold text-[14px] text-white leading-none mb-1">
                         (631) 203-1000
                       </h3>
                       <p className="text-[11px] font-bold text-squito-green uppercase tracking-wide">
@@ -569,13 +569,13 @@ function AuthenticatedProfile() {
                 </a>
 
                 <a href="mailto:service@getsquito.com" className="block outline-none">
-                  <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 transition-transform active:scale-95 hover:bg-gray-50">
+                  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition-transform active:scale-95 hover:bg-white/10">
                     <span className="text-xl opacity-60">✉️</span>
                     <div>
-                      <h3 className="font-bold text-[14px] text-gray-900">
+                      <h3 className="font-bold text-[14px] text-white">
                         service@getsquito.com
                       </h3>
-                      <p className="text-[11px] font-medium text-gray-500">
+                      <p className="text-[11px] font-medium text-white/40">
                         We respond within the hour
                       </p>
                     </div>
@@ -586,7 +586,7 @@ function AuthenticatedProfile() {
 
             {/* App Version Footer */}
             <motion.div variants={itemVariants} className="text-center pt-2">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-gray-300">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-white/20">
                 App Version 1.0.4 (Build 822)
               </p>
             </motion.div>
@@ -598,22 +598,22 @@ function AuthenticatedProfile() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
-          className="flex min-h-full flex-col pt-12 pb-10"
+          className="flex min-h-full flex-col pt-12 pb-10 bg-[#0a0a0a]"
         >
           {/* Back Button */}
           <div className="px-5 pt-2 pb-2">
             <GlassButton
               variant="ghost"
-              className="text-gray-900 border border-gray-200"
+              className="text-white border border-white/15"
               onClick={() => setActiveView("profile")}
             >
               ← Back to Profile
             </GlassButton>
           </div>
 
-          <div className="bg-white px-5 pb-8 pt-4 border-b border-gray-100 shadow-sm sm:px-8">
+          <div className="bg-[#1a1a1a] px-5 pb-8 pt-4 border-b border-white/10 shadow-sm sm:px-8">
             <header className="flex items-center">
-              <span className="text-xl font-display font-bold tracking-wide text-gray-900">
+              <span className="text-xl font-display font-bold tracking-wide text-white">
                 Points & Rewards
               </span>
             </header>
@@ -632,10 +632,10 @@ function AuthenticatedProfile() {
               <div className="inline-flex rounded-full border border-squito-green bg-squito-green/10 px-4 py-1.5 text-xs font-bold tracking-wide text-squito-green drop-shadow-sm">
                 PestPoints
               </div>
-              <div className="mt-2 font-display text-[5.5rem] font-bold leading-none tracking-tight text-[#111]">
+              <div className="mt-2 font-display text-[5.5rem] font-bold leading-none tracking-tight text-white">
                 {totalPoints}
               </div>
-              <div className="mt-2 text-sm font-medium text-gray-500">
+              <div className="mt-2 text-sm font-medium text-white/50">
                 Your current balance <span className="mx-1.5">•</span>{" "}
                 {tierInfo.name} member
               </div>

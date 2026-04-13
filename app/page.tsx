@@ -362,12 +362,19 @@ const FeedItem = memo(function FeedItem({
         {/* Gamified Book Action */}
         <div className="mt-4 flex flex-col items-center gap-1.5">
           <Link href="/plans" className="outline-none" onClick={() => haptics.light()}>
-            <GlassButton
-              variant="primary"
-              className="flex h-[60px] w-[60px] !rounded-full items-center justify-center !p-0 bg-squito-green/80 dark:bg-squito-green/80 border-white/40 shadow-[0_0_20px_rgba(107,158,17,0.5)]"
+            <motion.div
+              animate={{
+                boxShadow: [
+                  "0 0 20px rgba(107,158,17,0.4)",
+                  "0 0 35px rgba(107,158,17,0.7)",
+                  "0 0 20px rgba(107,158,17,0.4)",
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="flex h-[60px] w-[60px] rounded-full items-center justify-center bg-squito-green/90 border border-white/30"
             >
               <CalendarIcon size={28} className="text-white" />
-            </GlassButton>
+            </motion.div>
           </Link>
           <span className="text-[10px] font-bold text-squito-green drop-shadow-md uppercase tracking-wider">
             Book Now
@@ -394,24 +401,23 @@ function CommentsDrawer({ post, onClose }: { post: FeedPost; onClose: () => void
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 z-50 flex h-[65%] flex-col rounded-t-[32px] bg-white shadow-2xl"
+        className="fixed bottom-0 left-0 right-0 z-50 flex h-[65%] flex-col rounded-t-[32px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-t border-white/10 shadow-2xl"
       >
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 pb-4 pt-6">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 pb-4 pt-6">
           <div>
-            <h2 className="font-display text-lg font-bold text-gray-900">
+            <h2 className="font-display text-lg font-bold text-white">
               {post.comments} Comments
             </h2>
-            <p className="text-xs font-semibold text-gray-400">
+            <p className="text-xs font-semibold text-white/40">
               Pests are absolutely furious...
             </p>
           </div>
-          <GlassButton
-            variant="icon"
+          <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center !p-0 bg-black/5 dark:bg-black/5 !border-none text-gray-500 shadow-none text-sm"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/20 transition text-sm"
           >
             ✕
-          </GlassButton>
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="flex flex-col gap-6 pb-20">
@@ -423,19 +429,19 @@ function CommentsDrawer({ post, onClose }: { post: FeedPost; onClose: () => void
                 key={`${post.id}-${idx}`}
                 className="flex gap-4"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-50 text-[26px] shadow-sm border border-gray-100">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 text-[26px] shadow-sm border border-white/5">
                   {comment.icon}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[13px] text-gray-900">{comment.user}</span>
-                    <span className="text-[11px] font-medium text-gray-400">{comment.time}</span>
+                    <span className="font-bold text-[13px] text-white">{comment.user}</span>
+                    <span className="text-[11px] font-medium text-white/30">{comment.time}</span>
                   </div>
-                  <p className="mt-1 text-[14px] leading-snug text-gray-700">{comment.text}</p>
+                  <p className="mt-1 text-[14px] leading-snug text-white/70">{comment.text}</p>
                 </div>
                 <div className="flex flex-col items-center gap-1 pt-1 opacity-40 hover:opacity-100 transition">
-                  <span className="text-lg">🤍</span>
-                  <span className="text-[10px] font-bold text-gray-500">{comment.likes}</span>
+                  <HeartIcon size={18} className="text-white/60" />
+                  <span className="text-[10px] font-bold text-white/40">{comment.likes}</span>
                 </div>
               </motion.div>
             ))}
