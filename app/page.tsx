@@ -34,13 +34,6 @@ const feedData = [
     likes: "22.1K", comments: "891", animation: undefined,
   },
   {
-    id: 4,
-    videoSrc: "/videos/video4.mp4",
-    username: "@squitoprotect",
-    description: "This nested right near the front door! Always leave aggressive removals to the professionals. We handled this safely, quickly, and effectively! 🐝⚡ #WaspRemoval",
-    likes: "15.7K", comments: "423", animation: undefined,
-  },
-  {
     id: 5,
     videoSrc: "/videos/video5.mp4",
     username: "@squitoprotect",
