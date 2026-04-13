@@ -10,7 +10,7 @@
 #   3. `cap sync` copies the built bundle into ios/App/App/public/ and
 #      registers all native Capacitor plugins with Xcode
 #
-# The three-step pipeline: npm install → next build → cap sync
+# The four-step pipeline: npm install → inject env vars → next build → cap sync
 # =============================================================================
 
 set -e  # Exit immediately on any error so failures are loud and clear
@@ -54,16 +54,31 @@ echo "✅ Working directory: $(pwd)"
 # --legacy-peer-deps prevents hard stops on minor peer version mismatches
 # that are common across the Capacitor plugin ecosystem.
 echo ""
-echo "▶ Step 1/3 — Installing npm dependencies..."
+echo "▶ Step 1/4 — Installing npm dependencies..."
 "$NPM_BIN" install --legacy-peer-deps
 echo "✅ npm install complete"
 
-# ── 4. Build the static Next.js web bundle ────────────────────────────────────
+# ── 4. Inject environment variables for the Next.js build ────────────────────
+# .env.local is gitignored. NEXT_PUBLIC_* vars must be present at build time
+# because Next.js bakes them into the client-side JS bundle.
+# Set these in Xcode Cloud → Environment Variables (mark as secret).
+echo ""
+echo "▶ Step 2/4 — Injecting build-time environment variables..."
+cat > "$CI_WORKSPACE/.env.local" << EOF
+NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+NEXT_PUBLIC_ONESIGNAL_APP_ID=${NEXT_PUBLIC_ONESIGNAL_APP_ID}
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+EOF
+echo "✅ .env.local written for build"
+
+# ── 5. Build the static Next.js web bundle ────────────────────────────────────
 # We temporarily hide app/api/ (backend API routes) because Next.js cannot
 # statically export routes that use server-only APIs (Stripe, Supabase, etc).
 # The iOS app calls these APIs at runtime on https://squito-app.vercel.app.
 echo ""
-echo "▶ Step 2/3 — Building static web bundle..."
+echo "▶ Step 3/4 — Building static web bundle..."
 
 API_DIR="$CI_WORKSPACE/app/api"
 API_HIDDEN="$CI_WORKSPACE/app/_api"
@@ -94,9 +109,9 @@ fi
 printf '%s' "$CONFIG_BACKUP" > "$CONFIG" && echo "  → Restored next.config.mjs"
 echo "✅ Static build complete (out/ generated)"
 
-# ── 5. Sync Capacitor — copies web bundle + registers native plugins ──────────
+# ── 6. Sync Capacitor — copies web bundle + registers native plugins ──────────
 echo ""
-echo "▶ Step 3/3 — Running cap sync..."
+echo "▶ Step 4/4 — Running cap sync..."
 "$NPX_BIN" cap sync ios
 echo "✅ cap sync complete — web bundle and plugins registered with Xcode"
 
