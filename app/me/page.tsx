@@ -655,8 +655,8 @@ function AuthenticatedProfile() {
                     key={idx}
                     className={`flex flex-col items-center justify-center rounded-xl py-3 border ${
                       isActive
-                        ? "border-squito-green bg-[#f7fbe8] shadow-[0_4px_15px_rgba(107,158,17,0.15)]"
-                        : "border-gray-100 bg-gray-50 shadow-sm"
+                        ? "border-squito-green bg-squito-green/10 shadow-[0_4px_15px_rgba(107,158,17,0.15)]"
+                        : "border-white/10 bg-white/5 shadow-sm"
                     }`}
                   >
                     <span
@@ -665,7 +665,7 @@ function AuthenticatedProfile() {
                       {tier.name}
                     </span>
                     <span
-                      className={`mt-1 text-xs font-bold sm:text-sm ${isActive ? "text-[#111]" : "text-gray-700"}`}
+                      className={`mt-1 text-xs font-bold sm:text-sm ${isActive ? "text-white" : "text-white/50"}`}
                     >
                       {tier.maxPoints
                         ? `${tier.minPoints}–${tier.maxPoints}`
@@ -682,15 +682,15 @@ function AuthenticatedProfile() {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="mt-8"
             >
-              <div className="flex justify-between text-xs font-bold text-gray-800">
+              <div className="flex justify-between text-xs font-bold text-white/70">
                 <span>{tierInfo.name} member</span>
-                <span className="text-gray-500">
+                <span className="text-white/40">
                   {progress.nextTier
                     ? `${progress.pointsToNext} pts to ${progress.nextTier.name}`
                     : "Max tier reached!"}
                 </span>
               </div>
-              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-100 border border-gray-200">
+              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/10 border border-white/5">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progress.progress * 100}%` }}
@@ -707,7 +707,7 @@ function AuthenticatedProfile() {
           </div>
 
           <div className="flex-1 px-5 pt-2 pb-10 sm:px-8">
-            <div className="flex border-b border-gray-200 px-2 pt-2">
+            <div className="flex border-b border-white/10 px-2 pt-2">
               {(["Earn", "Redeem", "History"] as const).map((tab) => (
                 <button
                   key={tab}
@@ -715,7 +715,7 @@ function AuthenticatedProfile() {
                   className={`flex-1 pb-4 text-center text-[13px] font-bold tracking-wide transition-colors ${
                     pointsTab === tab
                       ? "border-b-[3px] border-squito-green text-squito-green"
-                      : "text-gray-400 border-b-[3px] border-transparent hover:text-gray-600"
+                      : "text-white/30 border-b-[3px] border-transparent hover:text-white/50"
                   }`}
                 >
                   {tab}
@@ -732,7 +732,7 @@ function AuthenticatedProfile() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-gray-600 pr-4">
+                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-white/50 pr-4">
                     Every action earns you points toward free services and rewards.
                     {tierInfo.multiplier > 1 && (
                       <span className="ml-1 font-bold text-squito-green">
@@ -788,18 +788,18 @@ function AuthenticatedProfile() {
                           variants={itemVariants}
                           whileTap={{ scale: 0.96 }}
                           onClick={action.onClick}
-                          className="flex cursor-pointer items-center gap-4 rounded-3xl bg-white border border-gray-100 p-3 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                          className="flex cursor-pointer items-center gap-4 rounded-3xl bg-[#1a1a1a] border border-white/10 p-3 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-shadow hover:bg-white/5"
                         >
-                          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[#f4fae6]">
+                          <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-squito-green/10">
                             <span className="text-[22px] drop-shadow-sm">
                               {action.icon}
                             </span>
                           </div>
                           <div className="flex-1 space-y-0.5">
-                            <h3 className="font-display font-bold text-[14px] text-gray-900">
+                            <h3 className="font-display font-bold text-[14px] text-white">
                               {action.title}
                             </h3>
-                            <p className="text-[11px] font-medium text-gray-500">
+                            <p className="text-[11px] font-medium text-white/40">
                               {action.desc}
                             </p>
                           </div>
@@ -821,7 +821,7 @@ function AuthenticatedProfile() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.6, type: "spring", stiffness: 200, damping: 20 }}
-                    className="mt-10 rounded-2xl bg-[#f7fbe8] border border-squito-green/20 p-5 shadow-sm"
+                    className="mt-10 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-5 shadow-sm"
                   >
                     <div className="flex gap-4">
                       <span className="text-2xl drop-shadow-sm">💡</span>
@@ -844,11 +844,11 @@ function AuthenticatedProfile() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-gray-600 pr-4">
+                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-white/50 pr-4">
                     Use your PestPoints to redeem exclusive rewards and services.
                   </p>
 
-                  <div className="mt-2 mb-2 inline-flex items-center gap-2 rounded-full bg-[#f7fbe8] border border-squito-green/15 px-4 py-2">
+                  <div className="mt-2 mb-2 inline-flex items-center gap-2 rounded-full bg-squito-green/10 border border-squito-green/15 px-4 py-2">
                     <span className="text-sm">💰</span>
                     <span className="text-[13px] font-bold text-squito-green">
                       Redeemable: {redeemablePoints} pts
@@ -856,18 +856,18 @@ function AuthenticatedProfile() {
                   </div>
 
                   {/* 90-day expiration notice */}
-                  <div className="mb-6 flex items-start gap-2 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3">
+                  <div className="mb-6 flex items-start gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-3">
                     <span className="text-base mt-0.5">⏳</span>
-                    <p className="text-[11px] font-medium text-amber-700 leading-relaxed">
+                    <p className="text-[11px] font-medium text-amber-400 leading-relaxed">
                       Redeemed discounts expire <strong>90 days</strong> after redemption. One discount per booking. Discounts automatically apply at checkout.
                     </p>
                   </div>
 
                   {rewards.length === 0 ? (
-                    <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+                    <div className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 text-center shadow-sm">
                       <span className="text-4xl">🎁</span>
-                      <p className="mt-3 font-bold text-gray-900">Check back later!</p>
-                      <p className="mt-1 text-[12px] text-gray-500">
+                      <p className="mt-3 font-bold text-white">Check back later!</p>
+                      <p className="mt-1 text-[12px] text-white/40">
                         New exclusive rewards are being added to the catalog soon.
                       </p>
                     </div>
@@ -885,20 +885,20 @@ function AuthenticatedProfile() {
                           <motion.div
                             variants={itemVariants}
                             key={reward.id}
-                            className={`flex items-center gap-4 rounded-3xl border p-4 pr-3 shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-all ${
+                            className={`flex items-center gap-4 rounded-3xl border p-4 pr-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all ${
                               canAfford
-                                ? "border-squito-green/20 bg-white"
-                                : "border-gray-100 bg-gray-50 opacity-60"
+                                ? "border-squito-green/20 bg-[#1a1a1a]"
+                                : "border-white/5 bg-white/5 opacity-60"
                             }`}
                           >
-                            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[#f4fae6]">
+                            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-squito-green/10">
                               <span className="text-[22px]">{reward.icon}</span>
                             </div>
                             <div className="flex-1 space-y-0.5 min-w-0">
-                              <h3 className="font-display font-bold text-[14px] text-gray-900 truncate">
+                              <h3 className="font-display font-bold text-[14px] text-white truncate">
                                 {reward.name}
                               </h3>
-                              <p className="text-[11px] font-medium text-gray-500 line-clamp-2">
+                              <p className="text-[11px] font-medium text-white/40 line-clamp-2">
                                 {reward.description}
                               </p>
                             </div>
@@ -915,7 +915,7 @@ function AuthenticatedProfile() {
                                 className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${
                                   canAfford
                                     ? "bg-squito-green text-white shadow-sm active:scale-95"
-                                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                    : "bg-white/10 text-white/30 cursor-not-allowed"
                                 }`}
                               >
                                 {isRedeeming ? "..." : canAfford ? "Redeem" : "Locked"}
@@ -938,42 +938,42 @@ function AuthenticatedProfile() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-gray-600 pr-4 mb-4">
+                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-white/50 pr-4 mb-4">
                     Your recent points activity.
                   </p>
 
                   {pointsHistory.length === 0 ? (
-                    <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+                    <div className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 text-center shadow-sm">
                       <span className="text-4xl">📜</span>
-                      <p className="mt-3 font-bold text-gray-900">No activity yet</p>
-                      <p className="mt-1 text-[12px] text-gray-500">
+                      <p className="mt-3 font-bold text-white">No activity yet</p>
+                      <p className="mt-1 text-[12px] text-white/40">
                         Book a service or refer a friend to start earning!
                       </p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-0 rounded-3xl border border-gray-100 bg-white overflow-hidden shadow-sm">
+                    <div className="flex flex-col gap-0 rounded-3xl border border-white/10 bg-[#1a1a1a] overflow-hidden shadow-sm">
                       {pointsHistory.map((tx: any, idx: number) => (
                         <div
                           key={tx.id}
                           className={`flex items-center justify-between px-5 py-4 ${
-                            idx > 0 ? "border-t border-gray-100" : ""
+                            idx > 0 ? "border-t border-white/10" : ""
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <div
                               className={`flex h-9 w-9 items-center justify-center rounded-full text-sm ${
                                 tx.type === "earn"
-                                  ? "bg-[#f4fae6] text-squito-green"
-                                  : "bg-red-50 text-red-500"
+                                  ? "bg-squito-green/10 text-squito-green"
+                                  : "bg-red-500/10 text-red-400"
                               }`}
                             >
                               {tx.type === "earn" ? "+" : "−"}
                             </div>
                             <div>
-                              <p className="text-[13px] font-bold text-gray-900">
+                              <p className="text-[13px] font-bold text-white">
                                 {tx.reason}
                               </p>
-                              <p className="text-[11px] text-gray-400">
+                              <p className="text-[11px] text-white/30">
                                 {new Date(tx.created_at).toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric",
@@ -1016,24 +1016,24 @@ function AuthenticatedProfile() {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-sm rounded-[32px] bg-white p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-[32px] bg-[#1a1a1a]/95 backdrop-blur-2xl border border-white/10 p-6 shadow-2xl"
           >
-            <div className="mx-auto mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#f4fae6] shadow-inner">
+            <div className="mx-auto mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-squito-green/10 shadow-inner">
               <span className="text-[40px] drop-shadow-sm">{confirmModal.reward.icon}</span>
             </div>
-            <h3 className="text-center font-display text-xl font-bold text-gray-900">
+            <h3 className="text-center font-display text-xl font-bold text-white">
               Confirm Redemption
             </h3>
-            <p className="mt-3 text-center text-[14px] font-medium leading-relaxed text-gray-500 px-2">
+            <p className="mt-3 text-center text-[14px] font-medium leading-relaxed text-white/50 px-2">
               Are you sure you want to spend <strong className="text-squito-green">{confirmModal.reward.cost_points} points</strong> on{" "}
-              <span className="text-gray-800">{confirmModal.reward.name}</span>?
+              <span className="text-white/80">{confirmModal.reward.name}</span>?
             </p>
 
             <div className="mt-8 flex gap-3">
               <button
                 disabled={redeemingId !== null}
                 onClick={() => setConfirmModal({ isOpen: false, reward: null })}
-                className="flex-1 rounded-2xl bg-gray-100 py-3.5 text-[14px] font-bold text-gray-600 transition-colors active:bg-gray-200"
+                className="flex-1 rounded-2xl bg-white/10 py-3.5 text-[14px] font-bold text-white/60 transition-colors active:bg-white/15"
               >
                 Cancel
               </button>
@@ -1069,7 +1069,7 @@ export default function MePage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-center text-gray-500 font-bold">
+        <div className="p-8 text-center text-white/30 font-bold">
           Loading...
         </div>
       }
