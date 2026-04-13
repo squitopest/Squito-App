@@ -39,8 +39,11 @@ echo "✅ Node: $(node --version)  at $NODE_BIN"
 echo "✅ npm:  $(npm --version)   at $NPM_BIN"
 
 # ── 2. Move to the repository root ───────────────────────────────────────────
-# $CI_WORKSPACE is the Xcode Cloud variable pointing to the cloned repo root.
-cd "$CI_WORKSPACE"
+# $CI_WORKSPACE is unreliable — it may be empty on Xcode Cloud.
+# Instead, compute the repo root from this script's own location.
+# Script lives at: ios/App/ci_scripts/ci_post_clone.sh → 3 dirs up = repo root.
+REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$REPO_ROOT"
 echo "✅ Working directory: $(pwd)"
 
 # ── 3. Install all npm dependencies ──────────────────────────────────────────
@@ -63,7 +66,7 @@ echo "✅ npm install complete"
 # during this static iOS build.
 echo ""
 echo "▶ Step 2/4 — Writing build-time environment variables..."
-cat > "$CI_WORKSPACE/.env.local" << 'ENVEOF'
+cat > "$REPO_ROOT/.env.local" << 'ENVEOF'
 NEXT_PUBLIC_SUPABASE_URL=https://gsbakbeoaurgzoodqpgt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzYmFrYmVvYXVyZ3pvb2RxcGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODc1ODgsImV4cCI6MjA5MDc2MzU4OH0.dj0TtekIkUJoPfm6XZD4rdtymxNFFvI_tHri1uCbxhU
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51RIGNbRv4Y2X5bnMgMhX8iNzqBGcuMu6ayI93BBPZROLLWL13AjgOLFnojlzyt3Ahtbvlm9VOjrJSkHiNLH5QnoH00hKYFii9z
@@ -79,9 +82,9 @@ echo "✅ .env.local written for build"
 echo ""
 echo "▶ Step 3/4 — Building static web bundle..."
 
-API_DIR="$CI_WORKSPACE/app/api"
-API_HIDDEN="$CI_WORKSPACE/app/_api"
-CONFIG="$CI_WORKSPACE/next.config.mjs"
+API_DIR="$REPO_ROOT/app/api"
+API_HIDDEN="$REPO_ROOT/app/_api"
+CONFIG="$REPO_ROOT/next.config.mjs"
 
 # Backup the Next.js config and enable static export mode
 CONFIG_BACKUP=$(cat "$CONFIG")
