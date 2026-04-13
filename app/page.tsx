@@ -7,6 +7,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/haptics";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { WelcomeCarousel } from "@/components/WelcomeCarousel";
+import {
+  HeartIcon,
+  CommentIcon,
+  CalendarIcon,
+  SquitoMark,
+  UserPlusIcon,
+  MusicNoteIcon,
+  SoundBarsIcon,
+  VolumeOffIcon,
+} from "@/components/ui/FeedIcons";
 
 // ─── Local video feed ────────────────────────────────────────────────────────
 // Drop your 5 MP4 files into /public/videos/ as video1.mp4 … video5.mp4.
@@ -247,7 +257,7 @@ const FeedItem = memo(function FeedItem({
           {isMuted && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-20 pointer-events-none">
               <div className="rounded-full bg-black/40 px-4 py-2 backdrop-blur-md shadow-md flex items-center gap-2">
-                <span className="text-xl">🔇</span>
+                <VolumeOffIcon size={18} className="text-white" />
                 <span className="text-white font-bold tracking-wide text-xs">Tap to Unmute</span>
               </div>
             </div>
@@ -274,23 +284,7 @@ const FeedItem = memo(function FeedItem({
 
       {/* Playing Indicator (Fake TikTok top left) */}
       <div className="absolute left-4 top-6 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-md">
-        <div className="flex gap-1">
-          <motion.div
-            animate={{ height: [8, 16, 8] }}
-            transition={{ repeat: Infinity, duration: 0.8 }}
-            className="w-1 bg-squito-green rounded-full"
-          />
-          <motion.div
-            animate={{ height: [16, 8, 16] }}
-            transition={{ repeat: Infinity, duration: 0.8 }}
-            className="w-1 bg-squito-green rounded-full"
-          />
-          <motion.div
-            animate={{ height: [12, 18, 12] }}
-            transition={{ repeat: Infinity, duration: 0.8, delay: 0.2 }}
-            className="w-1 bg-squito-green rounded-full"
-          />
-        </div>
+        <SoundBarsIcon size={14} className="text-squito-green" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
           Following
         </span>
@@ -307,11 +301,8 @@ const FeedItem = memo(function FeedItem({
 
         {/* Music Ticker */}
         <div className="mt-2 flex items-center gap-2 text-xs font-bold text-white/80 pointer-events-auto">
-          <span
-            className="animate-spin text-sm"
-            style={{ animationDuration: "3s" }}
-          >
-            🎵
+          <span className="animate-spin" style={{ animationDuration: "3s" }}>
+            <MusicNoteIcon size={13} className="text-white/80" />
           </span>
           <span className="truncate drop-shadow-md">
             Original Audio - Squito Pest Defense
@@ -323,17 +314,14 @@ const FeedItem = memo(function FeedItem({
       <div className="absolute bottom-24 pb-[env(safe-area-inset-bottom)] right-4 flex flex-col items-center gap-6 z-10">
         {/* Profile Follow */}
         <div className="relative mb-2 flex flex-col items-center">
-          <div className="h-[50px] w-[50px] overflow-hidden rounded-full border-[2px] border-white bg-black">
-            <div className="flex h-full w-full items-center justify-center text-xl">
-              🏡
+          <div className="h-[50px] w-[50px] overflow-hidden rounded-full border-[2px] border-white bg-black/60 backdrop-blur-sm">
+            <div className="flex h-full w-full items-center justify-center">
+              <SquitoMark size={30} className="text-squito-green" />
             </div>
           </div>
-          <GlassButton
-            variant="icon"
-            className="absolute -bottom-3 flex h-[26px] w-[26px] !p-0 items-center justify-center bg-squito-green dark:bg-squito-green border border-white/40 shadow-sm"
-          >
-            +
-          </GlassButton>
+          <div className="absolute -bottom-2.5 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-squito-green border border-white/40 shadow-sm">
+            <UserPlusIcon size={12} className="text-white" />
+          </div>
         </div>
 
         {/* Like */}
@@ -341,15 +329,16 @@ const FeedItem = memo(function FeedItem({
           <GlassButton
             variant="icon"
             onClick={() => toggleLike(post.id)}
-            className="flex h-12 w-12 flex-col items-center justify-center text-[26px]"
+            className="flex h-12 w-12 flex-col items-center justify-center"
           >
-            {liked[post.id] ? (
-              <span className="text-squito-green drop-shadow-[0_0_12px_rgba(107,158,17,0.8)]">
-                ❤️
-              </span>
-            ) : (
-              <span className="text-white">🤍</span>
-            )}
+            <HeartIcon
+              filled={!!liked[post.id]}
+              size={28}
+              className={liked[post.id]
+                ? "text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.6)]"
+                : "text-white"
+              }
+            />
           </GlassButton>
           <span className="text-[13px] font-bold text-white drop-shadow-md">
             {post.likes}
@@ -361,9 +350,9 @@ const FeedItem = memo(function FeedItem({
           <GlassButton
             variant="icon"
             onClick={() => setCommentsOpen(post)}
-            className="flex h-12 w-12 items-center justify-center text-[24px]"
+            className="flex h-12 w-12 items-center justify-center"
           >
-            💬
+            <CommentIcon size={26} className="text-white" />
           </GlassButton>
           <span className="text-[13px] font-bold text-white drop-shadow-md">
             {post.comments}
@@ -377,7 +366,7 @@ const FeedItem = memo(function FeedItem({
               variant="primary"
               className="flex h-[60px] w-[60px] !rounded-full items-center justify-center !p-0 bg-squito-green/80 dark:bg-squito-green/80 border-white/40 shadow-[0_0_20px_rgba(107,158,17,0.5)]"
             >
-              <span className="text-[26px]">🗓️</span>
+              <CalendarIcon size={28} className="text-white" />
             </GlassButton>
           </Link>
           <span className="text-[10px] font-bold text-squito-green drop-shadow-md uppercase tracking-wider">
