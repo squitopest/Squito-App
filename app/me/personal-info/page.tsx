@@ -10,16 +10,16 @@ import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
 
 // ── Bug Avatar Options (same as OnboardingWizard) ──
 const BUG_AVATARS = [
-  { id: "caterpillar", emoji: "🐛", label: "Caterpillar", bg: "bg-lime-100" },
-  { id: "ant", emoji: "🐜", label: "Ant", bg: "bg-amber-100" },
-  { id: "mosquito", emoji: "🦟", label: "Mosquito", bg: "bg-sky-100" },
-  { id: "spider", emoji: "🕷️", label: "Spider", bg: "bg-purple-100" },
-  { id: "bee", emoji: "🐝", label: "Bee", bg: "bg-yellow-100" },
-  { id: "cricket", emoji: "🦗", label: "Cricket", bg: "bg-emerald-100" },
-  { id: "ladybug", emoji: "🐞", label: "Ladybug", bg: "bg-red-100" },
-  { id: "butterfly", emoji: "🦋", label: "Butterfly", bg: "bg-indigo-100" },
-  { id: "beetle", emoji: "🪲", label: "Beetle", bg: "bg-orange-100" },
-  { id: "tick", emoji: "🦠", label: "Tick", bg: "bg-teal-100" },
+  { id: "caterpillar", emoji: "🐛", label: "Caterpillar", bg: "bg-lime-500/20" },
+  { id: "ant", emoji: "🐜", label: "Ant", bg: "bg-amber-500/20" },
+  { id: "mosquito", emoji: "🦟", label: "Mosquito", bg: "bg-sky-500/20" },
+  { id: "spider", emoji: "🕷️", label: "Spider", bg: "bg-purple-500/20" },
+  { id: "bee", emoji: "🐝", label: "Bee", bg: "bg-yellow-500/20" },
+  { id: "cricket", emoji: "🦗", label: "Cricket", bg: "bg-emerald-500/20" },
+  { id: "ladybug", emoji: "🐞", label: "Ladybug", bg: "bg-red-500/20" },
+  { id: "butterfly", emoji: "🦋", label: "Butterfly", bg: "bg-indigo-500/20" },
+  { id: "beetle", emoji: "🪲", label: "Beetle", bg: "bg-orange-500/20" },
+  { id: "tick", emoji: "🦠", label: "Tick", bg: "bg-teal-500/20" },
 ];
 
 function getEmojiForAvatar(avatarUrl: string | null) {
@@ -158,26 +158,26 @@ export default function PersonalInfoPage() {
       );
     }
     return (
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 text-3xl shadow-inner border-4 border-gray-300">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-3xl shadow-inner border-4 border-white/20">
         👤
       </div>
     );
   };
 
   const inputClasses =
-    "mt-1 w-full border-none p-0 text-[16px] font-medium text-gray-900 focus:ring-0 bg-transparent outline-none";
+    "mt-1 w-full border-none p-0 text-[16px] font-medium text-white focus:ring-0 bg-transparent outline-none placeholder:text-white/20";
 
   return (
-    <div className="flex min-h-full flex-col bg-gray-50 pb-10">
+    <div className="flex min-h-full flex-col bg-[#0a0a0a] pb-10">
       {/* Header */}
-      <div className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-200 bg-white/70 px-5 py-4 backdrop-blur-2xl">
+      <div className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[#1a1a1a]/80 px-5 py-4 backdrop-blur-2xl">
         <Link
           href="/me"
           className="flex items-center text-[15px] font-semibold text-squito-green"
         >
           <span className="mr-1 text-xl leading-none">‹</span> Profile
         </Link>
-        <span className="absolute left-1/2 -translate-x-1/2 font-display text-[16px] font-bold text-gray-900">
+        <span className="absolute left-1/2 -translate-x-1/2 font-display text-[16px] font-bold text-white">
           Personal Info
         </span>
         <div className="w-16" /> {/* spacer for center alignment */}
@@ -196,12 +196,12 @@ export default function PersonalInfoPage() {
         </div>
 
         {/* Contact Details */}
-        <h2 className="mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-gray-500">
+        <h2 className="mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
           Contact Details
         </h2>
-        <div className="overflow-hidden rounded-[20px] bg-white border border-gray-200 shadow-sm">
-          <div className="flex flex-col px-5 py-3 border-b border-gray-100">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+        <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm">
+          <div className="flex flex-col px-5 py-3 border-b border-white/10">
+            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
               First Name
             </span>
             <input
@@ -213,8 +213,8 @@ export default function PersonalInfoPage() {
             />
           </div>
 
-          <div className="flex flex-col px-5 py-3 border-b border-gray-100">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+          <div className="flex flex-col px-5 py-3 border-b border-white/10">
+            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
               Last Name
             </span>
             <input
@@ -227,7 +227,7 @@ export default function PersonalInfoPage() {
           </div>
 
           <div className="flex flex-col px-5 py-3">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
               Phone Number
             </span>
             <input
@@ -241,12 +241,12 @@ export default function PersonalInfoPage() {
         </div>
 
         {/* Service Address */}
-        <h2 className="mt-8 mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-gray-500">
+        <h2 className="mt-8 mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
           Service Address
         </h2>
-        <div className="overflow-hidden rounded-[20px] bg-white border border-gray-200 shadow-sm">
+        <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm">
           <div className="flex flex-col px-5 py-3">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
               Full Address
             </span>
             <input
@@ -280,7 +280,7 @@ export default function PersonalInfoPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="mt-4 rounded-2xl bg-[#f7fbe8] border border-squito-green/20 p-4 text-center"
+              className="mt-4 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-4 text-center"
             >
               <p className="text-[13px] font-bold text-squito-green">
                 ✓ Profile updated successfully!
@@ -297,7 +297,7 @@ export default function PersonalInfoPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/60 backdrop-blur-sm"
             onClick={() => setShowAvatarPicker(false)}
           >
             <motion.div
@@ -306,17 +306,17 @@ export default function PersonalInfoPage() {
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg rounded-t-[28px] bg-white pb-10 pt-6 px-6 shadow-[0_-8px_40px_rgba(0,0,0,0.15)]"
+              className="w-full max-w-lg rounded-t-[28px] bg-[#1a1a1a]/95 backdrop-blur-2xl border-t border-white/10 pb-10 pt-6 px-6 shadow-[0_-8px_40px_rgba(0,0,0,0.3)]"
             >
               {/* Handle bar */}
               <div className="mb-4 flex justify-center">
-                <div className="h-1 w-10 rounded-full bg-gray-300" />
+                <div className="h-1 w-10 rounded-full bg-white/20" />
               </div>
 
-              <h2 className="text-center font-display text-[20px] font-bold text-gray-900 mb-1">
+              <h2 className="text-center font-display text-[20px] font-bold text-white mb-1">
                 Choose Your Avatar
               </h2>
-              <p className="text-center text-[13px] text-gray-500 font-medium mb-6">
+              <p className="text-center text-[13px] text-white/40 font-medium mb-6">
                 Pick a fun bug buddy or upload your own!
               </p>
 
@@ -332,7 +332,7 @@ export default function PersonalInfoPage() {
                       className={`relative flex flex-col items-center gap-1 rounded-2xl p-2.5 transition-all ${
                         isSelected
                           ? "bg-squito-green/10 border-2 border-squito-green shadow-sm"
-                          : "border-2 border-transparent hover:bg-gray-100"
+                          : "border-2 border-transparent hover:bg-white/5"
                       }`}
                     >
                       <div
@@ -340,7 +340,7 @@ export default function PersonalInfoPage() {
                       >
                         <span className="text-[24px]">{bug.emoji}</span>
                       </div>
-                      <span className="text-[9px] font-bold text-gray-500">
+                      <span className="text-[9px] font-bold text-white/40">
                         {bug.label}
                       </span>
                       {isSelected && (
@@ -369,10 +369,10 @@ export default function PersonalInfoPage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 py-4 transition hover:border-squito-green hover:bg-squito-green/5 active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/20 py-4 transition hover:border-squito-green hover:bg-squito-green/5 active:scale-[0.98]"
               >
                 <span className="text-xl">📷</span>
-                <span className="text-[14px] font-semibold text-gray-600">
+                <span className="text-[14px] font-semibold text-white/50">
                   {uploadingPhoto ? "Uploading..." : "Upload Your Own Photo"}
                 </span>
               </button>
@@ -381,7 +381,7 @@ export default function PersonalInfoPage() {
               <button
                 type="button"
                 onClick={() => setShowAvatarPicker(false)}
-                className="mt-4 w-full py-3 text-[14px] font-semibold text-gray-500"
+                className="mt-4 w-full py-3 text-[14px] font-semibold text-white/30"
               >
                 Cancel
               </button>

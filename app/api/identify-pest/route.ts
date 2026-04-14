@@ -32,8 +32,14 @@ Follow this exact visual analysis methodology:
 
 ### Step 4: Behavioral & Contextual Clues
 - Location context matters: attic = termites/rodents/cluster flies; kitchen = roaches/ants/fruit flies; bedroom = bed bugs/fleas; yard/garden = ticks/mosquitoes/wasps; wood structures = carpenter ants/termites
-- Damage patterns: sawdust = carpenter ants or termites; frass pellets = termites; grease marks = rodent runways
 - Season context for Long Island: Ticks peak Apr-Aug; Mosquitoes Jun-Sep; Yellow Jackets Aug-Oct; Stink Bugs Sep-Nov; Cluster Flies Oct-Mar
+
+### Step 4b: Property Damage Identification
+If an image shows physical damage instead of the pest itself, analyze the wood/material:
+- Subterranean Termites: Mud tubes along walls/foundation, hollowed-out wood along the grain, and soil/mud inside the galleries. 
+- Powderpost Beetles: Tiny, round "shot holes" in wood (1/16" to 1/8"), accompanied by extremely fine, flour-like dust (frass) falling beneath.
+- Carpenter Ants: Smooth, clean, sandpapered-looking galleries (no mud!), with piles of coarse sawdust (frass) kicked out nearby.
+- Dry Rot / Water Damage: Cubical cracking, crumbling wood, fungal growth, but NO distinct pest galleries, mud, or frass.
 
 ### Step 5: Confidence Calibration
 - 90-100%: Crystal clear image, all key features visible and unambiguous
@@ -251,11 +257,11 @@ Respond with ONLY this exact JSON. No markdown, no code fences, no explanation o
   "scientificName": "Exact Latin binomial (e.g. Vespula maculifrons)",
   "confidence": 87,
   "description": "2-3 sentences describing the specific pest, its key visual features you observed, and why it matters to Long Island homeowners. Be specific about what you see in the image.",
-  "dangerLevel": "Exactly one of: Severe Disease | High Risk | Structural | Sanitary | Stinging | Protected Species | Nuisance",
+  "dangerLevel": "Exactly one of: Severe Disease | High Risk | Structural | Sanitary | Stinging | Protected Species | Nuisance | Wood Damage | Beneficial | None",
   "isProtected": false,
   "matchedPestId": "exact-slug-from-database-above or null if not in database",
   "recommendation": "Specific, actionable recommendation. For bees: ALWAYS recommend a beekeeper, never extermination. For wasps: recommend professional treatment with urgency level. For harmless species: explain why no action needed.",
-  "visualClues": "Brief note on the specific features in this image that led to this identification — especially body hair (fuzzy vs smooth), waist width, wing position, color pattern"
+  "visualClues": "Brief note on the specific features in this image that led to this identification — especially body hair (fuzzy vs smooth), waist width, wing position, color pattern. Or if damage, note the mud, sawdust, or hole size."
 }
 
 CRITICAL RULES FOR BEES:
@@ -268,7 +274,13 @@ CRITICAL RULES FOR WASPS/HORNETS:
 - isProtected = false
 - Include urgency in recommendation (immediate professional vs DIY)
 
-If the image is not a pest (e.g. a plant, human, food), set name to "Not a Pest" and explain in description.
+CRITICAL RULES FOR HARMLESS INSECTS:
+- If the identified insect is not a pest (e.g., a butterfly, moth, praying mantis, or ladybug), identify it confidently but set dangerLevel to "Beneficial" or "None". Include in your recommendation that no pest control is required.
+
+CRITICAL RULES FOR PROPERTY DAMAGE:
+- If identifying damage instead of a bug (e.g., Termite mud tubes or Powderpost beetle frass), set dangerLevel to "Wood Damage", and make the name the type of damage (e.g., "Termite Mud Tube" or "Powderpost Beetle Damage"). Provide a high urgency recommendation.
+
+If the image is not a pest or related to a pest (e.g. a plant, human, food), set name to "Not a Bug/Damage" and explain in description.
 If the image is too blurry or unclear, set confidence below 50 and explain in description what would help.`;
 export async function POST(request: Request) {
   try {

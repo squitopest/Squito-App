@@ -112,11 +112,11 @@ function SuccessContent() {
   if (!sessionId) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center p-8 text-center pb-32">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-500/10">
           <span className="text-4xl">⚠️</span>
         </div>
-        <h1 className="font-display text-2xl font-bold text-gray-900">No session found</h1>
-        <p className="mt-3 text-sm font-medium text-gray-500 max-w-xs">Please try booking again.</p>
+        <h1 className="font-display text-2xl font-bold text-white">No session found</h1>
+        <p className="mt-3 text-sm font-medium text-white/50 max-w-xs">Please try booking again.</p>
         <Link href="/book" className="mt-8">
           <GlassButton variant="primary" className="bg-squito-green/90 dark:bg-squito-green px-8 py-3">
             Book Again
@@ -140,7 +140,7 @@ function SuccessContent() {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-        className="mt-8 mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-[#f4fae6]"
+        className="mt-8 mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-squito-green/10"
       >
         <motion.span
           initial={{ scale: 0, rotate: -45 }}
@@ -156,7 +156,7 @@ function SuccessContent() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="font-display text-3xl font-bold text-gray-900 text-center"
+        className="font-display text-3xl font-bold text-white text-center"
       >
         Payment Confirmed!
       </motion.h1>
@@ -164,7 +164,7 @@ function SuccessContent() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="mt-2 text-sm font-medium text-gray-500 text-center max-w-xs"
+        className="mt-2 text-sm font-medium text-white/50 text-center max-w-xs"
       >
         {isCartOrder
           ? `A receipt for your ${details.cartItems!.length} services has been sent to your email.`
@@ -177,7 +177,7 @@ function SuccessContent() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 20 }}
-          className="mt-6 w-full max-w-sm rounded-3xl border border-gray-100 bg-white shadow-lg overflow-hidden"
+          className="mt-6 w-full max-w-sm rounded-3xl border border-white/10 bg-[#1a1a1a] shadow-lg overflow-hidden"
         >
           {/* Card Header */}
           <div className="bg-gradient-to-r from-squito-green to-[#5a8c10] px-5 py-4">
@@ -192,23 +192,23 @@ function SuccessContent() {
           </div>
 
           {/* Detail Rows */}
-          <div className="divide-y divide-gray-50 px-5">
+          <div className="divide-y divide-white/5 px-5">
             {details.name && (
               <div className="flex items-center justify-between py-3">
-                <span className="text-[12px] text-gray-400 font-medium">Name</span>
-                <span className="text-[13px] font-bold text-gray-800">{details.name}</span>
+                <span className="text-[12px] text-white/40 font-medium">Name</span>
+                <span className="text-[13px] font-bold text-white">{details.name}</span>
               </div>
             )}
             {details.address && (
               <div className="flex items-start justify-between gap-3 py-3">
-                <span className="text-[12px] text-gray-400 font-medium shrink-0">Address</span>
-                <span className="text-[13px] font-bold text-gray-800 text-right">{details.address}</span>
+                <span className="text-[12px] text-white/40 font-medium shrink-0">Address</span>
+                <span className="text-[13px] font-bold text-white text-right">{details.address}</span>
               </div>
             )}
             {details.preferredDate && (
               <div className="flex items-center justify-between py-3">
-                <span className="text-[12px] text-gray-400 font-medium">Appointment</span>
-                <span className="text-[13px] font-bold text-gray-800">
+                <span className="text-[12px] text-white/40 font-medium">Appointment</span>
+                <span className="text-[13px] font-bold text-white">
                   {new Date(details.preferredDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                   {details.preferredTime && ` at ${details.preferredTime}`}
                 </span>
@@ -218,17 +218,17 @@ function SuccessContent() {
             {/* Cart items breakdown */}
             {isCartOrder && details.cartItems && (
               <div className="py-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Services</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Services</p>
                 {details.cartItems.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between py-1.5">
-                    <span className="text-[12px] font-medium text-gray-700">
+                    <span className="text-[12px] font-medium text-white/70">
                       {item.service.replace(/\s*\(.*\)$/, "")}
                     </span>
                     <div className="flex items-center gap-2">
                       {item.points > 0 && (
                         <span className="text-[10px] font-bold text-squito-green">+{item.points} pts</span>
                       )}
-                      <span className="text-[12px] font-bold text-gray-800">
+                      <span className="text-[12px] font-bold text-white">
                         ${(item.priceCents / 100).toFixed(2)}
                       </span>
                     </div>
@@ -240,15 +240,15 @@ function SuccessContent() {
             {/* Discount applied */}
             {details.discountCents && details.discountCents > 0 && (
               <div className="flex items-center justify-between py-3">
-                <span className="text-[12px] text-emerald-600 font-medium">🎁 PestPoints Discount</span>
-                <span className="text-[13px] font-bold text-emerald-600">
+                <span className="text-[12px] text-emerald-500 font-medium">🎁 PestPoints Discount</span>
+                <span className="text-[13px] font-bold text-emerald-500">
                   -{formatAmount(details.discountCents, details.currency)}
                 </span>
               </div>
             )}
 
             <div className="flex items-center justify-between py-3">
-              <span className="text-[12px] text-gray-400 font-medium">Amount Paid</span>
+              <span className="text-[12px] text-white/40 font-medium">Amount Paid</span>
               <span className="text-[14px] font-bold text-squito-green">
                 {formatAmount(details.amountTotal, details.currency)}
               </span>
@@ -259,7 +259,7 @@ function SuccessContent() {
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="mt-6 w-full max-w-sm rounded-3xl border border-gray-100 bg-gray-50 p-5 animate-pulse h-44" />
+        <div className="mt-6 w-full max-w-sm rounded-3xl border border-white/10 bg-[#1a1a1a] p-5 animate-pulse h-44" />
       )}
 
       {/* PestPoints Banner */}
@@ -268,7 +268,7 @@ function SuccessContent() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-[#f7fbe8] border border-squito-green/20 px-5 py-3.5"
+          className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-squito-green/10 border border-squito-green/20 px-5 py-3.5"
         >
           <span className="text-xl">🎉</span>
           <p className="text-[12px] font-medium text-squito-green">
@@ -282,10 +282,10 @@ function SuccessContent() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-gray-100 px-5 py-3.5"
+          className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-white/5 border border-white/10 px-5 py-3.5"
         >
           <span className="text-xl">💡</span>
-          <p className="text-[12px] font-medium text-gray-600">
+          <p className="text-[12px] font-medium text-white/50">
             Create an account to earn <strong className="text-squito-green">PestPoints</strong> on every booking!
           </p>
         </motion.div>
@@ -303,7 +303,7 @@ function SuccessContent() {
             href={googleCalendarUrl(details)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-200 bg-white py-3 text-[12px] font-bold text-gray-700 shadow-sm active:scale-95 transition-transform"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#1a1a1a] py-3 text-[12px] font-bold text-white shadow-sm active:scale-95 transition-transform"
           >
             📅 Google Calendar
           </a>
@@ -311,7 +311,7 @@ function SuccessContent() {
             href={appleCalendarUrl(details)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-200 bg-white py-3 text-[12px] font-bold text-gray-700 shadow-sm active:scale-95 transition-transform"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#1a1a1a] py-3 text-[12px] font-bold text-white shadow-sm active:scale-95 transition-transform"
           >
             🍎 Apple Calendar
           </a>
@@ -345,11 +345,11 @@ function SuccessContent() {
 
 export default function BookSuccessPage() {
   return (
-    <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8">
+    <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8 bg-[#0a0a0a]">
       <Suspense
         fallback={
           <div className="flex min-h-[70vh] items-center justify-center">
-            <p className="text-gray-500 font-medium">Loading...</p>
+            <p className="text-white/50 font-medium">Loading...</p>
           </div>
         }
       >
