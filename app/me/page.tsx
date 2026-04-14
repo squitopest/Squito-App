@@ -74,6 +74,7 @@ function ProfileAvatar({
 
   if (avatarUrl && !avatarUrl.startsWith("emoji:")) {
     return (
+      /* eslint-disable-next-line @next/next/no-img-element */
       <img
         src={avatarUrl}
         alt="Avatar"

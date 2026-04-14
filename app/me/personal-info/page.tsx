@@ -150,6 +150,7 @@ export default function PersonalInfoPage() {
     }
     if (currentAvatarUrl) {
       return (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={currentAvatarUrl}
           alt="Your avatar"

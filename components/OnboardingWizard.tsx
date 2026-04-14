@@ -350,6 +350,7 @@ export function OnboardingWizard() {
               {customAvatarUrl ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={customAvatarUrl}
                       alt="Your avatar"
@@ -424,6 +425,7 @@ export function OnboardingWizard() {
                 className="relative"
               >
                 {avatarDisplay.type === "image" ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={avatarDisplay.url}
                     alt="Your avatar"

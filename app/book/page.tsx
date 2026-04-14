@@ -159,18 +159,18 @@ function BookForm() {
     }
   }, [profile, user]);
 
-  // Set service from query params (single-service mode only)
-  const SERVICE_MAP: Record<string, string> = {
-    "mosquito-barrier": "Mosquito Barrier Spray ($119)",
-    "organic-treatment": "Organic Mosquito & Tick Treatment ($99)",
-    "tick-treatment": "Tick Treatment ($99)",
-    "general-pest": "General & Full Property Pest Control ($299)",
-    "hornet-wasp": "Hornet & Wasp Removal ($349)",
-    "termite-inspection": "Termite Inspection ($199)",
-    "free-estimate": "Free Estimate / Custom Quote",
-  };
-
   useEffect(() => {
+    // Set service from query params (single-service mode only)
+    const SERVICE_MAP: Record<string, string> = {
+      "mosquito-barrier": "Mosquito Barrier Spray ($119)",
+      "organic-treatment": "Organic Mosquito & Tick Treatment ($99)",
+      "tick-treatment": "Tick Treatment ($99)",
+      "general-pest": "General & Full Property Pest Control ($299)",
+      "hornet-wasp": "Hornet & Wasp Removal ($349)",
+      "termite-inspection": "Termite Inspection ($199)",
+      "free-estimate": "Free Estimate / Custom Quote",
+    };
+
     if (initialService && SERVICE_MAP[initialService]) {
       setFormData((f) => ({ ...f, service: SERVICE_MAP[initialService] }));
     } else if (initialPlan) {

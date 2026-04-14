@@ -386,7 +386,7 @@ const FeedItem = memo(function FeedItem({
 });
 
 function CommentsDrawer({ post, onClose }: { post: FeedPost; onClose: () => void }) {
-  const videoComments = useMemo(() => generateCommentsForPost(post), [post.id, post.comments]);
+  const videoComments = useMemo(() => generateCommentsForPost(post), [post]);
   return (
     <>
       <motion.div

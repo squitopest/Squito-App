@@ -7,7 +7,8 @@
     "build": "node ./node_modules/next/dist/bin/next build",
     "build:ios": "node scripts/build-ios.js",
     "start": "node ./node_modules/next/dist/bin/next start",
-    "lint": "node ./node_modules/next/dist/bin/next lint"
+    "lint": "node ./node_modules/next/dist/bin/next lint",
+    "postinstall": "node scripts/patch-apple-sign-in.js"
   },
   "engines": {
     "node": ">=18.17.0"
