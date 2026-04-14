@@ -427,7 +427,7 @@ function AuthenticatedProfile() {
               {loadingBookings ? (
                 <div className="py-8 text-center">
                   <span className="text-3xl">⏳</span>
-                  <p className="mt-2 text-[13px] text-gray-400 font-medium">Loading...</p>
+                  <p className="mt-2 text-[13px] text-white/40 font-medium">Loading...</p>
                 </div>
               ) : serviceBookings.length === 0 ? (
                 <div className="py-8 text-center">
@@ -449,10 +449,10 @@ function AuthenticatedProfile() {
                 <div className="flex flex-col gap-0">
                   {serviceBookings.map((booking: any, idx: number) => {
                     const statusColors: Record<string, string> = {
-                      complete: "bg-[#f4fae6] text-squito-green",
-                      scheduled: "bg-blue-50 text-blue-600",
-                      in_progress: "bg-amber-50 text-amber-600",
-                      cancelled: "bg-red-50 text-red-500",
+                      complete: "bg-squito-green/15 text-squito-green",
+                      scheduled: "bg-blue-500/15 text-blue-400",
+                      in_progress: "bg-amber-500/15 text-amber-400",
+                      cancelled: "bg-red-500/15 text-red-400",
                     };
                     const statusColor = statusColors[booking.status] || statusColors.scheduled;
                     const displayDate = booking.scheduled_date
@@ -466,13 +466,13 @@ function AuthenticatedProfile() {
                     return (
                       <div
                         key={booking.id}
-                        className={`flex items-center justify-between py-4 ${idx > 0 ? "border-t border-gray-100" : ""}`}
+                        className={`flex items-center justify-between py-4 ${idx > 0 ? "border-t border-white/10" : ""}`}
                       >
                         <div>
-                          <h3 className="font-bold text-[14px] text-gray-900">
+                          <h3 className="font-bold text-[14px] text-white">
                             {booking.service_type}
                           </h3>
-                          <p className="text-[12px] text-gray-500 mt-0.5">
+                          <p className="text-[12px] text-white/50 mt-0.5">
                             {displayDate}
                           </p>
                         </div>
@@ -660,7 +660,7 @@ function AuthenticatedProfile() {
                     }`}
                   >
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider sm:text-xs ${isActive ? "text-squito-green" : "text-gray-400"}`}
+                      className={`text-[10px] font-bold uppercase tracking-wider sm:text-xs ${isActive ? "text-squito-green" : "text-white/40"}`}
                     >
                       {tier.name}
                     </span>
