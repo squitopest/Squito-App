@@ -45,6 +45,8 @@ interface AuthState {
   continueAsGuest: () => void;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string; success?: boolean }>;
+  signInWithGoogle: () => Promise<{ error?: string }>;
+  signInWithApple: () => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -239,6 +241,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true };
   };
 
+  const signInWithGoogle = async () => {
+    if (!supabase) return { error: "Supabase not configured." };
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "com.squito.app://auth/callback",
+      },
+    });
+    setIsLoading(false);
+    if (error) return { error: error.message };
+    return {};
+  };
+
+  const signInWithApple = async () => {
+    if (!supabase) return { error: "Supabase not configured." };
+    
+    let isNative = false;
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      isNative = Capacitor.isNativePlatform();
+    } catch (e) {}
+
+    if (isNative) {
+      try {
+        const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
+        const result = await SignInWithApple.authorize({
+          clientId: "com.squito.app", // Fallback, Supabase/Apple native ignores this on iOS but requires it for web
+          redirectURI: "https://squito-app.vercel.app/api/auth/callback",
+          scopes: "email name",
+        });
+        
+        if (result.response && result.response.identityToken) {
+          setIsLoading(true);
+          const { error } = await supabase.auth.signInWithIdToken({
+            provider: "apple",
+            token: result.response.identityToken,
+          });
+          setIsLoading(false);
+          if (error) return { error: error.message };
+          return {};
+        } else {
+          return { error: "Apple login cancelled." };
+        }
+      } catch (err: any) {
+        return { error: err.message || "Apple login failed natively." };
+      }
+    } else {
+      // Web fallback
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: {
+          redirectTo: "com.squito.app://auth/callback",
+        },
+      });
+      setIsLoading(false);
+      if (error) return { error: error.message };
+      return {};
+    }
+  };
+
   const signOutAction = async () => {
     if (supabase) await supabase.auth.signOut();
     setUser(null);
@@ -274,6 +338,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         continueAsGuest,
         refreshProfile,
         resetPassword,
+        signInWithGoogle,
+        signInWithApple,
       }}
     >
       {children}
