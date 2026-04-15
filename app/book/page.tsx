@@ -609,7 +609,7 @@ function BookForm() {
                 setGpsAccuracy(null);
               }
             }}
-            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-sm shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
+            className="w-full rounded-2xl border border-white/10 bg-[#1a1a1a] px-4 py-3.5 text-sm text-white placeholder:text-white/30 shadow-sm outline-none transition focus:border-squito-green focus:ring-1 focus:ring-squito-green"
           />
           {gpsAccuracy !== null && coordinates && (
             <motion.div
@@ -910,7 +910,7 @@ export default function BookPage() {
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mt-6 font-display text-[2rem] font-bold leading-tight text-gray-900"
+        className="mt-6 font-display text-[2rem] font-bold leading-tight text-white"
       >
         Book a Service
       </motion.h1>

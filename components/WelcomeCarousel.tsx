@@ -19,7 +19,7 @@ const slides = [
     emoji: "📸",
     title: "AI Pest Identifier",
     desc: "Found a creepy crawler? Snap a pic and our Squito AI will immediately identify the threat.",
-    color: "bg-blue-50",
+    color: "bg-blue-500/10",
     iconColor: "text-blue-500",
   },
   {
@@ -27,7 +27,7 @@ const slides = [
     emoji: "🗓️",
     title: "Smart Booking",
     desc: "Instant booking, this is what Pest Control should be!",
-    color: "bg-orange-50",
+    color: "bg-orange-500/10",
     iconColor: "text-orange-500",
   },
   {
@@ -35,7 +35,7 @@ const slides = [
     emoji: "🎁",
     title: "Earn PestPoints",
     desc: "Earn PestPoints when you book services and refer neighbors. Start earning today!",
-    color: "bg-purple-50",
+    color: "bg-purple-500/10",
     iconColor: "text-purple-500",
   },
 ];
@@ -86,13 +86,13 @@ export function WelcomeCarousel() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex flex-col bg-white"
+          className="fixed inset-0 z-[9999] flex flex-col bg-[#09090b]"
         >
           {/* Header / Skip */}
           <div className="flex items-center justify-end px-6 pt-safe-top mt-4">
             <button
               onClick={handleSkip}
-              className="text-[14px] font-bold text-gray-400 active:text-gray-600 transition"
+              className="text-[14px] font-bold text-white/40 active:text-white/60 transition"
             >
               Skip
             </button>
@@ -130,7 +130,7 @@ export function WelcomeCarousel() {
                     damping: 20,
                     delay: 0.1,
                   }}
-                  className={`flex h-40 w-40 items-center justify-center rounded-[40px] ${slides[currentSlide].color} shadow-sm border border-black/5`}
+                  className={`flex h-40 w-40 items-center justify-center rounded-[40px] ${slides[currentSlide].color} shadow-sm border border-white/10`}
                 >
                   <span className={`text-[80px] drop-shadow-md`}>
                     {slides[currentSlide].emoji}
@@ -141,7 +141,7 @@ export function WelcomeCarousel() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="mt-10 font-display text-3xl font-bold text-gray-900"
+                  className="mt-10 font-display text-3xl font-bold text-white/90"
                 >
                   {slides[currentSlide].title}
                 </motion.h1>
@@ -150,7 +150,7 @@ export function WelcomeCarousel() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="mt-4 text-[16px] font-medium leading-relaxed text-gray-500 max-w-[280px]"
+                  className="mt-4 text-[16px] font-medium leading-relaxed text-white/50 max-w-[280px]"
                 >
                   {slides[currentSlide].desc}
                 </motion.p>
@@ -168,7 +168,7 @@ export function WelcomeCarousel() {
                   className={`h-2 rounded-full transition-all duration-300 ${
                     idx === currentSlide
                       ? "w-8 bg-squito-green"
-                      : "w-2 bg-gray-200"
+                      : "w-2 bg-white/10"
                   }`}
                 />
               ))}

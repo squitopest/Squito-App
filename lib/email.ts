@@ -8,10 +8,8 @@ function getResend(): Resend | null {
   return _resend;
 }
 
-// Supabase Storage public URLs for email images
-const SUPABASE_STORAGE =
-  "https://gsbakbeoaurgzoodqpgt.supabase.co/storage/v1/object/public/email-assets";
-const LOGO_URL = `${SUPABASE_STORAGE}/squito_logo_v2.png`;
+const SUPABASE_STORAGE = "https://nwvvjnqjdpzwlzhvksse.supabase.co/storage/v1/object/public/email-assets";
+const LOGO_URL = `${SUPABASE_STORAGE}/squito_logo.png`;
 const FAMILY_URL = `${SUPABASE_STORAGE}/family_yard.png`;
 
 const WEBSITE = "https://www.squitopestcontrol.com";

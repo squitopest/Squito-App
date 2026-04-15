@@ -8,18 +8,22 @@ const config: CapacitorConfig = {
     // Allows loading local video/image assets
     androidScheme: 'https',
     iosScheme: 'capacitor',
-    allowNavigation: ['*.supabase.co', '*.cloudflarestream.com'],
+    allowNavigation: [
+      '*.supabase.co',
+      '*.cloudflarestream.com',
+      '*.stripe.com',
+    ],
   },
   plugins: {
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 300,
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#0a0a0a',
       showSpinner: false,
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#0a0a0a',
     },
     Keyboard: {
       resize: 'body',
@@ -30,7 +34,7 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     allowsLinkPreview: false,
     scrollEnabled: true,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#0a0a0a',
   },
 };
 

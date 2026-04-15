@@ -243,11 +243,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     if (!supabase) return { error: "Supabase not configured." };
+    
+    let isNative = false;
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      isNative = Capacitor.isNativePlatform();
+    } catch (e) {}
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
+    // Send users back to root page/localhost natively or on the web
+    const redirectUrl = isNative ? "com.squito.app://auth/callback" : origin;
+
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "com.squito.app://auth/callback",
+        redirectTo: redirectUrl,
       },
     });
     setIsLoading(false);
@@ -290,11 +301,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } else {
       // Web fallback
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "apple",
         options: {
-          redirectTo: "com.squito.app://auth/callback",
+          redirectTo: origin,
         },
       });
       setIsLoading(false);

@@ -133,7 +133,7 @@ export function OnboardingWizard() {
   if (!user || !profile || profile.onboarding_complete) return null;
 
   const inputClasses =
-    "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
+    "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-[15px] text-white/90 shadow-sm outline-none transition placeholder:text-white/30 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
 
   const avatarDisplay = getAvatarDisplay();
 
@@ -141,7 +141,7 @@ export function OnboardingWizard() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[9999] flex flex-col bg-gray-50"
+      className="fixed inset-0 z-[9999] flex flex-col bg-[#09090b]"
     >
       {/* Progress Bar */}
       <div className="relative px-6 pt-14 pb-2">
@@ -149,7 +149,7 @@ export function OnboardingWizard() {
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className="h-1.5 flex-1 rounded-full overflow-hidden bg-gray-200"
+              className="h-1.5 flex-1 rounded-full overflow-hidden bg-white/10"
             >
               <motion.div
                 initial={{ width: 0 }}
@@ -162,7 +162,7 @@ export function OnboardingWizard() {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-widest text-gray-400">
+        <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-widest text-white/40">
           Step {step} of 3
         </p>
       </div>
@@ -189,17 +189,17 @@ export function OnboardingWizard() {
                 >
                   👋
                 </motion.span>
-                <h1 className="font-display text-[24px] font-bold text-gray-900">
+                <h1 className="font-display text-[24px] font-bold text-white/90">
                   Let&apos;s set you up
                 </h1>
-                <p className="mt-1 text-[13px] text-gray-500 font-medium">
+                <p className="mt-1 text-[13px] text-white/50 font-medium">
                   Tell us a bit about yourself so we can serve you better.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                  <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                     Full Name <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -212,7 +212,7 @@ export function OnboardingWizard() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                  <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                     Phone Number
                   </label>
                   <input
@@ -225,7 +225,7 @@ export function OnboardingWizard() {
                 </div>
 
                 <div className="mt-2">
-                  <h2 className="mb-3 pl-1 text-[12px] font-bold uppercase tracking-wider text-gray-500">
+                  <h2 className="mb-3 pl-1 text-[12px] font-bold uppercase tracking-wider text-white/50">
                     Service Address <span className="text-red-400">*</span>
                   </h2>
                   <input
@@ -272,10 +272,10 @@ export function OnboardingWizard() {
                 >
                   🎨
                 </motion.span>
-                <h1 className="font-display text-[24px] font-bold text-gray-900">
+                <h1 className="font-display text-[24px] font-bold text-white/90">
                   Pick your avatar
                 </h1>
-                <p className="mt-1 text-[13px] text-gray-500 font-medium">
+                <p className="mt-1 text-[13px] text-white/50 font-medium">
                   Choose a fun bug buddy or upload your own photo.
                 </p>
               </div>
@@ -301,10 +301,10 @@ export function OnboardingWizard() {
                         setSelectedAvatar(bug.id);
                         setCustomAvatarUrl(null);
                       }}
-                      className={`relative flex flex-col items-center gap-1.5 rounded-2xl p-3 transition-all ${
+                      className={`relative flex flex-col items-center gap-1.5 rounded-2xl p-3 border-2 transition-all ${
                         isSelected
-                          ? "bg-squito-green/10 border-2 border-squito-green shadow-[0_4px_12px_rgba(107,158,17,0.2)]"
-                          : "border-2 border-transparent hover:bg-gray-100"
+                          ? "border-squito-green bg-white/10 scale-105"
+                          : "border-transparent bg-[#1a1a1a] hover:bg-white/5 hover:border-white/20"
                       }`}
                     >
                       <div
@@ -312,7 +312,9 @@ export function OnboardingWizard() {
                       >
                         <span className="text-[28px]">{bug.emoji}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-gray-500">
+                      <span className={`mt-2 text-[11px] font-bold ${
+                        isSelected ? "text-squito-green" : "text-white/50"
+                      }`}>
                         {bug.label}
                       </span>
                       {isSelected && (
@@ -331,11 +333,11 @@ export function OnboardingWizard() {
 
               {/* Divider */}
               <div className="my-5 flex items-center gap-4">
-                <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">
                   or
                 </span>
-                <div className="h-px flex-1 bg-gray-200" />
+                <div className="h-px flex-1 bg-white/10" />
               </div>
 
               {/* Upload Custom Photo */}
@@ -377,10 +379,10 @@ export function OnboardingWizard() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingPhoto}
-                  className="flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-300 py-5 transition hover:border-squito-green hover:bg-squito-green/5 active:scale-[0.98]"
+                  className="flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/10 py-5 transition hover:border-squito-green hover:bg-squito-green/5 active:scale-[0.98]"
                 >
                   <span className="text-2xl">📷</span>
-                  <span className="text-[14px] font-semibold text-gray-600">
+                  <span className="text-[14px] font-semibold text-white/60">
                     {uploadingPhoto ? "Uploading..." : "Upload Your Own Photo"}
                   </span>
                 </button>
@@ -391,7 +393,7 @@ export function OnboardingWizard() {
                 <GlassButton
                   variant="ghost"
                   onClick={() => setStep(1)}
-                  className="flex-1 py-4 text-[14px] text-gray-700 border border-gray-200"
+                  className="flex-1 py-4 text-[14px] text-white/70 border border-white/10"
                 >
                   ← Back
                 </GlassButton>
@@ -461,7 +463,7 @@ export function OnboardingWizard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="mt-6 font-display text-[28px] font-bold text-gray-900"
+                className="mt-6 font-display text-[28px] font-bold text-white"
               >
                 You&apos;re all set!
               </motion.h1>
@@ -470,7 +472,7 @@ export function OnboardingWizard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="mt-2 text-[14px] text-gray-500 font-medium max-w-[280px]"
+                className="mt-1 text-[13px] text-white/50 font-medium max-w-[260px] mx-auto"
               >
                 Welcome to the Squito family, {fullName.split(" ")[0]}. Let&apos;s keep your home pest-free.
               </motion.p>
@@ -480,40 +482,40 @@ export function OnboardingWizard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="mt-8 w-full rounded-3xl border border-gray-100 bg-white p-6 shadow-sm text-left"
+                className="mt-8 w-full rounded-3xl border border-white/10 bg-[#1a1a1a] p-6 shadow-sm text-left"
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">👤</span>
-                    <div>
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-white/50 mb-0.5">
                         Name
                       </p>
-                      <p className="text-[15px] font-semibold text-gray-900">
+                      <p className="font-medium text-[15px] truncate text-white/90">
                         {fullName}
                       </p>
                     </div>
                   </div>
                   {phone && (
-                    <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+                    <div className="flex items-center gap-3 border-t border-white/10 pt-4">
                       <span className="text-lg">📞</span>
-                      <div>
-                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-bold uppercase tracking-wider text-white/50 mb-0.5">
                           Phone
                         </p>
-                        <p className="text-[15px] font-semibold text-gray-900">
+                        <p className="font-medium text-[15px] truncate text-white/90">
                           {phone}
                         </p>
                       </div>
                     </div>
                   )}
-                  <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
+                  <div className="flex items-center gap-3 border-t border-white/10 pt-4">
                     <span className="text-lg">🏠</span>
-                    <div>
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-white/50 mb-0.5">
                         Service Address
                       </p>
-                      <p className="text-[15px] font-semibold text-gray-900">
+                      <p className="font-medium text-[15px] truncate text-white/90">
                         {serviceAddress}
                       </p>
                     </div>

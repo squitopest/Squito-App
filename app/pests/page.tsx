@@ -69,28 +69,63 @@ export default function PestsPage() {
 
   // Compress & normalize any image (HEIC, PNG, BMP, WebP) to JPEG < 1MB
   // so GPT-4o vision never throws "unsupported image" errors.
+  // Falls back to raw data URL if canvas rendering fails (e.g., HEIF on some iOS WKWebViews).
   const compressToJpeg = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
-      const img = new window.Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        const MAX = 1024;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-          else { width = Math.round((width * MAX) / height); height = MAX; }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { reject(new Error("Canvas not supported")); return; }
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      // Fallback: read file as raw data URL (skips canvas compression)
+      const fallbackRead = () => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Could not read image file"));
+        reader.readAsDataURL(file);
       };
-      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Image load failed")); };
-      img.src = objectUrl;
+
+      try {
+        const img = new window.Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        // If image doesn't load within 8s, use fallback
+        const timeout = setTimeout(() => {
+          URL.revokeObjectURL(objectUrl);
+          fallbackRead();
+        }, 8000);
+
+        img.onload = () => {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(objectUrl);
+          try {
+            const MAX = 1024;
+            let { width, height } = img;
+            if (width > MAX || height > MAX) {
+              if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+              else { width = Math.round((width * MAX) / height); height = MAX; }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) { fallbackRead(); return; }
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+            // Sanity check — canvas may produce an empty/tiny result for some formats
+            if (dataUrl && dataUrl.length > 100) {
+              resolve(dataUrl);
+            } else {
+              fallbackRead();
+            }
+          } catch {
+            fallbackRead();
+          }
+        };
+        img.onerror = () => {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(objectUrl);
+          fallbackRead();
+        };
+        img.src = objectUrl;
+      } catch {
+        fallbackRead();
+      }
     });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,10 +148,18 @@ export default function PestsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: jpeg }),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        setIdentifyResult({ error: errorData?.error || `Server error (${res.status}). Please try again.` });
+        return;
+      }
+
       const data = await res.json();
       setIdentifyResult(data);
     } catch (err: any) {
-      setIdentifyImage(null);
+      // DON'T clear identifyImage — keep the preview visible so the user
+      // sees their photo + the error, instead of snapping back to upload screen.
       setIdentifyResult({ error: err?.message || "Failed to process image. Please try again." });
     } finally {
       setIdentifying(false);

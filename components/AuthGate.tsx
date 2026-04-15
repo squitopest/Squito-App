@@ -158,13 +158,13 @@ export function AuthGate() {
   };
 
   const inputClasses =
-    "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
+    "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-[15px] text-white/90 shadow-sm outline-none transition placeholder:text-white/30 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[9998] flex flex-col bg-gray-50"
+      className="fixed inset-0 z-[9998] flex flex-col bg-[#09090b]"
     >
       {/* Top Section — Logo + Branding */}
       <div className="flex flex-col items-center pt-16 pb-6">
@@ -187,14 +187,14 @@ export function AuthGate() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-3 font-display text-sm font-bold tracking-wider text-gray-400"
+          className="mt-3 font-display text-sm font-bold tracking-wider text-white/40"
         >
           Smart. Safe. <span className="text-squito-green">Pest Control.</span>
         </motion.p>
       </div>
 
       {/* Tab Switcher */}
-      <div className="mx-6 flex overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+      <div className="mx-6 flex overflow-hidden rounded-2xl border border-white/10 bg-white/5">
         {(["login", "signup"] as AuthView[]).map((tab) => (
           <button
             key={tab}
@@ -205,8 +205,8 @@ export function AuthGate() {
             }}
             className={`flex-1 py-3 text-[13px] font-bold uppercase tracking-wider transition-all ${
               view === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-400 hover:text-gray-600"
+                ? "bg-white/10 text-white shadow-sm"
+                : "text-white/40 hover:text-white/60"
             }`}
           >
             {tab === "login" ? "Log In" : "Sign Up"}
@@ -228,7 +228,7 @@ export function AuthGate() {
               className="flex flex-col gap-4"
             >
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                   Email
                 </label>
                 <input
@@ -242,7 +242,7 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                   Password
                 </label>
                 <input
@@ -302,7 +302,7 @@ export function AuthGate() {
               className="flex flex-col gap-4"
             >
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                   Display Name
                 </label>
                 <input
@@ -316,7 +316,7 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                   Email
                 </label>
                 <input
@@ -330,7 +330,7 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                   Password
                 </label>
                 <input
@@ -344,7 +344,7 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
                   Confirm Password
                 </label>
                 <input
@@ -358,8 +358,8 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-gray-900">
-                  Referral Email <span className="font-medium text-gray-400">(Optional)</span>
+                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                  Referral Email <span className="font-medium text-white/40">(Optional)</span>
                 </label>
                 <input
                   type="email"
@@ -391,14 +391,14 @@ export function AuthGate() {
               </GlassButton>
 
               {/* Signup incentive */}
-              <div className="mt-1 flex items-center gap-2 rounded-2xl bg-[#f7fbe8] border border-squito-green/10 px-4 py-3">
+              <div className="mt-1 flex items-center gap-2 rounded-2xl bg-squito-green/10 border border-squito-green/20 px-4 py-3">
                 <span className="text-lg">🎁</span>
                 <p className="text-[12px] font-medium text-squito-green">
                   Sign up now and earn <strong>50 bonus PestPoints</strong> instantly!
                 </p>
               </div>
 
-              <p className="mt-2 text-center text-[11px] text-gray-400">
+              <p className="mt-2 text-center text-[11px] text-white/50">
                 By creating an account, you agree to our{" "}
                 <a href="/privacy" className="text-squito-green underline underline-offset-2 font-semibold">
                   Privacy Policy
@@ -410,18 +410,18 @@ export function AuthGate() {
 
         {/* Divider */}
         <div className="my-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-white/30">
             or
           </span>
-          <div className="h-px flex-1 bg-gray-200" />
+          <div className="h-px flex-1 bg-white/10" />
         </div>
 
         {/* Face ID Login (if credentials exist) */}
         {biometricAvailable && hasBiometricCreds && view === "login" && (
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-squito-green/30 bg-[#f4fae6] py-3.5 text-[15px] font-bold text-squito-green shadow-sm transition hover:bg-[#ebf8d2] active:scale-[0.98] mt-2"
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-squito-green/30 bg-squito-green/10 py-3.5 text-[15px] font-bold text-squito-green shadow-sm transition hover:bg-squito-green/20 active:scale-[0.98] mt-2"
             onClick={handleBiometricLogin}
             disabled={submitting}
           >
@@ -434,7 +434,7 @@ export function AuthGate() {
           <div className="flex flex-col gap-3">
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-gray-200 bg-white py-3.5 text-[15px] font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-black/40 py-3.5 text-[15px] font-semibold text-white/90 shadow-sm transition hover:bg-white/5 active:scale-[0.98]"
               onClick={async () => {
                 setSubmitting(true);
                 const res = await signInWithApple();
@@ -450,7 +450,7 @@ export function AuthGate() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-gray-200 bg-white py-3.5 text-[15px] font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-black/40 py-3.5 text-[15px] font-semibold text-white/90 shadow-sm transition hover:bg-white/5 active:scale-[0.98]"
               onClick={async () => {
                 setSubmitting(true);
                 const res = await signInWithGoogle();
@@ -476,11 +476,11 @@ export function AuthGate() {
           <button
             type="button"
             onClick={continueAsGuest}
-            className="w-full rounded-2xl border border-dashed border-gray-300 py-3.5 text-[14px] font-semibold text-gray-500 transition hover:border-gray-400 hover:text-gray-700 active:scale-[0.98]"
+            className="w-full rounded-2xl border border-dashed border-white/20 py-3.5 text-[14px] font-semibold text-white/50 transition hover:border-white/40 hover:text-white/70 active:scale-[0.98]"
           >
             Continue as Guest
           </button>
-          <p className="mt-2 text-center text-[11px] font-medium text-gray-400">
+          <p className="mt-2 text-center text-[11px] font-medium text-white/40">
             No PestPoints, no promotions, no saved preferences.
           </p>
         </div>
