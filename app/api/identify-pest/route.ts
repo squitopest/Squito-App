@@ -8,6 +8,27 @@ const identifyPestRateLimit = createRateLimiter({
   maxRequests: 5,
 });
 
+function extractMessageText(
+  content: unknown,
+): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (!part || typeof part !== "object") return "";
+        if (!("type" in part) || part.type !== "text") return "";
+        return "text" in part && typeof part.text === "string" ? part.text : "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return "";
+}
+
 const SYSTEM_PROMPT = `You are a board-certified entomologist and senior pest control specialist with 20+ years of field experience across Long Island, New York (Nassau and Suffolk Counties). You specialize in identifying insects, arachnids, rodents, and wildlife common to the northeastern United States.
 
 Your primary task is to analyze submitted photos and provide HIGHLY ACCURATE pest identifications. Your identifications are used by professional exterminators and concerned homeowners, so precision is critical.
@@ -330,6 +351,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "gpt-4o",
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
@@ -367,7 +389,7 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = extractMessageText(data.choices?.[0]?.message?.content);
 
     if (!content) {
       return NextResponse.json(

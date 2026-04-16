@@ -19,6 +19,8 @@ interface PestIdentifyResult {
   error?: string;
 }
 
+const DEFAULT_NATIVE_API_BASE = "https://squito-app.vercel.app";
+
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
@@ -79,24 +81,27 @@ export default function PestsPage() {
     }
   };
 
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+          return;
+        }
+        reject(new Error("Could not read image file"));
+      };
+      reader.onerror = () => reject(new Error("Could not read image file"));
+      reader.readAsDataURL(file);
+    });
+
   // Compress & normalize any image (HEIC, PNG, BMP, WebP) to JPEG < 1MB
   // so GPT-4o vision never throws "unsupported image" errors.
   // Falls back to raw data URL if canvas rendering fails (e.g., HEIF on some iOS WKWebViews).
   const compressToJpeg = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       // Fallback: read file as raw data URL (skips canvas compression)
-      const fallbackRead = () => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            resolve(reader.result);
-            return;
-          }
-          reject(new Error("Could not read image file"));
-        };
-        reader.onerror = () => reject(new Error("Could not read image file"));
-        reader.readAsDataURL(file);
-      };
+      const fallbackRead = () => readFileAsDataUrl(file).then(resolve).catch(reject);
 
       try {
         const img = new window.Image();
@@ -156,11 +161,17 @@ export default function PestsPage() {
     setIdentifyResult(null);
 
     try {
+      // Preserve the preview immediately so native photo-picker hiccups
+      // don't kick the user back to the empty upload state.
+      const preview = await readFileAsDataUrl(file);
+      setIdentifyImage(preview);
+
       const jpeg = await compressToJpeg(file);
-      setIdentifyImage(jpeg);
 
       const { Capacitor } = await import("@capacitor/core");
-      const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+      const API_BASE = Capacitor.isNativePlatform()
+        ? (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_NATIVE_API_BASE)
+        : "";
       const res = await fetch(`${API_BASE}/api/identify-pest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -179,6 +190,9 @@ export default function PestsPage() {
       }
 
       const data: PestIdentifyResult = await res.json();
+      if ((!data.name || !data.description) && !data.error) {
+        throw new Error("AI identification returned an incomplete result.");
+      }
       setIdentifyResult(data);
     } catch (err: unknown) {
       const message = err instanceof Error
