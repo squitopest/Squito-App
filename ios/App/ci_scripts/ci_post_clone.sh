@@ -117,6 +117,13 @@ echo "▶ Step 4/4 — Running cap sync..."
 "$NPX_BIN" cap sync ios
 echo "✅ cap sync complete — web bundle and plugins registered with Xcode"
 
+# Resolve Swift packages explicitly so Xcode Cloud doesn't rely on stale package
+# state when opening the project for archive/export.
+echo ""
+echo "▶ Resolving Swift package dependencies..."
+xcodebuild -project ios/App/App.xcodeproj -scheme App -resolvePackageDependencies
+echo "✅ Swift package dependencies resolved"
+
 echo ""
 echo "============================================================"
 echo "  ✅ Post-clone setup complete. Xcode build can proceed."
