@@ -204,7 +204,7 @@ type BillingCycle = "monthly" | "yearly";
 export default function PlanDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const planId = params.planId as string;
+  const planId = typeof params.planId === "string" ? params.planId : "";
   const plan = PLANS[planId];
   const [billing, setBilling] = useState<BillingCycle>("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -253,7 +253,7 @@ export default function PlanDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-4 flex justify-center"
           >
-            <span className="rounded-full bg-white/25 backdrop-blur-sm px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+            <span className="rounded-full bg-white/25 backdrop-blur-sm px-4 py-1.5 text-2xs font-bold uppercase tracking-widest text-white shadow-sm">
               ⭐ Most Popular — Recommended
             </span>
           </motion.div>
@@ -266,7 +266,7 @@ export default function PlanDetailPage() {
         >
           <span className="text-4xl mb-3 block">{plan.icon}</span>
           <h1 className="font-display text-3xl font-bold text-white">{plan.name}</h1>
-          <p className="mt-2 text-[13px] font-medium text-white/80 max-w-xs mx-auto">
+          <p className="mt-2 text-base font-medium text-white/80 max-w-xs mx-auto">
             {plan.tagline}
           </p>
         </motion.div>
@@ -282,7 +282,7 @@ export default function PlanDetailPage() {
             <button
               key={cycle}
               onClick={() => { setBilling(cycle); haptics.light(); }}
-              className={`flex-1 rounded-full py-2.5 text-[12px] font-bold uppercase tracking-wider transition-all duration-300 ${
+              className={`flex-1 rounded-full py-2.5 text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
                 billing === cycle
                   ? "bg-white text-gray-900 shadow-md"
                   : "text-white/70"
@@ -304,13 +304,13 @@ export default function PlanDetailPage() {
             <>
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-[2.8rem] font-bold text-white tabular-nums tracking-tight">{plan.initialFee}</span>
-                <span className="text-[14px] font-bold text-white/60">due today</span>
+                <span className="text-md font-bold text-white/60">due today</span>
               </div>
               <div className="mt-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3.5 py-1.5 text-[11px] font-bold text-white/90">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3.5 py-1.5 text-xs font-bold text-white/90">
                   📋 Initial setup fee — first month
                 </span>
-                <p className="mt-1.5 text-[10px] text-white/50">
+                <p className="mt-1.5 text-2xs text-white/50">
                   Then {plan.prices.monthly}/mo starting next month
                 </p>
               </div>
@@ -319,10 +319,10 @@ export default function PlanDetailPage() {
             <>
               <div className="inline-flex items-baseline gap-1">
                 <span className="text-[2.8rem] font-bold text-white tabular-nums tracking-tight">{plan.prices.yearly}</span>
-                <span className="text-[14px] font-bold text-white/60">/yr</span>
+                <span className="text-md font-bold text-white/60">/yr</span>
               </div>
               <div className="mt-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/25 backdrop-blur-sm px-3.5 py-1.5 text-[11px] font-bold text-emerald-100">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/25 backdrop-blur-sm px-3.5 py-1.5 text-xs font-bold text-emerald-100">
                   ✓ Initial fee waived — {plan.savings}
                 </span>
               </div>
@@ -350,10 +350,10 @@ export default function PlanDetailPage() {
               ⭐
             </motion.span>
             <div>
-              <p className="text-[13px] font-bold text-squito-green">
+              <p className="text-base font-bold text-squito-green">
                 Earn {points} PestPoints {isMonthly ? "every month" : "upfront"}
               </p>
-              <p className="text-[10px] font-medium text-squito-green/60 mt-0.5">
+              <p className="text-2xs font-medium text-squito-green/60 mt-0.5">
                 {isMonthly
                   ? `${points * 12} pts/year — unlock rewards & tier upgrades faster`
                   : `Bulk point bonus — instant tier boost!`}
@@ -369,7 +369,7 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.35 }}
           className="mt-6"
         >
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
             Best For
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -379,7 +379,7 @@ export default function PlanDetailPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4 + idx * 0.05 }}
-                className="rounded-full border border-gray-200 bg-white px-3.5 py-2 text-[12px] font-medium text-gray-700 shadow-sm"
+                className="rounded-full border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm"
               >
                 {item}
               </motion.span>
@@ -396,19 +396,19 @@ export default function PlanDetailPage() {
         >
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm text-center">
             <p className="text-[2rem] font-bold text-squito-green">{plan.pestsCount}</p>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mt-1">Pests Covered</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-1">Pests Covered</p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm text-center">
-            <p className="text-[14px] font-bold text-gray-900 leading-tight">{plan.treatments.split("(")[0].trim()}</p>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mt-1">Treatment Frequency</p>
+            <p className="text-md font-bold text-gray-900 leading-tight">{plan.treatments.split("(")[0].trim()}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-1">Treatment Frequency</p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm text-center">
-            <p className="text-[14px] font-bold text-gray-900">{plan.coverageArea}</p>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mt-1">Coverage Area</p>
+            <p className="text-md font-bold text-gray-900">{plan.coverageArea}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-1">Coverage Area</p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm text-center">
-            <p className="text-[14px] font-bold text-gray-900">{plan.responseTime}</p>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mt-1">Response Time</p>
+            <p className="text-md font-bold text-gray-900">{plan.responseTime}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-1">Response Time</p>
           </div>
         </motion.div>
 
@@ -419,7 +419,7 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.45 }}
           className="mt-6"
         >
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
             🐛 Pests Covered
           </h2>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -432,7 +432,7 @@ export default function PlanDetailPage() {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 + idx * 0.03 }}
-                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                       isInherited
                         ? "bg-squito-green/10 text-squito-green border border-squito-green/20"
                         : "bg-gray-50 text-gray-700 border border-gray-100"
@@ -453,7 +453,7 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.5 }}
           className="mt-6"
         >
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
             ✅ What&apos;s Included
           </h2>
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
@@ -467,14 +467,14 @@ export default function PlanDetailPage() {
                   transition={{ delay: 0.55 + idx * 0.04 }}
                   className="flex items-start gap-3 px-4 py-3.5"
                 >
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] mt-0.5 ${
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs mt-0.5 ${
                     isInherited
                       ? "bg-squito-green/15 text-squito-green"
                       : "bg-[#f4fae6] text-squito-green"
                   }`}>
                     ✓
                   </span>
-                  <span className={`text-[13px] leading-snug ${
+                  <span className={`text-base leading-snug ${
                     isInherited ? "font-bold text-squito-green" : "font-medium text-gray-700"
                   }`}>
                     {item}
@@ -492,7 +492,7 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.6 }}
           className="mt-8"
         >
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
             Our Promise to You
           </h2>
           <div className="flex flex-col gap-3">
@@ -506,8 +506,8 @@ export default function PlanDetailPage() {
               >
                 <span className="text-lg shrink-0">{g.icon}</span>
                 <div>
-                  <p className="text-[13px] font-bold text-gray-900">{g.title}</p>
-                  <p className="text-[11px] font-medium text-gray-500 mt-0.5 leading-relaxed">{g.desc}</p>
+                  <p className="text-base font-bold text-gray-900">{g.title}</p>
+                  <p className="text-xs font-medium text-gray-500 mt-0.5 leading-relaxed">{g.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -521,7 +521,7 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.7 }}
           className="mt-8"
         >
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
             Frequently Asked Questions
           </h2>
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50">
@@ -534,10 +534,10 @@ export default function PlanDetailPage() {
                   }}
                   className="flex w-full items-center justify-between px-4 py-3.5 text-left active:bg-gray-50 transition-colors"
                 >
-                  <span className="text-[13px] font-bold text-gray-900 pr-4 leading-snug">{faq.q}</span>
+                  <span className="text-base font-bold text-gray-900 pr-4 leading-snug">{faq.q}</span>
                   <motion.span
                     animate={{ rotate: openFaq === idx ? 180 : 0 }}
-                    className="text-gray-400 text-[14px] shrink-0"
+                    className="text-gray-400 text-md shrink-0"
                   >
                     ▾
                   </motion.span>
@@ -551,7 +551,7 @@ export default function PlanDetailPage() {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <p className="px-4 pb-4 text-[12px] font-medium text-gray-500 leading-relaxed">
+                      <p className="px-4 pb-4 text-sm font-medium text-gray-500 leading-relaxed">
                         {faq.a}
                       </p>
                     </motion.div>
@@ -569,9 +569,9 @@ export default function PlanDetailPage() {
           transition={{ delay: 0.8 }}
           className="mt-8 text-center"
         >
-          <p className="text-[11px] text-gray-400 mb-2">Have questions? We&apos;re here to help.</p>
+          <p className="text-xs text-gray-400 mb-2">Have questions? We&apos;re here to help.</p>
           <Link href="tel:6312031000" onClick={() => haptics.light()}>
-            <GlassButton variant="ghost" className="text-squito-green px-6 font-bold text-[13px]">
+            <GlassButton variant="ghost" className="text-squito-green px-6 font-bold text-base">
               📞 Call (631) 203-1000
             </GlassButton>
           </Link>
@@ -588,15 +588,15 @@ export default function PlanDetailPage() {
         >
           <div className="flex items-center justify-between mb-2.5">
             <div>
-              <p className="text-[14px] font-bold text-gray-900">{plan.name}</p>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-md font-bold text-gray-900">{plan.name}</p>
+              <p className="text-xs text-gray-500">
                 {isMonthly
                   ? `${plan.initialFee} today · then ${plan.prices.monthly}/mo`
                   : `${plan.prices.yearly}/yr · Fee waived`}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[11px] font-bold text-squito-green">
+              <p className="text-xs font-bold text-squito-green">
                 ⭐ +{points} pts{isMonthly ? "/mo" : ""}
               </p>
             </div>
@@ -608,7 +608,7 @@ export default function PlanDetailPage() {
           >
             <GlassButton
               variant="primary"
-              className="w-full py-3.5 text-[14px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
+              className="w-full py-3.5 text-md bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
             >
               {isMonthly
                 ? `Subscribe · ${plan.initialFee} today`

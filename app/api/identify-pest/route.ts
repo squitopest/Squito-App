@@ -1,5 +1,12 @@
 
 import { NextResponse } from "next/server";
+import { getErrorMessage } from "@/lib/errors";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const identifyPestRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 5,
+});
 
 const SYSTEM_PROMPT = `You are a board-certified entomologist and senior pest control specialist with 20+ years of field experience across Long Island, New York (Nassau and Suffolk Counties). You specialize in identifying insects, arachnids, rodents, and wildlife common to the northeastern United States.
 
@@ -284,6 +291,14 @@ If the image is not a pest or related to a pest (e.g. a plant, human, food), set
 If the image is too blurry or unclear, set confidence below 50 and explain in description what would help.`;
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    if (identifyPestRateLimit.isLimited(ip)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment and try again." },
+        { status: 429 },
+      );
+    }
+
     const { image } = await request.json();
 
     if (!image) {
@@ -377,10 +392,10 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Identify pest error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: getErrorMessage(error, "An unexpected error occurred") },
       { status: 500 },
     );
   }

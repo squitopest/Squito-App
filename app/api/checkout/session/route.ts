@@ -1,4 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
+import { getErrorMessage } from "@/lib/errors";
 import { getStripe } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,6 @@ export async function GET(request: NextRequest) {
       try {
         const { markRedemptionUsed } = await import("@/lib/pointsEngine");
         await markRedemptionUsed(meta.redemptionId);
-        console.log(`[Checkout Session] Marked redemption ${meta.redemptionId} as used`);
       } catch (err) {
         console.error("[Checkout Session] Failed to mark redemption used:", err);
       }
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       email: meta.email ?? "",
       phone: meta.phone ?? "",
       address: meta.address ?? "",
-      service: meta.service ?? (lineItem as any)?.description ?? "",
+      service: meta.service ?? lineItem?.description ?? "",
       preferredDate: meta.preferredDate ?? "",
       preferredTime: meta.preferredTime ?? "",
       // Discount info for UI display
@@ -66,10 +66,10 @@ export async function GET(request: NextRequest) {
       isCartOrder,
       cartItems,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[GET /api/checkout/session]", err);
     return NextResponse.json(
-      { error: err.message || "Failed to retrieve session" },
+      { error: getErrorMessage(err, "Failed to retrieve session") },
       { status: 500 }
     );
   }

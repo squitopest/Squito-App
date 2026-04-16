@@ -13,7 +13,22 @@ import {
   TIERS,
   getPointsHistory,
   getRewardsCatalog,
+  type PointsTransaction,
+  type Reward,
 } from "@/lib/pointsEngine";
+
+interface ServiceBooking {
+  id: string;
+  user_id: string;
+  service_type: string;
+  status: string;
+  scheduled_date: string | null;
+}
+
+interface ConfirmModalState {
+  isOpen: boolean;
+  reward: Reward | null;
+}
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -87,7 +102,7 @@ function ProfileAvatar({
   // Default fallback
   return (
     <div
-      className={`flex items-center justify-center rounded-full border-4 ${borderColor} bg-[#111] shadow-md`}
+      className={`flex items-center justify-center rounded-full border-4 ${borderColor} bg-squito-appDark shadow-md`}
       style={{ width: size, height: size }}
     >
       <span style={{ fontSize: size * 0.4 }}>🏡</span>
@@ -103,7 +118,7 @@ function GuestCTA() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex min-h-full flex-col px-5 pb-10 pt-12 sm:px-8 bg-[#0a0a0a]"
+      className="flex min-h-full flex-col px-5 pb-10 pt-12 sm:px-8 bg-squito-appBlack"
     >
       <div className="flex flex-col items-center pt-12">
         <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full border-4 border-white/20 bg-white/5 shadow-md">
@@ -112,7 +127,7 @@ function GuestCTA() {
         <h1 className="mt-4 font-display text-[22px] font-bold text-white">
           Guest Mode
         </h1>
-        <p className="mt-2 text-center text-[13px] font-medium text-white/50 max-w-[280px]">
+        <p className="mt-2 text-center text-base font-medium text-white/65 max-w-[280px]">
           You&apos;re browsing as a guest. Create an account to unlock the full
           Squito experience.
         </p>
@@ -135,7 +150,7 @@ function GuestCTA() {
               PestPoints Await You
             </h2>
           </div>
-          <p className="text-[13px] text-white/60 leading-relaxed">
+          <p className="text-base text-white/60 leading-relaxed">
             Members earn points on every service, unlock exclusive rewards, and
             get priority routing. Sign up and get{" "}
             <strong className="text-squito-green">50 bonus points</strong>{" "}
@@ -146,7 +161,7 @@ function GuestCTA() {
         {/* What you're missing */}
         <motion.div
           variants={itemVariants}
-          className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
+          className="rounded-3xl border border-white/10 bg-squito-cardDark/90 backdrop-blur-xl p-6 shadow-sm"
         >
           <h2 className="font-bold text-white mb-4">
             What you&apos;re missing
@@ -178,7 +193,7 @@ function GuestCTA() {
               className={`flex items-center gap-3 py-3 ${idx > 0 ? "border-t border-white/5" : ""}`}
             >
               <span className="text-lg">{item.icon}</span>
-              <span className="text-[13px] font-medium text-white/70">
+              <span className="text-base font-medium text-white/70">
                 {item.text}
               </span>
             </div>
@@ -189,7 +204,7 @@ function GuestCTA() {
           <GlassButton
             variant="primary"
             onClick={() => signOut()} // clears guest, returns to AuthGate
-            className="w-full py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
+            className="w-full py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
           >
             Create an Account
           </GlassButton>
@@ -198,7 +213,7 @@ function GuestCTA() {
         {/* Contact Card (available to guests too) */}
         <motion.div
           variants={itemVariants}
-          className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
+          className="rounded-3xl border border-white/10 bg-squito-cardDark/90 backdrop-blur-xl p-6 shadow-sm"
         >
           <h2 className="font-bold text-white mb-4">Contact Squito</h2>
           <div className="flex flex-col gap-3">
@@ -206,10 +221,10 @@ function GuestCTA() {
               <div className="flex items-center gap-4 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-4 text-squito-green transition-transform active:scale-95">
                 <span className="text-xl">📞</span>
                 <div>
-                  <h3 className="font-bold text-[14px] text-white leading-none mb-1">
+                  <h3 className="font-bold text-md text-white leading-none mb-1">
                     (631) 203-1000
                   </h3>
-                  <p className="text-[11px] font-bold text-squito-green uppercase tracking-wide">
+                  <p className="text-xs font-bold text-squito-green uppercase tracking-wide">
                     Tap to call
                   </p>
                 </div>
@@ -224,17 +239,17 @@ function GuestCTA() {
 
 // ── Authenticated Profile ──
 function AuthenticatedProfile() {
-  const { profile, user, signOut, refreshProfile } = useAuth();
+  const { profile, user, session, signOut, refreshProfile } = useAuth();
   const searchParams = useSearchParams();
   const [activeView, setActiveView] = useState<"profile" | "points">(
     "profile"
   );
   const [pointsTab, setPointsTab] = useState<"Earn" | "Redeem" | "History">("Earn");
-  const [pointsHistory, setPointsHistory] = useState<any[]>([]);
-  const [rewards, setRewards] = useState<any[]>([]);
+  const [pointsHistory, setPointsHistory] = useState<PointsTransaction[]>([]);
+  const [rewards, setRewards] = useState<Reward[]>([]);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, reward: any | null}>({isOpen: false, reward: null});
-  const [serviceBookings, setServiceBookings] = useState<any[]>([]);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({ isOpen: false, reward: null });
+  const [serviceBookings, setServiceBookings] = useState<ServiceBooking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";
@@ -274,7 +289,17 @@ function AuthenticatedProfile() {
         .order("scheduled_date", { ascending: false })
         .limit(10);
 
-      if (!error && data) setServiceBookings(data);
+      if (!error && data) {
+        setServiceBookings(
+          data.map((booking) => ({
+            id: booking.id,
+            user_id: booking.user_id,
+            service_type: booking.service_type,
+            status: booking.status,
+            scheduled_date: booking.scheduled_date,
+          })),
+        );
+      }
       setLoadingBookings(false);
     }
     loadBookings();
@@ -297,7 +322,10 @@ function AuthenticatedProfile() {
       try {
         await fetch("/api/redeem-alert", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+          },
           body: JSON.stringify({
             rewardName: reward.name,
             pointsSpent: reward.cost_points,
@@ -366,7 +394,7 @@ function AuthenticatedProfile() {
             <h1 className="mt-4 font-display text-[22px] font-bold text-white">
               {displayName}&apos;s Account
             </h1>
-            <p className="text-[13px] font-medium text-white/50">
+            <p className="text-base font-medium text-white/65">
               {tierInfo.name} Member{" "}
               <span className="mx-1">•</span> {totalPoints} pts
             </p>
@@ -381,7 +409,7 @@ function AuthenticatedProfile() {
             {/* PestPoints Card */}
             <motion.div
               variants={itemVariants}
-              className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
+              className="rounded-3xl border border-white/10 bg-squito-cardDark/90 backdrop-blur-xl p-6 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-bold text-white">PestPoints</h2>
@@ -389,7 +417,7 @@ function AuthenticatedProfile() {
                   {totalPoints} pts
                 </span>
               </div>
-              <p className="mt-3 text-[12px] font-medium text-white/50">
+              <p className="mt-3 text-sm font-medium text-white/50">
                 {progress.nextTier
                   ? `${progress.pointsToNext} pts until ${progress.nextTier.name} tier`
                   : "You've reached the highest tier! 🎉"}
@@ -421,26 +449,26 @@ function AuthenticatedProfile() {
             {/* Service History Card */}
             <motion.div
               variants={itemVariants}
-              className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
+              className="rounded-3xl border border-white/10 bg-squito-cardDark/90 backdrop-blur-xl p-6 shadow-sm"
             >
               <h2 className="font-bold text-white mb-4">Service history</h2>
 
               {loadingBookings ? (
                 <div className="py-8 text-center">
                   <span className="text-3xl">⏳</span>
-                  <p className="mt-2 text-[13px] text-white/40 font-medium">Loading...</p>
+                  <p className="mt-2 text-base text-white/40 font-medium">Loading...</p>
                 </div>
               ) : serviceBookings.length === 0 ? (
                 <div className="py-8 text-center">
                   <span className="text-4xl">🏠</span>
                   <p className="mt-3 font-bold text-white">No services yet</p>
-                  <p className="mt-1 text-[12px] text-white/50">
+                  <p className="mt-1 text-sm text-white/50">
                     Book your first visit and it&apos;ll show here!
                   </p>
                   <Link href="/plans">
                     <GlassButton
                       variant="secondary"
-                      className="mt-4 text-[13px]"
+                      className="mt-4 text-base"
                     >
                       Book Now →
                     </GlassButton>
@@ -448,7 +476,7 @@ function AuthenticatedProfile() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-0">
-                  {serviceBookings.map((booking: any, idx: number) => {
+                  {serviceBookings.map((booking, idx) => {
                     const statusColors: Record<string, string> = {
                       complete: "bg-squito-green/15 text-squito-green",
                       scheduled: "bg-blue-500/15 text-blue-400",
@@ -470,14 +498,14 @@ function AuthenticatedProfile() {
                         className={`flex items-center justify-between py-4 ${idx > 0 ? "border-t border-white/10" : ""}`}
                       >
                         <div>
-                          <h3 className="font-bold text-[14px] text-white">
+                          <h3 className="font-bold text-md text-white">
                             {booking.service_type}
                           </h3>
-                          <p className="text-[12px] text-white/50 mt-0.5">
+                          <p className="text-sm text-white/50 mt-0.5">
                             {displayDate}
                           </p>
                         </div>
-                        <div className={`rounded-full px-3 py-1 text-[11px] font-bold capitalize ${statusColor}`}>
+                        <div className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${statusColor}`}>
                           {booking.status.replace("_", " ")}
                         </div>
                       </div>
@@ -518,13 +546,13 @@ function AuthenticatedProfile() {
                 <Link
                   key={idx}
                   href={setting.route}
-                  className="flex items-center justify-between bg-[#1a1a1a] p-5 pr-6 transition-colors hover:bg-white/5 active:bg-white/10"
+                  className="flex items-center justify-between bg-squito-cardDark p-5 pr-6 transition-colors hover:bg-white/5 active:bg-white/10"
                 >
                   <div className="flex items-center gap-4 text-white">
                     <span className="text-[18px] opacity-80">
                       {setting.icon}
                     </span>
-                    <span className="font-bold text-[14px]">
+                    <span className="font-bold text-md">
                       {setting.name}
                     </span>
                   </div>
@@ -538,11 +566,11 @@ function AuthenticatedProfile() {
             {/* Sign Out Button (High Visibility) */}
             <motion.div
               variants={itemVariants}
-              className="mt-2 overflow-hidden rounded-3xl border border-red-500/20 bg-[#1a1a1a] shadow-sm"
+              className="mt-2 overflow-hidden rounded-3xl border border-red-500/20 bg-squito-cardDark shadow-sm"
             >
               <button
                 onClick={signOut}
-                className="w-full flex items-center justify-center bg-[#1a1a1a] p-4 text-[15px] font-bold text-red-400 transition-colors hover:bg-red-500/10 active:bg-red-500/20"
+                className="w-full flex items-center justify-center bg-squito-cardDark p-4 text-lg font-bold text-red-400 transition-colors hover:bg-red-500/10 active:bg-red-500/20"
               >
                 Sign Out
               </button>
@@ -551,7 +579,7 @@ function AuthenticatedProfile() {
             {/* Contact Card */}
             <motion.div
               variants={itemVariants}
-              className="rounded-3xl border border-white/10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 shadow-sm"
+              className="rounded-3xl border border-white/10 bg-squito-cardDark/90 backdrop-blur-xl p-6 shadow-sm"
             >
               <h2 className="font-bold text-white mb-4">Contact Squito</h2>
               <div className="flex flex-col gap-3">
@@ -559,10 +587,10 @@ function AuthenticatedProfile() {
                   <div className="flex items-center gap-4 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-4 text-squito-green transition-transform active:scale-95">
                     <span className="text-xl">📞</span>
                     <div>
-                      <h3 className="font-bold text-[14px] text-white leading-none mb-1">
+                      <h3 className="font-bold text-md text-white leading-none mb-1">
                         (631) 203-1000
                       </h3>
-                      <p className="text-[11px] font-bold text-squito-green uppercase tracking-wide">
+                      <p className="text-xs font-bold text-squito-green uppercase tracking-wide">
                         Tap to call
                       </p>
                     </div>
@@ -573,10 +601,10 @@ function AuthenticatedProfile() {
                   <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition-transform active:scale-95 hover:bg-white/10">
                     <span className="text-xl opacity-60">✉️</span>
                     <div>
-                      <h3 className="font-bold text-[14px] text-white">
+                      <h3 className="font-bold text-md text-white">
                         service@getsquito.com
                       </h3>
-                      <p className="text-[11px] font-medium text-white/40">
+                      <p className="text-xs font-medium text-white/40">
                         We respond within the hour
                       </p>
                     </div>
@@ -587,7 +615,7 @@ function AuthenticatedProfile() {
 
             {/* App Version Footer */}
             <motion.div variants={itemVariants} className="text-center pt-2">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-white/20">
+              <p className="text-xs font-bold tracking-widest uppercase text-white/20">
                 App Version 1.0.4 (Build 822)
               </p>
             </motion.div>
@@ -599,7 +627,7 @@ function AuthenticatedProfile() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
-          className="flex min-h-full flex-col pt-12 pb-10 bg-[#0a0a0a]"
+          className="flex min-h-full flex-col pt-12 pb-10 bg-squito-appBlack"
         >
           {/* Back Button */}
           <div className="px-5 pt-2 pb-2">
@@ -612,7 +640,7 @@ function AuthenticatedProfile() {
             </GlassButton>
           </div>
 
-          <div className="bg-[#1a1a1a] px-5 pb-8 pt-4 border-b border-white/10 shadow-sm sm:px-8">
+          <div className="bg-squito-cardDark px-5 pb-8 pt-4 border-b border-white/10 shadow-sm sm:px-8">
             <header className="flex items-center">
               <span className="text-xl font-display font-bold tracking-wide text-white">
                 Points & Rewards
@@ -661,7 +689,7 @@ function AuthenticatedProfile() {
                     }`}
                   >
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider sm:text-xs ${isActive ? "text-squito-green" : "text-white/40"}`}
+                      className={`text-2xs font-bold uppercase tracking-wider sm:text-xs ${isActive ? "text-squito-green" : "text-white/40"}`}
                     >
                       {tier.name}
                     </span>
@@ -712,8 +740,11 @@ function AuthenticatedProfile() {
               {(["Earn", "Redeem", "History"] as const).map((tab) => (
                 <button
                   key={tab}
+                  role="tab"
+                  aria-selected={pointsTab === tab}
+                  aria-label={`${tab} points tab`}
                   onClick={() => setPointsTab(tab)}
-                  className={`flex-1 pb-4 text-center text-[13px] font-bold tracking-wide transition-colors ${
+                  className={`flex-1 pb-4 text-center text-base font-bold tracking-wide transition-colors ${
                     pointsTab === tab
                       ? "border-b-[3px] border-squito-green text-squito-green"
                       : "text-white/30 border-b-[3px] border-transparent hover:text-white/50"
@@ -733,7 +764,7 @@ function AuthenticatedProfile() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-white/50 pr-4">
+                  <p className="mt-6 text-base font-medium leading-relaxed text-white/50 pr-4">
                     Every action earns you points toward free services and rewards.
                     {tierInfo.multiplier > 1 && (
                       <span className="ml-1 font-bold text-squito-green">
@@ -789,7 +820,7 @@ function AuthenticatedProfile() {
                           variants={itemVariants}
                           whileTap={{ scale: 0.96 }}
                           onClick={action.onClick}
-                          className="flex cursor-pointer items-center gap-4 rounded-3xl bg-[#1a1a1a] border border-white/10 p-3 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-shadow hover:bg-white/5"
+                          className="flex cursor-pointer items-center gap-4 rounded-3xl bg-squito-cardDark border border-white/10 p-3 pr-4 shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-shadow hover:bg-white/5"
                         >
                           <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-squito-green/10">
                             <span className="text-[22px] drop-shadow-sm">
@@ -797,14 +828,14 @@ function AuthenticatedProfile() {
                             </span>
                           </div>
                           <div className="flex-1 space-y-0.5">
-                            <h3 className="font-display font-bold text-[14px] text-white">
+                            <h3 className="font-display font-bold text-md text-white">
                               {action.title}
                             </h3>
-                            <p className="text-[11px] font-medium text-white/40">
+                            <p className="text-xs font-medium text-white/40">
                               {action.desc}
                             </p>
                           </div>
-                          <div className="font-bold text-[12px] text-squito-green">
+                          <div className="font-bold text-sm text-squito-green">
                             {action.pts}
                           </div>
                         </motion.div>
@@ -828,7 +859,7 @@ function AuthenticatedProfile() {
                       <span className="text-2xl drop-shadow-sm">💡</span>
                       <div>
                         <h4 className="font-bold text-squito-green">Pro tip</h4>
-                        <p className="mt-1 text-[13px] font-medium leading-relaxed text-squito-green/80 pr-2">
+                        <p className="mt-1 text-base font-medium leading-relaxed text-squito-green/80 pr-2">
                           Sign up for a plan instead of a one-time service to earn 200 bonus points instantly!
                         </p>
                       </div>
@@ -845,13 +876,13 @@ function AuthenticatedProfile() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-white/50 pr-4">
+                  <p className="mt-6 text-base font-medium leading-relaxed text-white/50 pr-4">
                     Use your PestPoints to redeem exclusive rewards and services.
                   </p>
 
                   <div className="mt-2 mb-2 inline-flex items-center gap-2 rounded-full bg-squito-green/10 border border-squito-green/15 px-4 py-2">
                     <span className="text-sm">💰</span>
-                    <span className="text-[13px] font-bold text-squito-green">
+                    <span className="text-base font-bold text-squito-green">
                       Redeemable: {redeemablePoints} pts
                     </span>
                   </div>
@@ -859,16 +890,16 @@ function AuthenticatedProfile() {
                   {/* 90-day expiration notice */}
                   <div className="mb-6 flex items-start gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-3">
                     <span className="text-base mt-0.5">⏳</span>
-                    <p className="text-[11px] font-medium text-amber-400 leading-relaxed">
+                    <p className="text-xs font-medium text-amber-400 leading-relaxed">
                       Redeemed discounts expire <strong>90 days</strong> after redemption. One discount per booking. Discounts automatically apply at checkout.
                     </p>
                   </div>
 
                   {rewards.length === 0 ? (
-                    <div className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 text-center shadow-sm">
+                    <div className="rounded-3xl border border-white/10 bg-squito-cardDark p-8 text-center shadow-sm">
                       <span className="text-4xl">🎁</span>
                       <p className="mt-3 font-bold text-white">Check back later!</p>
-                      <p className="mt-1 text-[12px] text-white/40">
+                      <p className="mt-1 text-sm text-white/40">
                         New exclusive rewards are being added to the catalog soon.
                       </p>
                     </div>
@@ -879,7 +910,7 @@ function AuthenticatedProfile() {
                       animate="show"
                       className="flex flex-col gap-4"
                     >
-                      {rewards.map((reward: any) => {
+                      {rewards.map((reward) => {
                         const canAfford = redeemablePoints >= reward.cost_points;
                         const isRedeeming = redeemingId === reward.id;
                         return (
@@ -888,7 +919,7 @@ function AuthenticatedProfile() {
                             key={reward.id}
                             className={`flex items-center gap-4 rounded-3xl border p-4 pr-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-all ${
                               canAfford
-                                ? "border-squito-green/20 bg-[#1a1a1a]"
+                                ? "border-squito-green/20 bg-squito-cardDark"
                                 : "border-white/5 bg-white/5 opacity-60"
                             }`}
                           >
@@ -896,15 +927,15 @@ function AuthenticatedProfile() {
                               <span className="text-[22px]">{reward.icon}</span>
                             </div>
                             <div className="flex-1 space-y-0.5 min-w-0">
-                              <h3 className="font-display font-bold text-[14px] text-white truncate">
+                              <h3 className="font-display font-bold text-md text-white truncate">
                                 {reward.name}
                               </h3>
-                              <p className="text-[11px] font-medium text-white/40 line-clamp-2">
+                              <p className="text-xs font-medium text-white/40 line-clamp-2">
                                 {reward.description}
                               </p>
                             </div>
                             <div className="flex flex-col items-end gap-1.5 shrink-0">
-                              <span className="text-[12px] font-bold text-squito-green">
+                              <span className="text-sm font-bold text-squito-green">
                                 {reward.cost_points} pts
                               </span>
                               <button
@@ -913,7 +944,7 @@ function AuthenticatedProfile() {
                                   if (!user) return;
                                   setConfirmModal({ isOpen: true, reward: reward });
                                 }}
-                                className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${
+                                className={`rounded-full px-3 py-1.5 text-xs font-bold transition-all ${
                                   canAfford
                                     ? "bg-squito-green text-white shadow-sm active:scale-95"
                                     : "bg-white/10 text-white/30 cursor-not-allowed"
@@ -939,21 +970,21 @@ function AuthenticatedProfile() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <p className="mt-6 text-[13px] font-medium leading-relaxed text-white/50 pr-4 mb-4">
+                  <p className="mt-6 text-base font-medium leading-relaxed text-white/50 pr-4 mb-4">
                     Your recent points activity.
                   </p>
 
                   {pointsHistory.length === 0 ? (
-                    <div className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 text-center shadow-sm">
+                    <div className="rounded-3xl border border-white/10 bg-squito-cardDark p-8 text-center shadow-sm">
                       <span className="text-4xl">📜</span>
                       <p className="mt-3 font-bold text-white">No activity yet</p>
-                      <p className="mt-1 text-[12px] text-white/40">
+                      <p className="mt-1 text-sm text-white/40">
                         Book a service or refer a friend to start earning!
                       </p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-0 rounded-3xl border border-white/10 bg-[#1a1a1a] overflow-hidden shadow-sm">
-                      {pointsHistory.map((tx: any, idx: number) => (
+                    <div className="flex flex-col gap-0 rounded-3xl border border-white/10 bg-squito-cardDark overflow-hidden shadow-sm">
+                      {pointsHistory.map((tx, idx) => (
                         <div
                           key={tx.id}
                           className={`flex items-center justify-between px-5 py-4 ${
@@ -971,10 +1002,10 @@ function AuthenticatedProfile() {
                               {tx.type === "earn" ? "+" : "−"}
                             </div>
                             <div>
-                              <p className="text-[13px] font-bold text-white">
+                              <p className="text-base font-bold text-white">
                                 {tx.reason}
                               </p>
-                              <p className="text-[11px] text-white/30">
+                              <p className="text-xs text-white/30">
                                 {new Date(tx.created_at).toLocaleDateString("en-US", {
                                   month: "short",
                                   day: "numeric",
@@ -984,7 +1015,7 @@ function AuthenticatedProfile() {
                             </div>
                           </div>
                           <span
-                            className={`font-bold text-[14px] ${
+                            className={`font-bold text-md ${
                               tx.type === "earn"
                                 ? "text-squito-green"
                                 : "text-red-500"
@@ -1014,10 +1045,13 @@ function AuthenticatedProfile() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm reward redemption"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-sm rounded-[32px] bg-[#1a1a1a]/95 backdrop-blur-2xl border border-white/10 p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-[32px] bg-squito-cardDark/95 backdrop-blur-2xl border border-white/10 p-6 shadow-2xl"
           >
             <div className="mx-auto mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-squito-green/10 shadow-inner">
               <span className="text-[40px] drop-shadow-sm">{confirmModal.reward.icon}</span>
@@ -1025,23 +1059,25 @@ function AuthenticatedProfile() {
             <h3 className="text-center font-display text-xl font-bold text-white">
               Confirm Redemption
             </h3>
-            <p className="mt-3 text-center text-[14px] font-medium leading-relaxed text-white/50 px-2">
+            <p className="mt-3 text-center text-md font-medium leading-relaxed text-white/50 px-2">
               Are you sure you want to spend <strong className="text-squito-green">{confirmModal.reward.cost_points} points</strong> on{" "}
               <span className="text-white/80">{confirmModal.reward.name}</span>?
             </p>
 
             <div className="mt-8 flex gap-3">
               <button
+                aria-label="Cancel redemption"
                 disabled={redeemingId !== null}
                 onClick={() => setConfirmModal({ isOpen: false, reward: null })}
-                className="flex-1 rounded-2xl bg-white/10 py-3.5 text-[14px] font-bold text-white/60 transition-colors active:bg-white/15"
+                className="flex-1 rounded-2xl bg-white/10 py-3.5 text-md font-bold text-white/60 transition-colors active:bg-white/15"
               >
                 Cancel
               </button>
               <button
+                aria-label={redeemingId ? "Processing redemption" : `Confirm: spend ${confirmModal.reward?.cost_points} points`}
                 disabled={redeemingId !== null}
                 onClick={handleConfirmRedeem}
-                className="flex-1 rounded-2xl bg-squito-green py-3.5 text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(107,158,17,0.25)] transition-transform active:scale-95 disabled:opacity-50"
+                className="flex-1 rounded-2xl bg-squito-green py-3.5 text-md font-bold text-white shadow-[0_8px_20px_rgba(107,158,17,0.25)] transition-transform active:scale-95 disabled:opacity-50"
               >
                 {redeemingId ? "Processing..." : "Get Reward"}
               </button>

@@ -127,6 +127,25 @@ const likeOptions = [
   "4.2K", "5.2K", "6.8K", "8.1K", "9.3K", "12.4K", "14.9K",
 ];
 
+type FeedCount = string | number;
+
+interface FeedPost {
+  id: number;
+  videoSrc: string;
+  username: string;
+  description: string;
+  likes: string;
+  comments: string;
+  animation?: {
+    scale: number[];
+  };
+}
+
+interface PostCommentSeed {
+  id?: number;
+  comments?: FeedCount;
+}
+
 // Deterministic seeded shuffle so each video always gets the same comments
 function seededShuffle<T>(arr: T[], seed: number | string): T[] {
   const shuffled = [...arr];
@@ -148,7 +167,7 @@ function seededShuffle<T>(arr: T[], seed: number | string): T[] {
 }
 
 // Parse comment count strings like "342", "4.5K", "1.2K" into a number safely
-function parseCount(count: any): number {
+function parseCount(count: FeedCount | null | undefined): number {
   if (typeof count === 'number') return count;
   if (typeof count !== 'string') return 0;
   const lower = count.toLowerCase().trim();
@@ -159,7 +178,7 @@ function parseCount(count: any): number {
 }
 
 // Generate N unique satirical pest comments for a given post
-function generateCommentsForPost(post: { id?: any; comments?: any }) {
+function generateCommentsForPost(post: PostCommentSeed) {
   const totalComments = parseCount(post.comments || "0");
   // Cap displayed comments at 20 max for performance, minimum 3
   const displayCount = Math.min(Math.max(totalComments, 3), 20);
@@ -179,20 +198,10 @@ function generateCommentsForPost(post: { id?: any; comments?: any }) {
   }));
 }
 
-interface FeedPost {
-  id: any;
-  videoSrc: string;
-  username: string;
-  description: string;
-  likes: string;
-  comments: string;
-  animation?: any;
-}
-
 interface FeedItemProps {
   post: FeedPost;
   liked: Record<string, boolean>;
-  toggleLike: (id: any) => void;
+  toggleLike: (id: number) => void;
   setCommentsOpen: (post: FeedPost) => void;
   isMuted: boolean;
   toggleMute: () => void;
@@ -285,7 +294,7 @@ const FeedItem = memo(function FeedItem({
       {/* Playing Indicator (Fake TikTok top left) */}
       <div className="absolute left-4 top-6 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-md">
         <SoundBarsIcon size={14} className="text-squito-green" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
+        <span className="text-2xs font-bold uppercase tracking-widest text-white shadow-sm">
           Following
         </span>
       </div>
@@ -295,7 +304,7 @@ const FeedItem = memo(function FeedItem({
         <h3 className="font-display text-[17px] font-bold text-white drop-shadow-md">
           {post.username}
         </h3>
-        <p className="text-[14px] font-medium leading-snug text-white/95 drop-shadow-md pr-2 pointer-events-auto">
+        <p className="text-md font-medium leading-snug text-white/95 drop-shadow-md pr-2 pointer-events-auto">
           {post.description}
         </p>
 
@@ -340,7 +349,7 @@ const FeedItem = memo(function FeedItem({
               }
             />
           </GlassButton>
-          <span className="text-[13px] font-bold text-white drop-shadow-md">
+          <span className="text-base font-bold text-white drop-shadow-md">
             {post.likes}
           </span>
         </div>
@@ -354,7 +363,7 @@ const FeedItem = memo(function FeedItem({
           >
             <CommentIcon size={26} className="text-white" />
           </GlassButton>
-          <span className="text-[13px] font-bold text-white drop-shadow-md">
+          <span className="text-base font-bold text-white drop-shadow-md">
             {post.comments}
           </span>
         </div>
@@ -376,7 +385,7 @@ const FeedItem = memo(function FeedItem({
               <CalendarIcon size={28} className="text-white" />
             </motion.div>
           </Link>
-          <span className="text-[10px] font-bold text-squito-green drop-shadow-md uppercase tracking-wider">
+          <span className="text-2xs font-bold text-squito-green drop-shadow-md uppercase tracking-wider">
             Book Now
           </span>
         </div>
@@ -434,14 +443,14 @@ function CommentsDrawer({ post, onClose }: { post: FeedPost; onClose: () => void
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[13px] text-white">{comment.user}</span>
-                    <span className="text-[11px] font-medium text-white/30">{comment.time}</span>
+                    <span className="font-bold text-base text-white">{comment.user}</span>
+                    <span className="text-xs font-medium text-white/30">{comment.time}</span>
                   </div>
-                  <p className="mt-1 text-[14px] leading-snug text-white/70">{comment.text}</p>
+                  <p className="mt-1 text-md leading-snug text-white/70">{comment.text}</p>
                 </div>
                 <div className="flex flex-col items-center gap-1 pt-1 opacity-40 hover:opacity-100 transition">
                   <HeartIcon size={18} className="text-white/60" />
-                  <span className="text-[10px] font-bold text-white/40">{comment.likes}</span>
+                  <span className="text-2xs font-bold text-white/40">{comment.likes}</span>
                 </div>
               </motion.div>
             ))}
@@ -464,7 +473,7 @@ export default function TikTokFeed() {
     setFeed([...feedData].sort(() => Math.random() - 0.5));
   }, []);
 
-  const toggleLike = useCallback((id: any) => {
+  const toggleLike = useCallback((id: number) => {
     setLiked((prev) => ({ ...prev, [id]: !prev[id] }));
     haptics.light();
   }, []);
@@ -473,7 +482,7 @@ export default function TikTokFeed() {
 
   // Lock body scroll while comments drawer is open to prevent feed losing snap
   useEffect(() => {
-    const el = document.querySelector(".snap-y") as HTMLElement | null;
+    const el = document.querySelector<HTMLElement>(".snap-y");
     if (commentsOpen) {
       document.body.style.overflow = "hidden";
       if (el) el.style.overflow = "hidden";

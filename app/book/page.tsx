@@ -25,6 +25,10 @@ function todayISO(): string {
   return d.toISOString().split("T")[0];
 }
 
+function getErrorMessage(error: unknown, fallback = "An error occurred"): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 // ── Price lookup (mirrors the API so the UI can preview costs) ──────────────
 const SERVICE_PRICES: Record<string, number> = {
   "Mosquito Barrier Spray ($119)": 119,
@@ -194,7 +198,7 @@ function BookForm() {
   // Trigger confetti when a Free Estimate completes successfully!
   useEffect(() => {
     if (status === "success") {
-      if (typeof window !== "undefined" && (window as any).Capacitor) {
+      if (Capacitor.isNativePlatform()) {
         haptics.success();
       }
       import("canvas-confetti").then((module) => {
@@ -227,11 +231,20 @@ function BookForm() {
           setGpsAccuracy(Math.round(accuracy));
 
           // Use Nominatim (free, no API key needed) for reverse geocoding
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18`,
-            { headers: { "User-Agent": "SquitoApp/1.0" } }
-          );
-          if (res.ok) {
+          const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18`;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 8000);
+
+          try {
+            const res = await fetch(url, {
+              headers: { "User-Agent": "SquitoApp/1.0" },
+              signal: controller.signal,
+            });
+
+            if (!res.ok) {
+              return;
+            }
+
             const data = await res.json();
             const addr = data.address;
             // Build a clean US street address
@@ -246,9 +259,14 @@ function BookForm() {
             ].filter(Boolean).join(", ");
             const fullAddress = [parts, cityState].filter(Boolean).join(", ");
             setFormData((f) => ({ ...f, address: fullAddress || data.display_name || "" }));
+          } catch (err: unknown) {
+            if (err instanceof Error && err.name === "AbortError") {
+              return;
+            }
+            console.error("Reverse geocode failed:", err);
+          } finally {
+            clearTimeout(timeout);
           }
-        } catch (err) {
-          console.error("Reverse geocode failed:", err);
         } finally {
           setLocating(false);
         }
@@ -266,7 +284,7 @@ function BookForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
-    if (typeof window !== "undefined" && (window as any).Capacitor) {
+    if (Capacitor.isNativePlatform()) {
       haptics.light();
     }
 
@@ -373,9 +391,9 @@ function BookForm() {
 
       // Redirect to Stripe Checkout
       window.location.href = result.url;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMessage(err.message || "An error occurred");
+      setErrorMessage(getErrorMessage(err));
       setStatus("error");
     }
   };
@@ -397,7 +415,7 @@ function BookForm() {
         <p className="mt-4 font-medium text-white/50">
           We&apos;ve received your request and will contact you at <strong className="text-white">{formData.email}</strong> to schedule your free estimate.
         </p>
-        <Link href="/plans" onClick={() => { if (typeof window !== "undefined" && (window as any).Capacitor) haptics.light() }}>
+        <Link href="/plans" onClick={() => { if (Capacitor.isNativePlatform()) haptics.light(); }}>
           <GlassButton
             variant="ghost"
             className="mt-10 text-squito-green dark:text-squito-green py-2 px-6"
@@ -462,8 +480,8 @@ function BookForm() {
         >
           <span className="text-xl">⚠️</span>
           <div>
-            <p className="text-[13px] font-bold text-amber-400">Payment was cancelled</p>
-            <p className="text-[12px] text-amber-500 mt-0.5">No charge was made. Your form is still filled in &mdash; just hit &ldquo;Proceed to Payment&rdquo; again when ready.</p>
+            <p className="text-base font-bold text-amber-400">Payment was cancelled</p>
+            <p className="text-sm text-amber-500 mt-0.5">No charge was made. Your form is still filled in &mdash; just hit &ldquo;Proceed to Payment&rdquo; again when ready.</p>
           </div>
         </motion.div>
       )}
@@ -486,24 +504,24 @@ function BookForm() {
           transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 20 }}
           className="mt-6 rounded-2xl border border-white/10 bg-[#1a1a1a] px-5 py-4"
         >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">
+          <p className="text-2xs font-bold uppercase tracking-widest text-white/40 mb-3">
             🛒 Cart ({cartItems.length} {cartItems.length === 1 ? "service" : "services"})
           </p>
           <div className="divide-y divide-white/5">
             {cartItems.map((item) => (
               <div key={item.serviceKey} className="flex items-center justify-between py-2.5">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-white truncate">{item.serviceName}</p>
+                  <p className="text-base font-bold text-white truncate">{item.serviceName}</p>
                   {item.points > 0 && (
-                    <span className="text-[10px] font-bold text-squito-green">⭐ +{item.points} pts</span>
+                    <span className="text-2xs font-bold text-squito-green">⭐ +{item.points} pts</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[14px] font-bold text-white">${item.price}</span>
+                  <span className="text-md font-bold text-white">${item.price}</span>
                   <button
                     type="button"
                     onClick={() => { removeItem(item.serviceKey); haptics.light(); }}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/10 text-red-400 text-[11px] active:scale-90 transition-transform"
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/10 text-red-400 text-xs active:scale-90 transition-transform"
                   >
                     ✕
                   </button>
@@ -511,7 +529,7 @@ function BookForm() {
               </div>
             ))}
           </div>
-          <Link href="/plans" className="mt-3 block text-center text-[12px] font-bold text-squito-green active:opacity-70">
+          <Link href="/plans" className="mt-3 block text-center text-sm font-bold text-squito-green active:opacity-70">
             + Add more services
           </Link>
         </motion.div>
@@ -526,7 +544,7 @@ function BookForm() {
       >
         <div className="grid grid-cols-1 gap-5">
            <div>
-            <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/70">
+            <label className="mb-1.5 block pl-1 text-base font-bold text-white/70">
               Full Name
             </label>
             <input
@@ -539,7 +557,7 @@ function BookForm() {
           </div>
           
           <div>
-            <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/70">
+            <label className="mb-1.5 block pl-1 text-base font-bold text-white/70">
               Email Address
             </label>
             <input
@@ -554,7 +572,7 @@ function BookForm() {
         </div>
 
         <div>
-          <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/70">
+          <label className="mb-1.5 block pl-1 text-base font-bold text-white/70">
             Phone
           </label>
           <input
@@ -570,14 +588,14 @@ function BookForm() {
         {/* Address with GPS button */}
         <div>
           <div className="flex items-center justify-between mb-1.5 pl-1">
-            <label className="text-[13px] font-bold text-white/70">
+            <label className="text-base font-bold text-white/70">
               Service Address
             </label>
             <button
               type="button"
               onClick={useMyLocation}
               disabled={locating}
-              className="flex items-center gap-1 text-[12px] font-bold text-squito-green active:scale-95 transition-transform disabled:opacity-50"
+              className="flex items-center gap-1 text-sm font-bold text-squito-green active:scale-95 transition-transform disabled:opacity-50"
             >
               {locating ? (
                 <>
@@ -617,8 +635,8 @@ function BookForm() {
               animate={{ opacity: 1, y: 0 }}
               className="mt-1.5 flex items-center gap-1.5 pl-1"
             >
-              <span className="text-[11px]">✅</span>
-              <span className="text-[11px] font-medium text-squito-green">
+              <span className="text-xs">✅</span>
+              <span className="text-xs font-medium text-squito-green">
                 GPS location captured (±{gpsAccuracy}m accuracy)
               </span>
             </motion.div>
@@ -628,7 +646,7 @@ function BookForm() {
         {/* Service selector (single-service mode only) */}
         {!isCartMode && (
           <div>
-            <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/70">
+            <label className="mb-1.5 block pl-1 text-base font-bold text-white/70">
               Service Needed
             </label>
             <select
@@ -660,7 +678,7 @@ function BookForm() {
         )}
 
         <div>
-          <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/70">
+          <label className="mb-1.5 block pl-1 text-base font-bold text-white/70">
             Preferred Date & Time
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -711,10 +729,10 @@ function BookForm() {
                 🎁
               </motion.span>
               <div>
-                <p className="text-[13px] font-bold text-emerald-700">
+                <p className="text-base font-bold text-emerald-700">
                   ${discountDollars} PestPoints discount applied!
                 </p>
-                <p className="text-[11px] font-medium text-emerald-600/70 mt-0.5">
+                <p className="text-xs font-medium text-emerald-600/70 mt-0.5">
                   From: {pendingDiscount.rewardName} &mdash; expires {new Date(pendingDiscount.expiresAt).toLocaleDateString()}
                 </p>
               </div>
@@ -745,14 +763,14 @@ function BookForm() {
                 ⭐
               </motion.span>
               <div>
-                <p className="text-[13px] font-bold text-squito-green">
+                <p className="text-base font-bold text-squito-green">
                   Earn up to <motion.span
-                    className="inline-block text-[15px]"
+                    className="inline-block text-lg"
                     animate={{ scale: [1, 1.15, 1] }}
                     transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 4 }}
                   >+{pointsPreview} PestPoints</motion.span> on this booking!
                 </p>
-                <p className="text-[11px] font-medium text-squito-green/70 mt-0.5">
+                <p className="text-xs font-medium text-squito-green/70 mt-0.5">
                   {isCartMode
                     ? `Earn points for each of your ${cartItems.length} services!`
                     : "Points increase with your tier. Higher tier = bigger rewards!"}
@@ -771,7 +789,7 @@ function BookForm() {
           transition={{ type: "spring", stiffness: 300, damping: 28 }}
           className="mt-2 rounded-2xl border border-white/10 bg-[#1a1a1a] px-5 py-4"
         >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3">Order Summary</p>
+          <p className="text-2xs font-bold uppercase tracking-widest text-white/40 mb-3">Order Summary</p>
           
           {isCartMode ? (
             // Cart mode: show all items
@@ -779,19 +797,19 @@ function BookForm() {
               {cartItems.map((item) => (
                 <div key={item.serviceKey} className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="text-[13px] font-bold text-white leading-snug">
+                    <p className="text-base font-bold text-white leading-snug">
                       {item.serviceName}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[14px] font-bold text-white">${item.price}</p>
+                    <p className="text-md font-bold text-white">${item.price}</p>
                   </div>
                 </div>
               ))}
               <div className="border-t border-white/10 pt-2 mt-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-[12px] text-white/50">Subtotal ({cartItems.length} services)</p>
-                  <p className="text-[14px] font-bold text-white">
+                  <p className="text-sm text-white/50">Subtotal ({cartItems.length} services)</p>
+                  <p className="text-md font-bold text-white">
                     ${selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}
                   </p>
                 </div>
@@ -801,19 +819,19 @@ function BookForm() {
             // Single-service mode: show one item
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <p className="text-[14px] font-bold text-white leading-snug">
+                <p className="text-md font-bold text-white leading-snug">
                   {formData.service.replace(/\s*\(.*\)$/, "")}
                 </p>
-                <p className="text-[11px] text-white/50 mt-0.5">
+                <p className="text-xs text-white/50 mt-0.5">
                   {SERVICE_DESCRIPTIONS[formData.service]}
                 </p>
                 {isMonthlyPlan && (
-                  <span className="mt-1.5 inline-block rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+                  <span className="mt-1.5 inline-block rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-2xs font-bold text-amber-500">
                     📋 Initial setup — first month
                   </span>
                 )}
                 {isRecurring && !isMonthlyPlan && (
-                  <span className="mt-1.5 inline-block rounded-full bg-squito-green/15 px-2 py-0.5 text-[10px] font-bold text-squito-green">
+                  <span className="mt-1.5 inline-block rounded-full bg-squito-green/15 px-2 py-0.5 text-2xs font-bold text-squito-green">
                     🔄 Annual plan
                   </span>
                 )}
@@ -824,7 +842,7 @@ function BookForm() {
                     ? initialFee.toFixed(2)
                     : selectedPrice.toLocaleString("en-US", { minimumFractionDigits: selectedPrice % 1 === 0 ? 0 : 2 })}
                 </p>
-                <p className="text-[10px] text-white/40">
+                <p className="text-2xs text-white/40">
                   {isMonthlyPlan ? "due today" : isRecurring ? "/year" : "subtotal"}
                 </p>
               </div>
@@ -839,8 +857,8 @@ function BookForm() {
               className="mt-2"
             >
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-emerald-500">🎁 PestPoints Discount</p>
-                <p className="text-[11px] font-bold text-emerald-500">-${discountDollars.toFixed(2)}</p>
+                <p className="text-xs font-semibold text-emerald-500">🎁 PestPoints Discount</p>
+                <p className="text-xs font-bold text-emerald-500">-${discountDollars.toFixed(2)}</p>
               </div>
             </motion.div>
           )}
@@ -852,8 +870,8 @@ function BookForm() {
               className="mt-2"
             >
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-medium text-white/50">🔄 Recurring starts next month</p>
-                <p className="text-[11px] font-bold text-white/70">${selectedPrice.toFixed(2)}/mo</p>
+                <p className="text-xs font-medium text-white/50">🔄 Recurring starts next month</p>
+                <p className="text-xs font-bold text-white/70">${selectedPrice.toFixed(2)}/mo</p>
               </div>
               <p className="text-[9px] text-white/40 mt-0.5">Today you only pay the initial fee. Monthly billing begins next month.</p>
             </motion.div>
@@ -866,14 +884,14 @@ function BookForm() {
               className="mt-2 space-y-1"
             >
               <div className="flex items-center justify-between">
-                <p className="text-[11px] text-white/40">{taxCounty} County Tax ({(taxRate * 100).toFixed(3)}%)</p>
-                <p className="text-[11px] text-white/50">+${taxAmount.toFixed(2)}</p>
+                <p className="text-xs text-white/40">{taxCounty} County Tax ({(taxRate * 100).toFixed(3)}%)</p>
+                <p className="text-xs text-white/50">+${taxAmount.toFixed(2)}</p>
               </div>
             </motion.div>
           )}
           <div className="mt-3 border-t border-white/10 pt-3 flex items-center justify-between">
-            <p className="text-[11px] text-white/50">Total charged today</p>
-            <p className="text-[14px] font-bold text-squito-green">
+            <p className="text-xs text-white/50">Total charged today</p>
+            <p className="text-md font-bold text-squito-green">
               ${formData.address.length > 5 ? totalWithTax.toFixed(2) : priceAfterDiscount.toLocaleString("en-US", { minimumFractionDigits: priceAfterDiscount % 1 === 0 ? 0 : 2 })} {formData.address.length > 5 && taxRate > 0 ? "(incl. tax)" : ""}
             </p>
           </div>
@@ -883,7 +901,7 @@ function BookForm() {
         <GlassButton
           variant="primary"
           type="submit"
-          className={`mt-4 flex w-full py-4 text-[15px] shadow-[0_8px_20px_rgba(107,158,17,0.25)] transition-all ${status === "submitting" ? "bg-squito-green/50" : "bg-squito-green/90 dark:bg-squito-green hover:bg-squito-green"}`}
+          className={`mt-4 flex w-full py-4 text-lg shadow-[0_8px_20px_rgba(107,158,17,0.25)] transition-all ${status === "submitting" ? "bg-squito-green/50" : "bg-squito-green/90 dark:bg-squito-green hover:bg-squito-green"}`}
           disabled={status === "submitting"}
         >
           {status === "submitting"
@@ -895,7 +913,7 @@ function BookForm() {
             : `Pay $${(formData.address.length > 5 ? totalWithTax : priceAfterDiscount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Securely →`}
         </GlassButton>
         {!isFree && (
-          <p className="mt-2 text-center text-[11px] font-medium text-gray-400">
+          <p className="mt-2 text-center text-xs font-medium text-gray-400">
             🔒 Secure payment via Stripe
           </p>
         )}

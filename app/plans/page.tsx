@@ -195,20 +195,20 @@ export default function ServicesPage() {
   const isMonthly = billingCycle === "monthly";
 
   return (
-    <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8 bg-[#0a0a0a]">
+    <div className="flex min-h-full flex-col px-5 pb-32 pt-12 sm:px-8 bg-squito-appBlack">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-squito-green">
+        <span className="text-xs font-bold uppercase tracking-[0.2em] text-squito-green">
           Book Once. Earn Points. Get Rewarded.
         </span>
         <h1 className="mt-2 font-display text-[2rem] font-bold leading-tight text-white">
           Our Services
         </h1>
-        <p className="mt-2 text-[13px] font-medium leading-relaxed text-white/50">
+        <p className="mt-2 text-base font-medium leading-relaxed text-white/50">
           Add services to your cart and book them all at once.
         </p>
       </motion.div>
@@ -240,10 +240,10 @@ export default function ServicesPage() {
               key={service.id}
               className={`relative overflow-hidden rounded-[28px] border transition-all active:scale-[0.97] ${
                 service.popular
-                  ? "border-squito-green/40 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(107,158,17,0.12)]"
+                  ? "border-squito-green/40 bg-squito-cardDark/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(107,158,17,0.12)]"
                   : inCart
-                  ? "border-squito-green/30 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-[0_4px_16px_rgba(107,158,17,0.08)]"
-                  : "border-white/8 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+                  ? "border-squito-green/30 bg-squito-cardDark/90 backdrop-blur-xl shadow-[0_4px_16px_rgba(107,158,17,0.08)]"
+                  : "border-white/8 bg-squito-cardDark/90 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
               }`}
             >
               {service.popular && (
@@ -278,7 +278,7 @@ export default function ServicesPage() {
                 <h3 className="font-display text-[16px] font-bold text-white leading-snug">
                   {service.name}
                 </h3>
-                <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-white/50">
+                <p className="mt-1.5 text-sm font-medium leading-relaxed text-white/60">
                   {service.desc}
                 </p>
                 <div className="mt-4 flex items-center justify-between">
@@ -287,7 +287,7 @@ export default function ServicesPage() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.3 + idx * 0.06, type: "spring", stiffness: 300, damping: 15 }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-squito-green/10 border border-squito-green/20 px-3.5 py-1.5 text-[12px] font-bold text-squito-green"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-squito-green/10 border border-squito-green/20 px-3.5 py-1.5 text-sm font-bold text-squito-green"
                     >
                       <motion.span
                         animate={{ scale: [1, 1.3, 1] }}
@@ -298,7 +298,7 @@ export default function ServicesPage() {
                       Earn {service.points} pts
                     </motion.span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-[12px] font-bold text-white/40">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/5 border border-white/10 px-3 py-1.5 text-sm font-bold text-white/40">
                       No commitment
                     </span>
                   )}
@@ -308,7 +308,7 @@ export default function ServicesPage() {
                       <motion.button
                         whileHover={{ scale: 1.04 }}
                         whileTap={{ scale: 0.95 }}
-                        className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-white/10"
+                        className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl px-5 py-2.5 text-base font-bold text-white shadow-sm transition-all hover:bg-white/10"
                       >
                         <span className="relative z-10">Schedule →</span>
                       </motion.button>
@@ -318,7 +318,7 @@ export default function ServicesPage() {
                       initial={{ scale: 1.1 }}
                       animate={{ scale: 1 }}
                       disabled
-                      className="relative overflow-hidden rounded-2xl border border-squito-green/40 bg-squito-green/10 backdrop-blur-xl px-5 py-2.5 text-[13px] font-bold text-squito-green shadow-[0_0_12px_rgba(107,158,17,0.15)]"
+                      className="relative overflow-hidden rounded-2xl border border-squito-green/40 bg-squito-green/10 backdrop-blur-xl px-5 py-2.5 text-base font-bold text-squito-green shadow-[0_0_12px_rgba(107,158,17,0.15)]"
                     >
                       <motion.span
                         initial={{ opacity: 0, y: 5 }}
@@ -337,7 +337,7 @@ export default function ServicesPage() {
                         : {}}
                       transition={wasJustAdded ? { duration: 0.5 } : { type: "spring", stiffness: 400, damping: 15 }}
                       onClick={() => handleAddToCart(service.serviceKey)}
-                      className={`relative overflow-hidden rounded-2xl px-5 py-2.5 text-[13px] font-bold transition-all ${
+                      className={`relative overflow-hidden rounded-2xl px-5 py-2.5 text-base font-bold transition-all ${
                         service.popular
                           ? "bg-gradient-to-r from-squito-green via-[#7db818] to-squito-green text-white shadow-[0_4px_16px_rgba(107,158,17,0.35)] hover:shadow-[0_6px_24px_rgba(107,158,17,0.45)] border border-squito-green/50"
                           : "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.25)] border border-gray-700/50"
@@ -361,7 +361,7 @@ export default function ServicesPage() {
                           </motion.span>
                         ) : (
                           <>
-                            <span className="text-[14px]">🛒</span>
+                            <span className="text-md">🛒</span>
                             Add to Cart
                           </>
                         )}
@@ -386,14 +386,14 @@ export default function ServicesPage() {
       >
         {/* Section Header */}
         <div className="text-center mb-6">
-          <span className="inline-flex items-center gap-2 rounded-full bg-squito-green/10 border border-squito-green/20 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-squito-green">
+          <span className="inline-flex items-center gap-2 rounded-full bg-squito-green/10 border border-squito-green/20 px-4 py-1.5 text-2xs font-bold uppercase tracking-widest text-squito-green">
             🛡️ Protection Plans
           </span>
           <h2 className="mt-4 font-display text-[1.75rem] font-bold text-white leading-tight">
             Pick your plan.<br/>
             <span className="text-squito-green">We handle the rest.</span>
           </h2>
-          <p className="mt-2 text-[12px] font-medium text-white/40 max-w-xs mx-auto leading-relaxed">
+          <p className="mt-2 text-sm font-medium text-white/60 max-w-xs mx-auto leading-relaxed">
             Every plan includes free re-service, no contracts, and the Squito Pest Control guarantee.
           </p>
         </div>
@@ -403,8 +403,10 @@ export default function ServicesPage() {
           {(["monthly", "yearly"] as const).map((cycle) => (
             <button
               key={cycle}
+              aria-pressed={billingCycle === cycle}
+              aria-label={`${cycle === "monthly" ? "Monthly" : "Yearly"} billing${cycle === "yearly" ? " — save 20%" : ""}`}
               onClick={() => { setBillingCycle(cycle); haptics.light(); }}
-              className={`flex-1 rounded-full py-2.5 text-[12px] font-bold transition-all duration-300 ${
+              className={`flex-1 rounded-full py-2.5 text-sm font-bold transition-all duration-300 ${
                 billingCycle === cycle
                   ? "bg-white/10 text-squito-green shadow-sm"
                   : "text-white/40"
@@ -437,13 +439,13 @@ export default function ServicesPage() {
                 key={plan.id}
                 className={`relative rounded-[28px] border overflow-hidden active:scale-[0.97] transition-transform ${
                   plan.popular
-                    ? "border-squito-green/40 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(107,158,17,0.15)]"
-                    : "border-white/8 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+                    ? "border-squito-green/40 bg-squito-cardDark/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(107,158,17,0.15)]"
+                    : "border-white/8 bg-squito-cardDark/90 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
                 }`}
               >
                 {plan.popular && (
                   <div className="bg-gradient-to-r from-squito-green to-[#5a8c10] px-5 py-2.5 text-center">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white">
+                    <span className="text-2xs font-bold uppercase tracking-widest text-white">
                       ⭐ Most Popular — Recommended
                     </span>
                   </div>
@@ -457,7 +459,7 @@ export default function ServicesPage() {
                         <span className="text-2xl">{plan.icon}</span>
                         <h3 className="font-display text-xl font-bold text-white">{plan.name}</h3>
                       </div>
-                      <p className="mt-1 text-[12px] font-medium text-white/50 max-w-[200px]">{plan.desc}</p>
+                      <p className="mt-1 text-sm font-medium text-white/65 max-w-[200px]">{plan.desc}</p>
                     </div>
                   </div>
 
@@ -465,18 +467,18 @@ export default function ServicesPage() {
                   <div className="mt-4">
                     <div className="flex items-baseline gap-1">
                       <span className="text-[2.2rem] font-bold text-white tabular-nums tracking-tight">{price}</span>
-                      <span className="text-[13px] font-bold text-white/40">{billingLabel}</span>
+                      <span className="text-base font-bold text-white/40">{billingLabel}</span>
                     </div>
 
                     {isMonthly ? (
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-[10px] font-bold text-amber-400">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-2xs font-bold text-amber-400">
                           + {plan.initialFee} initial fee
                         </span>
                       </div>
                     ) : (
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold text-emerald-400">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-2xs font-bold text-emerald-400">
                           ✓ Initial fee waived · {plan.yearSavings}
                         </span>
                       </div>
@@ -486,15 +488,15 @@ export default function ServicesPage() {
                   {/* Quick stats */}
                   <div className="mt-4 grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-white/5 border border-white/5 px-3 py-2 text-center">
-                      <p className="text-[14px] font-bold text-squito-green">{plan.pestsCount}</p>
+                      <p className="text-md font-bold text-squito-green">{plan.pestsCount}</p>
                       <p className="text-[9px] font-bold text-white/30 uppercase">Pests</p>
                     </div>
                     <div className="rounded-xl bg-white/5 border border-white/5 px-3 py-2 text-center">
-                      <p className="text-[11px] font-bold text-white">{plan.coverage}</p>
+                      <p className="text-xs font-bold text-white">{plan.coverage}</p>
                       <p className="text-[9px] font-bold text-white/30 uppercase">Coverage</p>
                     </div>
                     <div className="rounded-xl bg-white/5 border border-white/5 px-3 py-2 text-center">
-                      <p className="text-[11px] font-bold text-white">{plan.frequency}</p>
+                      <p className="text-xs font-bold text-white">{plan.frequency}</p>
                       <p className="text-[9px] font-bold text-white/30 uppercase">Visits</p>
                     </div>
                   </div>
@@ -503,10 +505,10 @@ export default function ServicesPage() {
                   <div className="mt-4 flex flex-col gap-2">
                     {plan.features.map((feat, fidx) => (
                       <div key={fidx} className="flex items-start gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-squito-green/15 text-[10px] text-squito-green mt-0.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-squito-green/15 text-2xs text-squito-green mt-0.5">
                           ✓
                         </span>
-                        <span className="text-[12px] font-medium text-white/70 leading-snug">{feat}</span>
+                        <span className="text-sm font-medium text-white/75 leading-snug">{feat}</span>
                       </div>
                     ))}
                   </div>
@@ -514,7 +516,7 @@ export default function ServicesPage() {
                   {/* Points preview */}
                   <div className="mt-4 rounded-xl bg-squito-green/10 border border-squito-green/15 px-3.5 py-2.5 flex items-center gap-2">
                     <span className="text-sm">⭐</span>
-                    <span className="text-[11px] font-bold text-squito-green">
+                    <span className="text-xs font-bold text-squito-green">
                       Earn {points} PestPoints {isMonthly ? "every month" : "upfront"}
                       {isMonthly && <span className="text-squito-green/50"> ({points * 12}/yr)</span>}
                     </span>
@@ -530,7 +532,7 @@ export default function ServicesPage() {
                       <motion.button
                         whileHover={{ scale: 1.03, y: -1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="w-full relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl py-3 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-white/10"
+                        className="w-full relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-xl py-3 text-base font-bold text-white shadow-sm transition-all hover:bg-white/10"
                       >
                         <span className="relative z-10">View Details</span>
                       </motion.button>
@@ -544,7 +546,7 @@ export default function ServicesPage() {
                         whileHover={{ scale: 1.06, y: -1 }}
                         whileTap={{ scale: 0.93 }}
                         transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                        className={`w-full relative overflow-hidden rounded-2xl py-3 text-[13px] font-bold transition-all ${
+                        className={`w-full relative overflow-hidden rounded-2xl py-3 text-base font-bold transition-all ${
                           plan.popular
                             ? "bg-gradient-to-r from-squito-green via-[#7db818] to-squito-green text-white shadow-[0_4px_16px_rgba(107,158,17,0.35)] hover:shadow-[0_6px_24px_rgba(107,158,17,0.5)] border border-squito-green/50"
                             : "bg-gradient-to-r from-squito-green/90 to-[#5a8c10] text-white shadow-[0_4px_12px_rgba(107,158,17,0.2)] hover:shadow-[0_6px_20px_rgba(107,158,17,0.35)] border border-squito-green/40"
@@ -577,7 +579,7 @@ export default function ServicesPage() {
           {trustBadges.map((badge) => (
             <span
               key={badge.label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3.5 py-2 text-[11px] font-bold text-white/60"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3.5 py-2 text-xs font-bold text-white/60"
             >
               {badge.icon} {badge.label}
             </span>
@@ -610,18 +612,19 @@ export default function ServicesPage() {
             className="fixed bottom-16 left-0 right-0 z-[8500] flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-none"
           >
             <button
+              aria-label={`View cart — ${itemCount} ${itemCount === 1 ? "service" : "services"}, subtotal $${subtotal}`}
               onClick={() => { openDrawer(); haptics.medium(); }}
-              className="pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl border border-squito-green/30 bg-[#1a1a1a]/95 backdrop-blur-xl px-5 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.3)] active:scale-[0.98] transition-transform"
+              className="pointer-events-auto flex w-full max-w-sm items-center justify-between rounded-2xl border border-squito-green/30 bg-squito-cardDark/95 backdrop-blur-xl px-5 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.3)] active:scale-[0.98] transition-transform"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-squito-green text-white text-[13px] font-bold">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-squito-green text-white text-base font-bold">
                   {itemCount}
                 </span>
                 <div className="text-left">
-                  <p className="text-[13px] font-bold text-white">
+                  <p className="text-base font-bold text-white">
                     {itemCount} {itemCount === 1 ? "service" : "services"} in cart
                   </p>
-                  <p className="text-[11px] font-medium text-white/40">
+                  <p className="text-xs font-medium text-white/40">
                     Tap to review & checkout
                   </p>
                 </div>

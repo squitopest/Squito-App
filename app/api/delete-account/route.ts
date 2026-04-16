@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getErrorMessage } from "@/lib/errors";
 
 export async function POST(req: NextRequest) {
   try {
@@ -70,10 +71,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[DELETE ACCOUNT] Unexpected error:", err);
     return NextResponse.json(
-      { error: err.message || "Internal error" },
+      { error: getErrorMessage(err, "Internal error") },
       { status: 500 },
     );
   }

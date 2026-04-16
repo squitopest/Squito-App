@@ -12,7 +12,7 @@ export default function PrivacyPolicyPage() {
       >
         <Link
           href="/me"
-          className="inline-flex items-center gap-1 text-[13px] font-semibold text-squito-green mb-6 hover:opacity-80"
+          className="inline-flex items-center gap-1 text-base font-semibold text-squito-green mb-6 hover:opacity-80"
         >
           ← Back
         </Link>
@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="font-display text-[2rem] font-bold leading-tight text-white">
           Privacy Policy
         </h1>
-        <p className="mt-2 text-[13px] font-medium text-white/40">
+        <p className="mt-2 text-base font-medium text-white/40">
           Last updated: April 11, 2026
         </p>
       </motion.div>
@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="mt-8 space-y-8 text-[14px] leading-relaxed text-white/70"
+        className="mt-8 space-y-8 text-md leading-relaxed text-white/70"
       >
         <section>
           <h2 className="font-display text-lg font-bold text-white mb-2">

@@ -6,11 +6,12 @@ const KEY_ID = "SH3T3U8M89";
 const TEAM_ID = "4367ZCH572";           
 const CLIENT_ID = "com.squito.app.services";   
 
-const P8_PATH = path.join(__dirname, "AuthKey.p8");
+const P8_PATH = process.env.APPLE_AUTH_KEY_PATH || path.join(__dirname, "AuthKey.p8");
 
 try {
   if (!fs.existsSync(P8_PATH)) {
-    console.error("❌ Error: Could not find AuthKey.p8!");
+    console.error("❌ Error: Could not find the Apple private key file.");
+    console.error("   Put it at scripts/AuthKey.p8 or set APPLE_AUTH_KEY_PATH.");
     process.exit(1);
   }
 
@@ -35,11 +36,11 @@ try {
     }
   );
 
-  const outputPath = path.join(__dirname, "apple-jwt.txt");
+  const outputPath = process.env.APPLE_CLIENT_SECRET_OUTPUT || path.join(__dirname, "apple-jwt.txt");
   fs.writeFileSync(outputPath, token);
   
   console.log("\n✅ Apple Client Secret Generated Successfully!");
-  console.log("👉 The JWT has been saved to: scripts/apple-jwt.txt");
+  console.log(`👉 The JWT has been saved to: ${outputPath}`);
   console.log("Please open that file in VS Code, copy everything inside, and paste it into Supabase.");
   console.log("This prevents your terminal from accidentally adding hidden spaces or newlines when copying!\n");
 

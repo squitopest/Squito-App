@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
-      <body className="font-sans min-h-[100dvh] w-full flex flex-col bg-[#0a0a0a] text-white antialiased">
+      <body className="font-sans min-h-[100dvh] w-full flex flex-col bg-squito-appBlack text-white antialiased">
         <AuthProvider>
           <CartProvider>
             <SplashScreen />

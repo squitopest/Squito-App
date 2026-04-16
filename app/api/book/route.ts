@@ -1,6 +1,24 @@
 
 import { NextResponse } from "next/server";
-import { processBooking } from "@/lib/bookingEngine";
+import { processBooking, type BookingData } from "@/lib/bookingEngine";
+
+interface BookRoutePayload {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  service?: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  notes?: string;
+  userId?: string;
+  coordinates?: { lat: number; lng: number } | null;
+  isPaid?: boolean;
+}
+
+function isBookRoutePayload(value: unknown): value is BookRoutePayload {
+  return typeof value === "object" && value !== null;
+}
 
 /**
  * POST /api/book
@@ -16,7 +34,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const data = body as Record<string, any>;
+  if (!isBookRoutePayload(body)) {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const data = body;
 
   // This route should ONLY be called for Free Estimates now
   if (data.service !== "Free Estimate / Custom Quote") {
@@ -26,7 +48,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const required = ["name", "email", "phone", "address", "service"];
+  const required: Array<keyof BookRoutePayload> = ["name", "email", "phone", "address", "service"];
   for (const key of required) {
     const v = data[key];
     if (typeof v !== "string" || !v.trim()) {
@@ -37,9 +59,19 @@ export async function POST(request: Request) {
     }
   }
 
-  // Tag it as unpaid for the engine
-  data.isPaid = false;
+  const bookingData: BookingData = {
+    name: data.name!,
+    email: data.email!,
+    phone: data.phone!,
+    address: data.address!,
+    service: data.service!,
+    preferredDate: data.preferredDate ?? null,
+    preferredTime: data.preferredTime ?? null,
+    userId: data.userId ?? null,
+    coordinates: data.coordinates ?? null,
+    isPaid: false,
+  };
 
-  const result = await processBooking(data);
+  const result = await processBooking(bookingData);
   return NextResponse.json(result);
 }

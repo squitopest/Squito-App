@@ -64,7 +64,7 @@ export default function NotificationsPage() {
       <div className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[#1a1a1a]/80 px-5 py-4 backdrop-blur-2xl">
         <Link
           href="/me"
-          className="flex items-center text-[15px] font-semibold text-squito-green"
+          className="flex items-center text-lg font-semibold text-squito-green"
         >
           <span className="mr-1 text-xl leading-none">‹</span> Profile
         </Link>
@@ -75,16 +75,16 @@ export default function NotificationsPage() {
       </div>
 
       <div className="px-5 pt-8">
-        <h2 className="mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
+        <h2 className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">
           Service Reminders
         </h2>
         <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm mb-8">
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div>
-              <span className="block text-[15px] font-bold text-white">
+              <span className="block text-lg font-bold text-white">
                 Push Notifications
               </span>
-              <span className="block text-[12px] font-medium text-white/40 mt-0.5">
+              <span className="block text-sm font-medium text-white/40 mt-0.5">
                 Route updates, tech tracking
               </span>
             </div>
@@ -96,10 +96,10 @@ export default function NotificationsPage() {
 
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div>
-              <span className="block text-[15px] font-bold text-white">
+              <span className="block text-lg font-bold text-white">
                 SMS Alerts
               </span>
-              <span className="block text-[12px] font-medium text-white/40 mt-0.5">
+              <span className="block text-sm font-medium text-white/40 mt-0.5">
                 Gate codes, ETA text alerts
               </span>
             </div>
@@ -108,10 +108,10 @@ export default function NotificationsPage() {
 
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <span className="block text-[15px] font-bold text-white">
+              <span className="block text-lg font-bold text-white">
                 Email
               </span>
-              <span className="block text-[12px] font-medium text-white/40 mt-0.5">
+              <span className="block text-sm font-medium text-white/40 mt-0.5">
                 Invoices and detailed service reports
               </span>
             </div>
@@ -122,16 +122,16 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        <h2 className="mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
+        <h2 className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">
           Promotions
         </h2>
         <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm">
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <span className="block text-[15px] font-bold text-white">
+              <span className="block text-lg font-bold text-white">
                 Marketing & Offers
               </span>
-              <span className="block text-[12px] font-medium text-white/40 mt-0.5 pr-4">
+              <span className="block text-sm font-medium text-white/40 mt-0.5 pr-4">
                 Receive discounts on preventative pest add-ons
               </span>
             </div>

@@ -1,7 +1,14 @@
 
 import { NextResponse } from "next/server";
+import { getErrorMessage } from "@/lib/errors";
 import { getStripe } from "@/lib/stripe";
 import { calculateTax } from "@/lib/bookingEngine";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const checkoutRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 10,
+});
 
 // Service ID → price in cents (Stripe uses cents)
 const SERVICE_PRICES: Record<string, number> = {
@@ -48,10 +55,63 @@ const SERVICE_POINTS: Record<string, number> = {
   "Ultimate Fortress (yearly)": 2100,
 };
 
+interface CheckoutCoordinates {
+  lat: number;
+  lng: number;
+}
+
+interface CheckoutCartInputItem {
+  serviceKey?: string;
+  service?: string;
+}
+
+interface CheckoutRequestBody {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  service?: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  coordinates?: CheckoutCoordinates;
+  userId?: string;
+  discountCents?: number;
+  redemptionId?: string;
+  cartItems?: CheckoutCartInputItem[];
+}
+
+function isCheckoutRequestBody(value: unknown): value is CheckoutRequestBody {
+  return typeof value === "object" && value !== null;
+}
+
+interface CheckoutLineItem {
+  price_data: {
+    currency: "usd";
+    product_data: {
+      name: string;
+      description: string;
+    };
+    unit_amount: number;
+  };
+  quantity: number;
+}
+
 export async function POST(request: Request) {
-  let body: Record<string, any>;
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  if (checkoutRateLimit.isLimited(ip)) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment and try again." },
+      { status: 429 },
+    );
+  }
+
+  let body: CheckoutRequestBody;
   try {
-    body = await request.json();
+    const parsedBody = await request.json();
+    if (!isCheckoutRequestBody(parsedBody)) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    body = parsedBody;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -93,6 +153,12 @@ export async function POST(request: Request) {
     // Cart mode — validate each item against server-side price list
     for (const item of clientCartItems) {
       const serviceKey = item.serviceKey || item.service;
+      if (!serviceKey) {
+        return NextResponse.json(
+          { error: "Cart item is missing a service identifier" },
+          { status: 400 }
+        );
+      }
       const serverPrice = SERVICE_PRICES[serviceKey];
       if (serverPrice === undefined || serverPrice === 0) {
         return NextResponse.json(
@@ -112,6 +178,9 @@ export async function POST(request: Request) {
     }
   } else {
     // Single-service mode (backward compatible)
+    if (!service) {
+      return NextResponse.json({ error: "Missing service" }, { status: 400 });
+    }
     const priceCents = SERVICE_PRICES[service];
     if (!priceCents) {
       return NextResponse.json({ error: `Unknown service: ${service}` }, { status: 400 });
@@ -153,9 +222,8 @@ export async function POST(request: Request) {
         // Use the DATABASE value — not the client's claimed amount
         validDiscount = Math.min(redemption.discount_cents, subtotalCents);
         verifiedRedemptionId = redemption.id;
-        console.log(`[Checkout] Verified discount: ${validDiscount} cents for user ${userId}`);
       } else {
-        console.warn(`[Checkout] Discount rejected — invalid/expired/used redemption ${redemptionId}`);
+        console.warn("[Checkout] Discount rejected due to invalid, expired, or used redemption.");
       }
     } catch (err) {
       console.error("[Checkout] Discount validation error:", err);
@@ -180,7 +248,7 @@ export async function POST(request: Request) {
     }
 
     // ── Build line items ──
-    const line_items: any[] = verifiedCartItems.map((item) => {
+    const line_items: CheckoutLineItem[] = verifiedCartItems.map((item) => {
       // If there's a discount, spread it proportionally across items for Stripe display
       const itemDiscountCents = validDiscount > 0
         ? Math.round((item.priceCents / subtotalCents) * validDiscount)
@@ -296,7 +364,7 @@ export async function POST(request: Request) {
       // Also store the primary service name for backward compat
       metadata.service = verifiedCartItems.map((i) => i.service.replace(/\s*\(.*\)$/, "")).join(", ");
     } else {
-      metadata.service = service;
+      metadata.service = service || "";
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -310,10 +378,10 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ url: session.url, tax });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[Stripe Checkout Error]", err);
     return NextResponse.json(
-      { error: err.message || "Failed to create checkout session" },
+      { error: getErrorMessage(err, "Failed to create checkout session") },
       { status: 500 }
     );
   }

@@ -158,13 +158,13 @@ export function AuthGate() {
   };
 
   const inputClasses =
-    "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-[15px] text-white/90 shadow-sm outline-none transition placeholder:text-white/30 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
+    "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-lg text-white/90 shadow-sm outline-none transition placeholder:text-white/30 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[9998] flex flex-col bg-[#09090b]"
+      className="fixed inset-0 z-[9998] flex flex-col bg-squito-appBlack"
     >
       {/* Top Section — Logo + Branding */}
       <div className="flex flex-col items-center pt-16 pb-6">
@@ -203,7 +203,7 @@ export function AuthGate() {
               setError("");
               setMsg("");
             }}
-            className={`flex-1 py-3 text-[13px] font-bold uppercase tracking-wider transition-all ${
+            className={`flex-1 py-3 text-base font-bold uppercase tracking-wider transition-all ${
               view === tab
                 ? "bg-white/10 text-white shadow-sm"
                 : "text-white/40 hover:text-white/60"
@@ -228,10 +228,11 @@ export function AuthGate() {
               className="flex flex-col gap-4"
             >
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="login-email" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Email
                 </label>
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -242,10 +243,11 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="login-password" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Password
                 </label>
                 <input
+                  id="login-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -259,7 +261,7 @@ export function AuthGate() {
                 <motion.p
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl bg-red-50 px-4 py-2.5 text-[13px] font-medium text-red-600"
+                  className="rounded-xl bg-red-50 px-4 py-2.5 text-base font-medium text-red-600"
                 >
                   {error}
                 </motion.p>
@@ -268,7 +270,7 @@ export function AuthGate() {
                 <motion.p
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl bg-squito-green/10 px-4 py-2.5 text-[13px] font-medium text-[#4c730a]"
+                  className="rounded-xl bg-squito-green/10 px-4 py-2.5 text-base font-medium text-[#4c730a]"
                 >
                   {msg}
                 </motion.p>
@@ -278,7 +280,7 @@ export function AuthGate() {
                 variant="primary"
                 type="submit"
                 disabled={submitting}
-                className="mt-2 w-full py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-50"
+                className="mt-2 w-full py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-50"
               >
                 {submitting ? "Signing in..." : "Log In"}
               </GlassButton>
@@ -286,7 +288,7 @@ export function AuthGate() {
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="mt-1 text-[12px] font-semibold text-squito-green hover:underline"
+                className="mt-1 text-sm font-semibold text-squito-green hover:underline"
               >
                 Forgot password?
               </button>
@@ -302,10 +304,11 @@ export function AuthGate() {
               className="flex flex-col gap-4"
             >
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="signup-name" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Display Name
                 </label>
                 <input
+                  id="signup-name"
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
@@ -316,10 +319,11 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="signup-email" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Email
                 </label>
                 <input
+                  id="signup-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -330,10 +334,11 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="signup-password" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Password
                 </label>
                 <input
+                  id="signup-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -344,10 +349,11 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="signup-confirm-password" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Confirm Password
                 </label>
                 <input
+                  id="signup-confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -358,10 +364,11 @@ export function AuthGate() {
               </div>
 
               <div>
-                <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                <label htmlFor="signup-referral" className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                   Referral Email <span className="font-medium text-white/40">(Optional)</span>
                 </label>
                 <input
+                  id="signup-referral"
                   type="email"
                   value={referralEmail}
                   onChange={(e) => setReferralEmail(e.target.value)}
@@ -375,7 +382,7 @@ export function AuthGate() {
                 <motion.p
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl bg-red-50 px-4 py-2.5 text-[13px] font-medium text-red-600"
+                  className="rounded-xl bg-red-50 px-4 py-2.5 text-base font-medium text-red-600"
                 >
                   {error}
                 </motion.p>
@@ -385,7 +392,7 @@ export function AuthGate() {
                 variant="primary"
                 type="submit"
                 disabled={submitting}
-                className="mt-2 w-full py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-50"
+                className="mt-2 w-full py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-50"
               >
                 {submitting ? "Creating account..." : "Create Account"}
               </GlassButton>
@@ -393,12 +400,12 @@ export function AuthGate() {
               {/* Signup incentive */}
               <div className="mt-1 flex items-center gap-2 rounded-2xl bg-squito-green/10 border border-squito-green/20 px-4 py-3">
                 <span className="text-lg">🎁</span>
-                <p className="text-[12px] font-medium text-squito-green">
+                <p className="text-sm font-medium text-squito-green">
                   Sign up now and earn <strong>50 bonus PestPoints</strong> instantly!
                 </p>
               </div>
 
-              <p className="mt-2 text-center text-[11px] text-white/50">
+              <p className="mt-2 text-center text-xs text-white/50">
                 By creating an account, you agree to our{" "}
                 <a href="/privacy" className="text-squito-green underline underline-offset-2 font-semibold">
                   Privacy Policy
@@ -411,7 +418,7 @@ export function AuthGate() {
         {/* Divider */}
         <div className="my-6 flex items-center gap-4">
           <div className="h-px flex-1 bg-white/10" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-white/30">
+          <span className="text-xs font-bold uppercase tracking-widest text-white/30">
             or
           </span>
           <div className="h-px flex-1 bg-white/10" />
@@ -421,7 +428,7 @@ export function AuthGate() {
         {biometricAvailable && hasBiometricCreds && view === "login" && (
           <button
             type="button"
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-squito-green/30 bg-squito-green/10 py-3.5 text-[15px] font-bold text-squito-green shadow-sm transition hover:bg-squito-green/20 active:scale-[0.98] mt-2"
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-squito-green/30 bg-squito-green/10 py-3.5 text-lg font-bold text-squito-green shadow-sm transition hover:bg-squito-green/20 active:scale-[0.98] mt-2"
             onClick={handleBiometricLogin}
             disabled={submitting}
           >
@@ -434,7 +441,7 @@ export function AuthGate() {
           <div className="flex flex-col gap-3">
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-black/40 py-3.5 text-[15px] font-semibold text-white/90 shadow-sm transition hover:bg-white/5 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-black/40 py-3.5 text-lg font-semibold text-white/90 shadow-sm transition hover:bg-white/5 active:scale-[0.98]"
               onClick={async () => {
                 setSubmitting(true);
                 const res = await signInWithApple();
@@ -450,7 +457,7 @@ export function AuthGate() {
             </button>
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-black/40 py-3.5 text-[15px] font-semibold text-white/90 shadow-sm transition hover:bg-white/5 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-black/40 py-3.5 text-lg font-semibold text-white/90 shadow-sm transition hover:bg-white/5 active:scale-[0.98]"
               onClick={async () => {
                 setSubmitting(true);
                 const res = await signInWithGoogle();
@@ -476,11 +483,11 @@ export function AuthGate() {
           <button
             type="button"
             onClick={continueAsGuest}
-            className="w-full rounded-2xl border border-dashed border-white/20 py-3.5 text-[14px] font-semibold text-white/50 transition hover:border-white/40 hover:text-white/70 active:scale-[0.98]"
+            className="w-full rounded-2xl border border-dashed border-white/20 py-3.5 text-md font-semibold text-white/50 transition hover:border-white/40 hover:text-white/70 active:scale-[0.98]"
           >
             Continue as Guest
           </button>
-          <p className="mt-2 text-center text-[11px] font-medium text-white/40">
+          <p className="mt-2 text-center text-xs font-medium text-white/40">
             No PestPoints, no promotions, no saved preferences.
           </p>
         </div>

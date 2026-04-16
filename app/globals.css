@@ -30,6 +30,15 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Hide scrollbars across all browsers while keeping scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer / Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;             /* Chrome, Safari, Opera, iOS */
+  }
 }
 
 /* Google Maps Autocomplete Dark Mode Overrides */

@@ -18,7 +18,7 @@ const slides = [
     id: "ai",
     emoji: "📸",
     title: "AI Pest Identifier",
-    desc: "Found a creepy crawler? Snap a pic and our Squito AI will immediately identify the threat.",
+    desc: "Found a creepy crawler? Snap a pic and Squito will immediately identify the threat.",
     color: "bg-blue-500/10",
     iconColor: "text-blue-500",
   },
@@ -92,7 +92,7 @@ export function WelcomeCarousel() {
           <div className="flex items-center justify-end px-6 pt-safe-top mt-4">
             <button
               onClick={handleSkip}
-              className="text-[14px] font-bold text-white/40 active:text-white/60 transition"
+              className="text-md font-bold text-white/40 active:text-white/60 transition"
             >
               Skip
             </button>

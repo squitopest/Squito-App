@@ -77,7 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
     if (error || !data) return null;
-    return data as UserProfile;
+    return {
+      id: data.id,
+      display_name: data.display_name,
+      email: data.email,
+      address: data.address,
+      service_address: data.service_address,
+      avatar_url: data.avatar_url,
+      phone: data.phone,
+      created_at: data.created_at,
+      total_points: data.total_points,
+      redeemable_points: data.redeemable_points,
+      tier: data.tier,
+      onboarding_complete: data.onboarding_complete,
+    };
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -89,11 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ── Bootstrap session on mount ──
   useEffect(() => {
+    let isMounted = true;
+    let authCleanup: (() => void) | undefined;
+    const pushListenerRemovers: Array<() => void> = [];
+
     async function init() {
       // Check for guest mode first
       if (typeof window !== "undefined") {
         const guestStored = localStorage.getItem(GUEST_KEY);
         if (guestStored === "true") {
+          if (!isMounted) return;
           setIsGuest(true);
           setIsLoading(false);
           setIsAuthReady(true);
@@ -103,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!supabase) {
         // No Supabase configured — treat as needing auth gate
+        if (!isMounted) return;
         setIsLoading(false);
         setIsAuthReady(true);
         return;
@@ -113,11 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { session: existingSession },
       } = await supabase.auth.getSession();
 
+      if (!isMounted) return;
+
       if (existingSession?.user) {
         setUser(existingSession.user);
         setSession(existingSession);
         const p = await fetchProfile(existingSession.user.id);
-        if (p) setProfile(p);
+        if (isMounted && p) setProfile(p);
       }
 
       // Initialize APNs Hardware Hook (Native Only)
@@ -126,13 +147,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (Capacitor.isNativePlatform()) {
             import("@capacitor/push-notifications").then(({ PushNotifications }) => {
               PushNotifications.requestPermissions().then((result) => {
-                if (result.receive === 'granted') {
+                if (result.receive === "granted") {
                   PushNotifications.register();
                 }
               }).catch(console.warn);
 
               // Webhook raw APNs tokens directly into OneSignal CRM
-              PushNotifications.addListener('registration', async (token) => {
+              PushNotifications.addListener("registration", async (token) => {
                 const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
                 if (!appId || !supabase) return;
                 try {
@@ -144,18 +165,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       app_id: appId,
                       device_type: 0, // 0 = iOS (Apple APNs)
                       identifier: token.value,
-                      external_user_id: currentSession?.user?.id || undefined
-                    })
+                      external_user_id: currentSession?.user?.id || undefined,
+                    }),
                   });
                 } catch (err) {
                   console.warn("OneSignal Registration failed", err);
                 }
-              });
+              }).then((handle) => {
+                pushListenerRemovers.push(() => {
+                  void handle.remove();
+                });
+              }).catch(console.warn);
             }).catch(console.warn);
           }
         }).catch(console.warn);
       }
 
+      if (!isMounted) return;
       setIsLoading(false);
       setIsAuthReady(true);
 
@@ -171,7 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(newSession.user);
           setSession(newSession);
           setIsGuest(false);
-          localStorage.removeItem(GUEST_KEY);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(GUEST_KEY);
+          }
           const p = await fetchProfile(newSession.user.id);
           if (p) setProfile(p);
         } else {
@@ -181,10 +209,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      return () => subscription.unsubscribe();
+      authCleanup = () => subscription.unsubscribe();
     }
 
-    init();
+    void init();
+
+    return () => {
+      isMounted = false;
+      authCleanup?.();
+      pushListenerRemovers.forEach((remove) => remove());
+    };
   }, [fetchProfile, router]);
 
   // ── Auth actions ──
@@ -206,7 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) => {
     if (!supabase) return { error: "Supabase not configured. Add your keys to .env.local" };
     setIsLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -219,12 +253,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
     if (error) return { error: error.message };
 
-    // Fire welcome email (non-blocking — don't hold up the UI)
-    fetch("/api/welcome-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, displayName }),
-    }).catch((err) => console.warn("[Auth] Welcome email failed:", err));
+    // Fire welcome email only when Supabase returns a live session token.
+    // This keeps the email endpoint private instead of publicly callable.
+    if (data.session?.access_token) {
+      fetch("/api/welcome-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({ email, displayName }),
+      }).catch((err) => console.warn("[Auth] Welcome email failed:", err));
+    }
 
     return {};
   };
@@ -296,8 +336,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           return { error: "Apple login cancelled." };
         }
-      } catch (err: any) {
-        return { error: err.message || "Apple login failed natively." };
+      } catch (err: unknown) {
+        return {
+          error: err instanceof Error ? err.message : "Apple login failed natively.",
+        };
       }
     } else {
       // Web fallback

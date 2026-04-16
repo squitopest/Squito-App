@@ -17,6 +17,8 @@
 # misc
 .DS_Store
 *.pem
+scripts/AuthKey.p8
+scripts/apple-jwt.txt
 
 # debug
 npm-debug.log*

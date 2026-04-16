@@ -181,7 +181,7 @@ function SuccessContent() {
         >
           {/* Card Header */}
           <div className="bg-gradient-to-r from-squito-green to-[#5a8c10] px-5 py-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">
+            <p className="text-2xs font-bold uppercase tracking-widest text-white/70">
               {isCartOrder ? `${details.cartItems!.length} Services Booked` : "Booking Confirmed"}
             </p>
             <p className="text-[17px] font-bold text-white mt-0.5 leading-snug">
@@ -195,20 +195,20 @@ function SuccessContent() {
           <div className="divide-y divide-white/5 px-5">
             {details.name && (
               <div className="flex items-center justify-between py-3">
-                <span className="text-[12px] text-white/40 font-medium">Name</span>
-                <span className="text-[13px] font-bold text-white">{details.name}</span>
+                <span className="text-sm text-white/40 font-medium">Name</span>
+                <span className="text-base font-bold text-white">{details.name}</span>
               </div>
             )}
             {details.address && (
               <div className="flex items-start justify-between gap-3 py-3">
-                <span className="text-[12px] text-white/40 font-medium shrink-0">Address</span>
-                <span className="text-[13px] font-bold text-white text-right">{details.address}</span>
+                <span className="text-sm text-white/40 font-medium shrink-0">Address</span>
+                <span className="text-base font-bold text-white text-right">{details.address}</span>
               </div>
             )}
             {details.preferredDate && (
               <div className="flex items-center justify-between py-3">
-                <span className="text-[12px] text-white/40 font-medium">Appointment</span>
-                <span className="text-[13px] font-bold text-white">
+                <span className="text-sm text-white/40 font-medium">Appointment</span>
+                <span className="text-base font-bold text-white">
                   {new Date(details.preferredDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                   {details.preferredTime && ` at ${details.preferredTime}`}
                 </span>
@@ -218,17 +218,17 @@ function SuccessContent() {
             {/* Cart items breakdown */}
             {isCartOrder && details.cartItems && (
               <div className="py-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Services</p>
+                <p className="text-2xs font-bold uppercase tracking-widest text-white/40 mb-2">Services</p>
                 {details.cartItems.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between py-1.5">
-                    <span className="text-[12px] font-medium text-white/70">
+                    <span className="text-sm font-medium text-white/70">
                       {item.service.replace(/\s*\(.*\)$/, "")}
                     </span>
                     <div className="flex items-center gap-2">
                       {item.points > 0 && (
-                        <span className="text-[10px] font-bold text-squito-green">+{item.points} pts</span>
+                        <span className="text-2xs font-bold text-squito-green">+{item.points} pts</span>
                       )}
-                      <span className="text-[12px] font-bold text-white">
+                      <span className="text-sm font-bold text-white">
                         ${(item.priceCents / 100).toFixed(2)}
                       </span>
                     </div>
@@ -240,16 +240,16 @@ function SuccessContent() {
             {/* Discount applied */}
             {details.discountCents && details.discountCents > 0 && (
               <div className="flex items-center justify-between py-3">
-                <span className="text-[12px] text-emerald-500 font-medium">🎁 PestPoints Discount</span>
-                <span className="text-[13px] font-bold text-emerald-500">
+                <span className="text-sm text-emerald-500 font-medium">🎁 PestPoints Discount</span>
+                <span className="text-base font-bold text-emerald-500">
                   -{formatAmount(details.discountCents, details.currency)}
                 </span>
               </div>
             )}
 
             <div className="flex items-center justify-between py-3">
-              <span className="text-[12px] text-white/40 font-medium">Amount Paid</span>
-              <span className="text-[14px] font-bold text-squito-green">
+              <span className="text-sm text-white/40 font-medium">Amount Paid</span>
+              <span className="text-md font-bold text-squito-green">
                 {formatAmount(details.amountTotal, details.currency)}
               </span>
             </div>
@@ -271,7 +271,7 @@ function SuccessContent() {
           className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-squito-green/10 border border-squito-green/20 px-5 py-3.5"
         >
           <span className="text-xl">🎉</span>
-          <p className="text-[12px] font-medium text-squito-green">
+          <p className="text-sm font-medium text-squito-green">
             {isCartOrder && totalCartPoints > 0
               ? <>You&apos;re earning <strong>{totalCartPoints} PestPoints</strong> across all {details!.cartItems!.length} services! Check your profile shortly.</>
               : <>Your <strong>PestPoints</strong> will be awarded automatically! Check your profile shortly.</>}
@@ -285,7 +285,7 @@ function SuccessContent() {
           className="mt-4 flex w-full max-w-sm items-center gap-3 rounded-2xl bg-white/5 border border-white/10 px-5 py-3.5"
         >
           <span className="text-xl">💡</span>
-          <p className="text-[12px] font-medium text-white/50">
+          <p className="text-sm font-medium text-white/50">
             Create an account to earn <strong className="text-squito-green">PestPoints</strong> on every booking!
           </p>
         </motion.div>
@@ -303,7 +303,7 @@ function SuccessContent() {
             href={googleCalendarUrl(details)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#1a1a1a] py-3 text-[12px] font-bold text-white shadow-sm active:scale-95 transition-transform"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#1a1a1a] py-3 text-sm font-bold text-white shadow-sm active:scale-95 transition-transform"
           >
             📅 Google Calendar
           </a>
@@ -311,7 +311,7 @@ function SuccessContent() {
             href={appleCalendarUrl(details)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#1a1a1a] py-3 text-[12px] font-bold text-white shadow-sm active:scale-95 transition-transform"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#1a1a1a] py-3 text-sm font-bold text-white shadow-sm active:scale-95 transition-transform"
           >
             🍎 Apple Calendar
           </a>
@@ -328,7 +328,7 @@ function SuccessContent() {
         <Link href="/plans">
           <GlassButton
             variant="primary"
-            className="w-full py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
+            className="w-full py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
           >
             Browse More Services
           </GlassButton>

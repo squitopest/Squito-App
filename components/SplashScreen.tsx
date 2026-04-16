@@ -179,7 +179,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
                 initial={{ opacity: 0, letterSpacing: "0.05em" }}
                 animate={{ opacity: 1, letterSpacing: "0.25em" }}
                 transition={{ delay: 1.6, duration: 1, ease: "easeOut" }}
-                className="text-[11px] font-bold uppercase text-white/50"
+                className="text-xs font-bold uppercase text-white/50"
               >
                 Pest Control
               </motion.p>
@@ -190,7 +190,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.3 }}
               transition={{ delay: 2.0, duration: 0.8 }}
-              className="mt-6 text-[10px] font-medium tracking-[0.15em] text-white/30"
+              className="mt-6 text-2xs font-medium tracking-[0.15em] text-white/30"
             >
               Smart. Safe. <span className="text-squito-green/60">Pest Control.</span>
             </motion.p>

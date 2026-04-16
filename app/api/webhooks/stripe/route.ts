@@ -1,9 +1,20 @@
 
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { processBooking, processCartBooking } from "@/lib/bookingEngine";
+import { getErrorMessage } from "@/lib/errors";
+
+function isCheckoutSession(value: unknown): value is Stripe.Checkout.Session {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "object" in value &&
+    value.object === "checkout.session"
+  );
+}
 
 export async function POST(req: Request) {
   const stripe = getStripe();
@@ -22,18 +33,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
-  let event;
+  let event: Stripe.Event;
   try {
     const body = await req.text();
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err: any) {
-    console.error(`[Stripe Webhook] Signature verification failed`, err.message);
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+  } catch (err: unknown) {
+    const message = getErrorMessage(err, "Signature verification failed");
+    console.error("[Stripe Webhook] Signature verification failed", message);
+    return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
   }
 
   // We only handle checkout.session.completed right now
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any;
+    if (!isCheckoutSession(event.data.object)) {
+      console.error("[Stripe Webhook] Received unexpected event payload for checkout.session.completed");
+      return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+    }
+
+    const session = event.data.object;
 
     try {
       // 1. Deduplication using Supabase
@@ -49,7 +66,7 @@ export async function POST(req: Request) {
       });
 
       // Attempt to record this webhook to prevent duplicate processing
-      const { data: insertData, error: dbError } = await supabase
+      const { error: dbError } = await supabase
         .from("stripe_webhooks")
         .insert({
           id: event.id,
@@ -60,7 +77,6 @@ export async function POST(req: Request) {
       if (dbError) {
         // Assuming duplicate id (PostgreSQL error code 23505)
         if (dbError.code === "23505") {
-          console.log(`[Stripe Webhook] Event ${event.id} already processed. Skipping.`);
           return NextResponse.json({ received: true, notice: "Already processed" });
         }
         throw new Error(`Database error: ${dbError.message}`);
@@ -72,8 +88,6 @@ export async function POST(req: Request) {
 
       if (isCartOrder && meta.cartItems) {
         // ── Cart order: process all services ──
-        console.log(`[Stripe Webhook] Processing CART order with session ${session.id}`);
-
         let cartItems: Array<{ service: string; priceCents: number; points: number }>;
         try {
           cartItems = JSON.parse(meta.cartItems);
@@ -109,7 +123,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Booking processing failed" }, { status: 500 });
           }
 
-          console.log(`[Stripe Webhook] Successfully processed cart order with ${cartItems.length} services`);
         }
       } else {
         // ── Single-service order (backward compatible) ──
@@ -142,8 +155,7 @@ export async function POST(req: Request) {
         }
       }
 
-      console.log(`[Stripe Webhook] Successfully processed session ${session.id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[Stripe Webhook] Error processing event:", err);
       return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

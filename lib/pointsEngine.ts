@@ -13,6 +13,32 @@ export interface TierInfo {
   color: string;
 }
 
+export interface PointsTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  type: "earn" | "redeem";
+  reason: string;
+  created_at: string;
+}
+
+export interface Reward {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  cost_points: number;
+  discount_value?: number | string | null;
+  active?: boolean;
+}
+
+interface PendingDiscountRow {
+  id: string;
+  discount_cents: number;
+  expires_at: string;
+  rewards?: { name?: string } | Array<{ name?: string }> | null;
+}
+
 export const TIERS: TierInfo[] = [
   {
     name: "Starter",
@@ -122,7 +148,7 @@ export async function awardPoints(
     .limit(1);
 
   if (recentTx && recentTx.length > 0) {
-    console.warn(`[Points] Duplicate blocked: "${reason}" for user ${userId} within ${DEDUP_WINDOW_MS / 1000}s`);
+    console.warn(`[Points] Duplicate transaction blocked within the ${DEDUP_WINDOW_MS / 1000}s dedupe window.`);
     return { error: "Duplicate transaction blocked", duplicate: true };
   }
 
@@ -295,12 +321,21 @@ export async function getPendingDiscount(userId: string) {
 
   if (error || !data) return null;
 
+  const rewardData: PendingDiscountRow = {
+    id: data.id,
+    discount_cents: data.discount_cents,
+    expires_at: data.expires_at,
+    rewards: data.rewards,
+  };
+
   return {
     redemptionId: data.id,
     discountCents: data.discount_cents,
     discountDollars: data.discount_cents / 100,
     expiresAt: data.expires_at,
-    rewardName: (data as any).rewards?.name || "PestPoints Discount",
+    rewardName: Array.isArray(rewardData.rewards)
+      ? rewardData.rewards[0]?.name || "PestPoints Discount"
+      : rewardData.rewards?.name || "PestPoints Discount",
   };
 }
 
@@ -323,7 +358,7 @@ export async function markRedemptionUsed(redemptionId: string) {
   return { success: true };
 }
 
-export async function getPointsHistory(userId: string) {
+export async function getPointsHistory(userId: string): Promise<PointsTransaction[]> {
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -333,11 +368,19 @@ export async function getPointsHistory(userId: string) {
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (error) return [];
-  return data || [];
+  if (error || !data) return [];
+
+  return data.map((transaction) => ({
+    id: transaction.id,
+    user_id: transaction.user_id,
+    amount: transaction.amount,
+    type: transaction.type,
+    reason: transaction.reason,
+    created_at: transaction.created_at,
+  }));
 }
 
-export async function getRewardsCatalog() {
+export async function getRewardsCatalog(): Promise<Reward[]> {
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -346,6 +389,15 @@ export async function getRewardsCatalog() {
     .eq("active", true)
     .order("cost_points", { ascending: true });
 
-  if (error) return [];
-  return data || [];
+  if (error || !data) return [];
+
+  return data.map((reward) => ({
+    id: reward.id,
+    name: reward.name,
+    description: reward.description,
+    icon: reward.icon,
+    cost_points: reward.cost_points,
+    discount_value: reward.discount_value,
+    active: reward.active,
+  }));
 }

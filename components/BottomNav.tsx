@@ -37,7 +37,7 @@ function BottomNavContent() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[9000] flex justify-center px-4 pb-[env(safe-area-inset-bottom)] pointer-events-none">
-      <nav className="flex h-14 w-full max-w-xs items-center justify-around rounded-full border border-white/10 bg-[#1a1a1a]/95 backdrop-blur-2xl shadow-[0_-2px_24px_rgba(0,0,0,0.4)] pointer-events-auto px-1">
+      <nav aria-label="Main navigation" className="flex h-14 w-full max-w-xs items-center justify-around rounded-full border border-white/10 bg-squito-cardDark/95 backdrop-blur-2xl shadow-[0_-2px_24px_rgba(0,0,0,0.4)] pointer-events-auto px-1">
         {navItems.map((item) => {
           const isCart = item.name === "Cart";
           const isActive = isCart
@@ -53,6 +53,7 @@ function BottomNavContent() {
             return (
               <button
                 key={item.name}
+                aria-label={`Cart${itemCount > 0 ? `, ${itemCount} item${itemCount === 1 ? "" : "s"}` : ""}`}
                 onClick={() => {
                   toggleDrawer();
                   haptics.light();
@@ -72,6 +73,8 @@ function BottomNavContent() {
             <Link
               key={item.name}
               href={item.href}
+              aria-label={item.name}
+              aria-current={isActive ? "page" : undefined}
               onClick={() => haptics.light()}
               className="relative flex flex-col items-center justify-center gap-0.5 w-14 h-full group"
             >
@@ -126,7 +129,7 @@ export function BottomNav() {
     <Suspense
       fallback={
         <nav className="fixed bottom-0 left-0 right-0 z-[9000] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
-          <div className="h-14 w-full max-w-xs rounded-full bg-[#1a1a1a]/95 backdrop-blur-2xl" />
+          <div className="h-14 w-full max-w-xs rounded-full bg-squito-cardDark/95 backdrop-blur-2xl" />
         </nav>
       }
     >

@@ -174,7 +174,7 @@ export default function PersonalInfoPage() {
       <div className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[#1a1a1a]/80 px-5 py-4 backdrop-blur-2xl">
         <Link
           href="/me"
-          className="flex items-center text-[15px] font-semibold text-squito-green"
+          className="flex items-center text-lg font-semibold text-squito-green"
         >
           <span className="mr-1 text-xl leading-none">‹</span> Profile
         </Link>
@@ -190,19 +190,19 @@ export default function PersonalInfoPage() {
           {renderAvatar()}
           <button
             onClick={() => setShowAvatarPicker(true)}
-            className="mt-3 text-[13px] font-semibold text-squito-green"
+            className="mt-3 text-base font-semibold text-squito-green"
           >
             Edit Picture
           </button>
         </div>
 
         {/* Contact Details */}
-        <h2 className="mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
+        <h2 className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">
           Contact Details
         </h2>
         <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm">
           <div className="flex flex-col px-5 py-3 border-b border-white/10">
-            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
+            <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
               First Name
             </span>
             <input
@@ -215,7 +215,7 @@ export default function PersonalInfoPage() {
           </div>
 
           <div className="flex flex-col px-5 py-3 border-b border-white/10">
-            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
+            <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
               Last Name
             </span>
             <input
@@ -228,7 +228,7 @@ export default function PersonalInfoPage() {
           </div>
 
           <div className="flex flex-col px-5 py-3">
-            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
+            <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
               Phone Number
             </span>
             <input
@@ -242,12 +242,12 @@ export default function PersonalInfoPage() {
         </div>
 
         {/* Service Address */}
-        <h2 className="mt-8 mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
+        <h2 className="mt-8 mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">
           Service Address
         </h2>
         <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm">
           <div className="flex flex-col px-5 py-3">
-            <span className="text-[11px] font-bold text-white/30 uppercase tracking-widest">
+            <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
               Full Address
             </span>
             <input
@@ -266,7 +266,7 @@ export default function PersonalInfoPage() {
         <div className="mt-10">
           <GlassButton
             variant="primary"
-            className="w-full py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
+            className="w-full py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
             onClick={handleSave}
             disabled={saving}
           >
@@ -283,7 +283,7 @@ export default function PersonalInfoPage() {
               exit={{ opacity: 0, y: 20 }}
               className="mt-4 rounded-2xl bg-squito-green/10 border border-squito-green/20 p-4 text-center"
             >
-              <p className="text-[13px] font-bold text-squito-green">
+              <p className="text-base font-bold text-squito-green">
                 ✓ Profile updated successfully!
               </p>
             </motion.div>
@@ -314,10 +314,10 @@ export default function PersonalInfoPage() {
                 <div className="h-1 w-10 rounded-full bg-white/20" />
               </div>
 
-              <h2 className="text-center font-display text-[20px] font-bold text-white mb-1">
+              <h2 className="text-center font-display text-2xl font-bold text-white mb-1">
                 Choose Your Avatar
               </h2>
-              <p className="text-center text-[13px] text-white/40 font-medium mb-6">
+              <p className="text-center text-base text-white/40 font-medium mb-6">
                 Pick a fun bug buddy or upload your own!
               </p>
 
@@ -348,7 +348,7 @@ export default function PersonalInfoPage() {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-squito-green text-white text-[10px] font-bold shadow-md"
+                          className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-squito-green text-white text-2xs font-bold shadow-md"
                         >
                           ✓
                         </motion.div>
@@ -373,7 +373,7 @@ export default function PersonalInfoPage() {
                 className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/20 py-4 transition hover:border-squito-green hover:bg-squito-green/5 active:scale-[0.98]"
               >
                 <span className="text-xl">📷</span>
-                <span className="text-[14px] font-semibold text-white/50">
+                <span className="text-md font-semibold text-white/50">
                   {uploadingPhoto ? "Uploading..." : "Upload Your Own Photo"}
                 </span>
               </button>
@@ -382,7 +382,7 @@ export default function PersonalInfoPage() {
               <button
                 type="button"
                 onClick={() => setShowAvatarPicker(false)}
-                className="mt-4 w-full py-3 text-[14px] font-semibold text-white/30"
+                className="mt-4 w-full py-3 text-md font-semibold text-white/30"
               >
                 Cancel
               </button>

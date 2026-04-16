@@ -17,6 +17,10 @@ const services = [
   { value: "other", label: "Other / not sure" },
 ];
 
+const serviceLabels = Object.fromEntries(
+  services.map((service) => [service.value, service.label]),
+);
+
 export function GuestBookingForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
@@ -38,11 +42,18 @@ export function GuestBookingForm() {
           name: data.get("name"),
           email: data.get("email"),
           phone: data.get("phone"),
-          address: data.get("address"),
+          address: [data.get("address"), data.get("cityZip")]
+            .filter(Boolean)
+            .join(", "),
           cityZip: data.get("cityZip"),
-          service: data.get("service"),
+          service: "Free Estimate / Custom Quote",
           preferredDate: data.get("preferredDate"),
-          notes: data.get("notes"),
+          notes: [
+            `Requested service: ${serviceLabels[String(data.get("service") || "other")] || "Other / not sure"}`,
+            String(data.get("notes") || "").trim(),
+          ]
+            .filter(Boolean)
+            .join("\n"),
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -255,7 +266,7 @@ export function GuestBookingForm() {
           variant="primary"
           type="submit"
           disabled={status === "submitting"}
-          className="inline-flex w-full justify-center !rounded-full bg-squito-neon/90 hover:bg-squito-neon dark:bg-squito-neon px-8 py-4 text-[15px] font-bold tracking-wide text-[#09090b] shadow-[0_0_20px_rgba(192,255,0,0.2)] disabled:opacity-60 sm:w-auto"
+          className="inline-flex w-full justify-center !rounded-full bg-squito-neon/90 hover:bg-squito-neon dark:bg-squito-neon px-8 py-4 text-lg font-bold tracking-wide text-[#09090b] shadow-[0_0_20px_rgba(192,255,0,0.2)] disabled:opacity-60 sm:w-auto"
         >
           {status === "submitting" ? "Sending…" : "Request booking"}
         </GlassButton>

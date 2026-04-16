@@ -22,7 +22,7 @@ interface WelcomeEmailParams {
 export async function sendWelcomeEmail({ to, displayName }: WelcomeEmailParams) {
   const resend = getResend();
   if (!resend) {
-    console.warn("[Email] RESEND_API_KEY not set — skipping welcome email.");
+    console.error("[Email] RESEND_API_KEY not set.");
     return { success: false, error: "No API key" };
   }
 
@@ -156,7 +156,7 @@ export async function sendRedemptionAlert({
 }: RedemptionAlertParams) {
   const resend = getResend();
   if (!resend) {
-    console.warn("[Email] RESEND_API_KEY not set — skipping redemption alert.");
+    console.error("[Email] RESEND_API_KEY not set.");
     return { success: false, error: "No API key" };
   }
 

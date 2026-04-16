@@ -11,7 +11,7 @@ export default function BillingPage() {
       <div className="sticky top-0 z-50 flex items-center justify-between border-b border-white/10 bg-[#1a1a1a]/80 px-5 py-4 backdrop-blur-2xl">
         <Link
           href="/me"
-          className="flex items-center text-[15px] font-semibold text-squito-green"
+          className="flex items-center text-lg font-semibold text-squito-green"
         >
           <span className="mr-1 text-xl leading-none">‹</span> Profile
         </Link>
@@ -22,15 +22,15 @@ export default function BillingPage() {
       </div>
 
       <div className="px-5 pt-8">
-        <h2 className="mb-2 px-2 text-[12px] font-bold uppercase tracking-wider text-white/30">
+        <h2 className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">
           Active Subscription
         </h2>
         <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm p-8 text-center mb-10">
           <span className="text-3xl">🛡️</span>
-          <h3 className="mt-3 font-bold text-white text-[15px]">
+          <h3 className="mt-3 font-bold text-white text-lg">
             No Active Plans
           </h3>
-          <p className="mt-1 text-[13px] font-medium text-white/40">
+          <p className="mt-1 text-base font-medium text-white/40">
             Book a recurring service to activate a Squito protection plan.
           </p>
           <div className="mt-6">

@@ -133,7 +133,7 @@ export function OnboardingWizard() {
   if (!user || !profile || profile.onboarding_complete) return null;
 
   const inputClasses =
-    "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-[15px] text-white/90 shadow-sm outline-none transition placeholder:text-white/30 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
+    "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3.5 text-lg text-white/90 shadow-sm outline-none transition placeholder:text-white/30 focus:border-squito-green focus:ring-2 focus:ring-squito-green/20";
 
   const avatarDisplay = getAvatarDisplay();
 
@@ -162,7 +162,7 @@ export function OnboardingWizard() {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-widest text-white/40">
+        <p className="mt-3 text-center text-xs font-bold uppercase tracking-widest text-white/40">
           Step {step} of 3
         </p>
       </div>
@@ -192,14 +192,14 @@ export function OnboardingWizard() {
                 <h1 className="font-display text-[24px] font-bold text-white/90">
                   Let&apos;s set you up
                 </h1>
-                <p className="mt-1 text-[13px] text-white/50 font-medium">
+                <p className="mt-1 text-base text-white/50 font-medium">
                   Tell us a bit about yourself so we can serve you better.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                  <label className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                     Full Name <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -212,7 +212,7 @@ export function OnboardingWizard() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block pl-1 text-[13px] font-bold text-white/90">
+                  <label className="mb-1.5 block pl-1 text-base font-bold text-white/90">
                     Phone Number
                   </label>
                   <input
@@ -225,7 +225,7 @@ export function OnboardingWizard() {
                 </div>
 
                 <div className="mt-2">
-                  <h2 className="mb-3 pl-1 text-[12px] font-bold uppercase tracking-wider text-white/50">
+                  <h2 className="mb-3 pl-1 text-sm font-bold uppercase tracking-wider text-white/50">
                     Service Address <span className="text-red-400">*</span>
                   </h2>
                   <input
@@ -245,7 +245,7 @@ export function OnboardingWizard() {
                   variant="primary"
                   disabled={!step1Valid}
                   onClick={() => setStep(2)}
-                  className="w-full py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-40"
+                  className="w-full py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-40"
                 >
                   Continue
                 </GlassButton>
@@ -275,7 +275,7 @@ export function OnboardingWizard() {
                 <h1 className="font-display text-[24px] font-bold text-white/90">
                   Pick your avatar
                 </h1>
-                <p className="mt-1 text-[13px] text-white/50 font-medium">
+                <p className="mt-1 text-base text-white/50 font-medium">
                   Choose a fun bug buddy or upload your own photo.
                 </p>
               </div>
@@ -312,7 +312,7 @@ export function OnboardingWizard() {
                       >
                         <span className="text-[28px]">{bug.emoji}</span>
                       </div>
-                      <span className={`mt-2 text-[11px] font-bold ${
+                      <span className={`mt-2 text-xs font-bold ${
                         isSelected ? "text-squito-green" : "text-white/50"
                       }`}>
                         {bug.label}
@@ -321,7 +321,7 @@ export function OnboardingWizard() {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-squito-green text-white text-[12px] font-bold shadow-md"
+                          className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-squito-green text-white text-sm font-bold shadow-md"
                         >
                           ✓
                         </motion.div>
@@ -334,7 +334,7 @@ export function OnboardingWizard() {
               {/* Divider */}
               <div className="my-5 flex items-center gap-4">
                 <div className="h-px flex-1 bg-white/10" />
-                <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">
+                <span className="text-xs font-bold uppercase tracking-widest text-white/40">
                   or
                 </span>
                 <div className="h-px flex-1 bg-white/10" />
@@ -361,7 +361,7 @@ export function OnboardingWizard() {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-squito-green text-white text-[12px] font-bold shadow-md"
+                      className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-squito-green text-white text-sm font-bold shadow-md"
                     >
                       ✓
                     </motion.div>
@@ -369,7 +369,7 @@ export function OnboardingWizard() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-[13px] font-semibold text-squito-green"
+                    className="text-base font-semibold text-squito-green"
                   >
                     Change Photo
                   </button>
@@ -382,7 +382,7 @@ export function OnboardingWizard() {
                   className="flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/10 py-5 transition hover:border-squito-green hover:bg-squito-green/5 active:scale-[0.98]"
                 >
                   <span className="text-2xl">📷</span>
-                  <span className="text-[14px] font-semibold text-white/60">
+                  <span className="text-md font-semibold text-white/60">
                     {uploadingPhoto ? "Uploading..." : "Upload Your Own Photo"}
                   </span>
                 </button>
@@ -393,7 +393,7 @@ export function OnboardingWizard() {
                 <GlassButton
                   variant="ghost"
                   onClick={() => setStep(1)}
-                  className="flex-1 py-4 text-[14px] text-white/70 border border-white/10"
+                  className="flex-1 py-4 text-md text-white/70 border border-white/10"
                 >
                   ← Back
                 </GlassButton>
@@ -401,7 +401,7 @@ export function OnboardingWizard() {
                   variant="primary"
                   onClick={() => setStep(3)}
                   disabled={!selectedAvatar && !customAvatarUrl}
-                  className="flex-[2] py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-40"
+                  className="flex-[2] py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)] disabled:opacity-40"
                 >
                   Continue
                 </GlassButton>
@@ -472,7 +472,7 @@ export function OnboardingWizard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="mt-1 text-[13px] text-white/50 font-medium max-w-[260px] mx-auto"
+                className="mt-1 text-base text-white/50 font-medium max-w-[260px] mx-auto"
               >
                 Welcome to the Squito family, {fullName.split(" ")[0]}. Let&apos;s keep your home pest-free.
               </motion.p>
@@ -488,10 +488,10 @@ export function OnboardingWizard() {
                   <div className="flex items-center gap-3">
                     <span className="text-lg">👤</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold uppercase tracking-wider text-white/50 mb-0.5">
+                      <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-0.5">
                         Name
                       </p>
-                      <p className="font-medium text-[15px] truncate text-white/90">
+                      <p className="font-medium text-lg truncate text-white/90">
                         {fullName}
                       </p>
                     </div>
@@ -500,10 +500,10 @@ export function OnboardingWizard() {
                     <div className="flex items-center gap-3 border-t border-white/10 pt-4">
                       <span className="text-lg">📞</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-bold uppercase tracking-wider text-white/50 mb-0.5">
+                        <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-0.5">
                           Phone
                         </p>
-                        <p className="font-medium text-[15px] truncate text-white/90">
+                        <p className="font-medium text-lg truncate text-white/90">
                           {phone}
                         </p>
                       </div>
@@ -512,10 +512,10 @@ export function OnboardingWizard() {
                   <div className="flex items-center gap-3 border-t border-white/10 pt-4">
                     <span className="text-lg">🏠</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold uppercase tracking-wider text-white/50 mb-0.5">
+                      <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-0.5">
                         Service Address
                       </p>
-                      <p className="font-medium text-[15px] truncate text-white/90">
+                      <p className="font-medium text-lg truncate text-white/90">
                         {serviceAddress}
                       </p>
                     </div>
@@ -532,7 +532,7 @@ export function OnboardingWizard() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🎁</span>
-                  <p className="text-[13px] font-bold text-squito-green">
+                  <p className="text-base font-bold text-squito-green">
                     50 PestPoints added to your account!
                   </p>
                 </div>
@@ -543,7 +543,7 @@ export function OnboardingWizard() {
                 <GlassButton
                   variant="ghost"
                   onClick={() => setStep(2)}
-                  className="flex-1 py-4 text-[14px] text-gray-700 border border-gray-200"
+                  className="flex-1 py-4 text-md text-gray-700 border border-gray-200"
                 >
                   ← Back
                 </GlassButton>
@@ -551,7 +551,7 @@ export function OnboardingWizard() {
                   variant="primary"
                   onClick={handleFinish}
                   disabled={saving}
-                  className="flex-[2] py-4 text-[15px] bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
+                  className="flex-[2] py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
                 >
                   {saving ? "Saving..." : "Let's Go! 🚀"}
                 </GlassButton>

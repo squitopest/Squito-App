@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import { getErrorMessage } from "@/lib/errors";
 
 // ── Service-role Supabase client (bypasses RLS — server-only) ───────────────
 function getServiceSupabase() {
@@ -75,23 +76,69 @@ function getTierMultiplier(totalPoints: number): { multiplier: number; tier: str
   return                          { multiplier: 1,    tier: "Starter" };
 }
 
+interface BookingCoordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface BookingData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  service: string;
+  preferredDate?: string | null;
+  preferredTime?: string | null;
+  userId?: string | null;
+  county?: string | null;
+  taxRate?: number | null;
+  subtotal?: string | number | null;
+  taxAmount?: string | number | null;
+  totalCharged?: string | number | null;
+  discountCents?: number | null;
+  isPaid?: boolean;
+  isStripeWebhook?: boolean;
+  coordinates?: BookingCoordinates | null;
+}
+
+export interface CartBookingData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  preferredDate?: string | null;
+  preferredTime?: string | null;
+  userId?: string | null;
+  county?: string | null;
+  taxRate?: number | null;
+  subtotal?: string | number | null;
+  taxAmount?: string | number | null;
+  totalCharged?: string | number | null;
+  discountCents?: number | null;
+  isPaid?: boolean;
+  isStripeWebhook?: boolean;
+  coordinates?: BookingCoordinates | null;
+}
+
+interface CartBookingItem {
+  service: string;
+  priceCents: number;
+  points: number;
+}
+
 // ── Main processBooking ──────────────────────────────────────────────────────
-export async function processBooking(data: Record<string, any>) {
+export async function processBooking(data: BookingData) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const supabase = getServiceSupabase();
 
   if (!resendApiKey) {
-    console.warn("[BookingEngine] RESEND_API_KEY not found — logging booking only");
-    console.log(data);
+    console.error("[BookingEngine] RESEND_API_KEY not found.");
     return { ok: true, notice: "Logged locally" };
   }
 
   const resend = new Resend(resendApiKey);
 
   try {
-    console.log(`[BookingEngine] Processing: ${data.service} for ${data.email} (paid: ${data.isPaid})`);
-
-
     // ── 3. Write to service_bookings ────────────────────────────────────────
     const userId = data.userId;
     if (supabase && userId && typeof userId === "string" && userId.length > 0) {
@@ -108,7 +155,6 @@ export async function processBooking(data: Record<string, any>) {
         ].filter(Boolean).join(" | "),
       });
       if (bookingErr) console.error("[BookingEngine] service_bookings insert failed:", bookingErr.message);
-      else console.log(`[BookingEngine] service_bookings row created for user ${userId}`);
     }
 
     // ── 4. CRM Integration (Zapier / GorillaDesk) ───────────────────────────
@@ -135,7 +181,6 @@ export async function processBooking(data: Record<string, any>) {
           body: JSON.stringify(leadPayload),
         });
         if (!zapierResponse.ok) console.error("[Zapier]", zapierResponse.status);
-        else console.log("[Zapier] Lead pushed successfully");
       } catch (e) {
         console.error("[Zapier Error]", e);
       }
@@ -147,7 +192,6 @@ export async function processBooking(data: Record<string, any>) {
           body: JSON.stringify(leadPayload),
         });
         if (!gdResponse.ok) console.error("[GorillaDesk]", gdResponse.status, await gdResponse.text());
-        else console.log("[GorillaDesk] Customer pushed to CRM");
       } catch (e) { console.error("[GorillaDesk Error]", e); }
     }
 
@@ -171,7 +215,7 @@ export async function processBooking(data: Record<string, any>) {
             .limit(1);
 
           if (recentTx && recentTx.length > 0) {
-            console.warn("[Points] Duplicate blocked for user", userId);
+            console.warn("[Points] Duplicate booking points award blocked within the dedupe window.");
           } else {
             // Get profile with service role (bypasses RLS)
             const { data: profile } = await supabase
@@ -203,7 +247,6 @@ export async function processBooking(data: Record<string, any>) {
 
               pointsAwarded = true;
               earnedAmount = multiplied;
-              console.log(`[Points] Awarded ${multiplied} points (${basePoints} × ${multiplier}x ${tier}) to ${userId}`);
             }
           }
         } catch (e) { console.error("[Points Error]", e); }
@@ -261,15 +304,14 @@ export async function processBooking(data: Record<string, any>) {
             ${pointsAwarded ? `<p><strong>Points Awarded:</strong> ${earnedAmount}</p>` : ""}
           `,
         });
-        console.log(`[Email] Confirmations sent for ${data.email}`);
-    } catch (emailErr: any) {
+    } catch (emailErr: unknown) {
       console.error("[Email Error] Failed to send Resend emails:", emailErr);
     }
 
     return { ok: true, pointsAwarded, earnedAmount, isPaid: data.isPaid };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[BookingEngine]", err);
-    return { ok: false, error: err.message || "Failed to process booking" };
+    return { ok: false, error: getErrorMessage(err, "Failed to process booking") };
   }
 }
 
@@ -277,23 +319,20 @@ export async function processBooking(data: Record<string, any>) {
 // Handles multi-service cart orders: creates N booking rows, awards points per
 // service, pushes to CRM once, sends one combined confirmation email.
 export async function processCartBooking(
-  data: Record<string, any>,
-  cartItems: Array<{ service: string; priceCents: number; points: number }>
+  data: CartBookingData,
+  cartItems: CartBookingItem[]
 ) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const supabase = getServiceSupabase();
 
   if (!resendApiKey) {
-    console.warn("[BookingEngine] RESEND_API_KEY not found — logging cart booking only");
-    console.log({ data, cartItems });
+    console.error("[BookingEngine] RESEND_API_KEY not found.");
     return { ok: true, notice: "Logged locally" };
   }
 
   const resend = new Resend(resendApiKey);
   const userId = data.userId;
   const serviceNames = cartItems.map((i) => i.service.replace(/\s*\(.*\)$/, ""));
-
-  console.log(`[BookingEngine] Processing CART: ${serviceNames.join(", ")} for ${data.email}`);
 
   try {
     // ── 1. Write service_bookings rows (one per service) ──────────────────
@@ -312,7 +351,6 @@ export async function processCartBooking(
           ].filter(Boolean).join(" | "),
         });
         if (bookingErr) console.error(`[BookingEngine] service_bookings insert failed for ${item.service}:`, bookingErr.message);
-        else console.log(`[BookingEngine] service_bookings row created: ${item.service}`);
       }
     }
 
@@ -339,7 +377,6 @@ export async function processCartBooking(
           body: JSON.stringify(leadPayload),
         });
         if (!zapierResponse.ok) console.error("[Zapier]", zapierResponse.status);
-        else console.log("[Zapier] Cart lead pushed successfully");
       } catch (e) {
         console.error("[Zapier Error]", e);
       }
@@ -351,7 +388,6 @@ export async function processCartBooking(
           body: JSON.stringify(leadPayload),
         });
         if (!gdResponse.ok) console.error("[GorillaDesk]", gdResponse.status, await gdResponse.text());
-        else console.log("[GorillaDesk] Cart customer pushed to CRM");
       } catch (e) { console.error("[GorillaDesk Error]", e); }
     }
 
@@ -402,7 +438,6 @@ export async function processCartBooking(
 
             totalPointsAwarded += multiplied;
             pointsBreakdown.push({ service: item.service.replace(/\s*\(.*\)$/, ""), earned: multiplied });
-            console.log(`[Points] Awarded ${multiplied} points for ${item.service} to ${userId}`);
           }
         } catch (e) {
           console.error(`[Points Error] Failed for ${item.service}:`, e);
@@ -491,15 +526,13 @@ export async function processCartBooking(
           ${totalPointsAwarded > 0 ? `<p><strong>Points Awarded:</strong> ${totalPointsAwarded}</p>` : ""}
         `,
       });
-
-      console.log(`[Email] Cart confirmations sent for ${data.email}`);
-    } catch (emailErr: any) {
+    } catch (emailErr: unknown) {
       console.error("[Email Error] Failed to send cart confirmation emails:", emailErr);
     }
 
     return { ok: true, totalPointsAwarded, pointsBreakdown, isPaid: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[BookingEngine] Cart processing error:", err);
-    return { ok: false, error: err.message || "Failed to process cart booking" };
+    return { ok: false, error: getErrorMessage(err, "Failed to process cart booking") };
   }
 }

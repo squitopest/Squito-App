@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: 'com.squito.app',
-  appName: 'Squito AI',
+  appName: 'Squito',
   webDir: 'out',
   server: {
     // Allows loading local video/image assets
