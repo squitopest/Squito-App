@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: 'com.squito.app',
+  appId: 'com.squito.pestcontrol.app',
   appName: 'Squito',
   webDir: 'out',
   server: {

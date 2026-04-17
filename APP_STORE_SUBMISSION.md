@@ -9,7 +9,7 @@
 | Field | Value |
 |---|---|
 | **App Name** | Squito |
-| **Bundle ID** | `com.squito.app` |
+| **Bundle ID** | `com.squito.pestcontrol.app` |
 | **Privacy Policy URL** | `https://squito-app.vercel.app/privacy` |
 | **Account Deletion URL** | `https://squito-app.vercel.app/me/security` |
 | **Support URL** | `https://squitopestcontrol.com` |
@@ -169,4 +169,4 @@ Ensure these are set in Vercel before submission:
 
 *Generated: April 11, 2026*
 *App Version: 1.0.0*
-*Bundle ID: com.squito.app*
+*Bundle ID: com.squito.pestcontrol.app*

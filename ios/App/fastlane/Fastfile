@@ -9,7 +9,7 @@ platform :ios do
       use_automatic_signing: false,
       path: "App.xcodeproj",
       team_id: "4367ZCH572",
-      bundle_identifier: "com.squito.app",
+      bundle_identifier: "com.squito.pestcontrol.app",
       profile_name: "Squito Pest Control App",
       code_sign_identity: "Apple Distribution",
       targets: ["App"]
@@ -27,7 +27,7 @@ platform :ios do
       output_name: "SquitoApp.ipa",
       export_options: {
         provisioningProfiles: {
-          "com.squito.app" => "Squito Pest Control App"
+          "com.squito.pestcontrol.app" => "Squito Pest Control App"
         }
       }
     )

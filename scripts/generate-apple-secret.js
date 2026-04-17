@@ -4,7 +4,7 @@ const path = require("path");
 
 const KEY_ID = "SH3T3U8M89";             
 const TEAM_ID = "4367ZCH572";           
-const CLIENT_ID = "com.squito.app.services";   
+const CLIENT_ID = "com.squito.pestcontrol.app.services";   
 
 const P8_PATH = process.env.APPLE_AUTH_KEY_PATH || path.join(__dirname, "AuthKey.p8");
 

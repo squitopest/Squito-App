@@ -292,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
     // Send users back to root page/localhost natively or on the web
-    const redirectUrl = isNative ? "com.squito.app://auth/callback" : origin;
+    const redirectUrl = isNative ? "com.squito.pestcontrol.app://auth/callback" : origin;
 
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -319,7 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
         const result = await SignInWithApple.authorize({
-          clientId: "com.squito.app", // Fallback, Supabase/Apple native ignores this on iOS but requires it for web
+          clientId: "com.squito.pestcontrol.app", // Fallback, Supabase/Apple native ignores this on iOS but requires it for web
           redirectURI: "https://squito-app.vercel.app/api/auth/callback",
           scopes: "email name",
         });
