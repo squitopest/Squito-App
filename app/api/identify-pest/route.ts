@@ -29,6 +29,36 @@ function extractMessageText(
   return "";
 }
 
+function extractResponseOutputText(data: unknown): string {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+
+  if ("output_text" in data && typeof data.output_text === "string") {
+    return data.output_text;
+  }
+
+  if (!("output" in data) || !Array.isArray(data.output)) {
+    return "";
+  }
+
+  return data.output
+    .flatMap((item) => {
+      if (!item || typeof item !== "object" || !("content" in item) || !Array.isArray(item.content)) {
+        return [];
+      }
+
+      return item.content
+        .map((part: unknown) => {
+          if (!part || typeof part !== "object") return "";
+          if ("text" in part && typeof part.text === "string") return part.text;
+          return "";
+        })
+        .filter(Boolean);
+    })
+    .join("\n");
+}
+
 const SYSTEM_PROMPT = `You are a board-certified entomologist and senior pest control specialist with 20+ years of field experience across Long Island, New York (Nassau and Suffolk Counties). You specialize in identifying insects, arachnids, rodents, and wildlife common to the northeastern United States.
 
 Your primary task is to analyze submitted photos and provide HIGHLY ACCURATE pest identifications. Your identifications are used by professional exterminators and concerned homeowners, so precision is critical.
@@ -343,39 +373,47 @@ export async function POST(request: Request) {
       ? image.split(";")[0].split(":")[1]
       : "image/jpeg";
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const model = process.env.OPENAI_PEST_MODEL || "gpt-4.1-mini";
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
-        response_format: { type: "json_object" },
-        messages: [
+        model,
+        input: [
           {
             role: "system",
-            content: SYSTEM_PROMPT,
+            content: [
+              {
+                type: "input_text",
+                text: SYSTEM_PROMPT,
+              },
+            ],
           },
           {
             role: "user",
             content: [
               {
-                type: "text",
+                type: "input_text",
                 text: "Please analyze this image carefully using your full identification protocol. Identify the pest species, noting all visible morphological features, and provide your expert assessment.",
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Data}`,
-                  detail: "high",
-                },
+                type: "input_image",
+                image_url: `data:${mimeType};base64,${base64Data}`,
+                detail: "high",
               },
             ],
           },
         ],
-        max_tokens: 800,
-        temperature: 0.1,
+        text: {
+          format: {
+            type: "json_object",
+          },
+        },
+        max_output_tokens: 800,
       }),
     });
 
@@ -383,13 +421,18 @@ export async function POST(request: Request) {
       const errorData = await response.json().catch(() => ({}));
       console.error("OpenAI API error:", errorData);
       return NextResponse.json(
-        { error: "AI identification failed. Please try again." },
+        {
+          error:
+            typeof errorData?.error?.message === "string"
+              ? errorData.error.message
+              : "AI identification failed. Please try again.",
+        },
         { status: 500 },
       );
     }
 
     const data = await response.json();
-    const content = extractMessageText(data.choices?.[0]?.message?.content);
+    const content = extractResponseOutputText(data) || extractMessageText((data as { choices?: Array<{ message?: { content?: unknown } }> })?.choices?.[0]?.message?.content);
 
     if (!content) {
       return NextResponse.json(
