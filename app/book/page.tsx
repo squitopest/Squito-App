@@ -30,6 +30,43 @@ function getErrorMessage(error: unknown, fallback = "An error occurred"): string
   return error instanceof Error ? error.message : fallback;
 }
 
+function getBookingTrustSteps(args: {
+  isCartMode: boolean;
+  isFree: boolean;
+  isMonthlyPlan: boolean;
+  itemCount: number;
+}) {
+  if (args.isFree) {
+    return [
+      "We review your estimate request quickly and match it to the right technician.",
+      "We confirm the visit window using your preferred contact details.",
+      "You get a clear next step instead of a surprise charge.",
+    ];
+  }
+
+  if (args.isCartMode) {
+    return [
+      `Stripe secures payment for all ${args.itemCount} services in one checkout.`,
+      "Each service is logged separately so your account history stays clear.",
+      "Our team follows up with timing and visit details after payment.",
+    ];
+  }
+
+  if (args.isMonthlyPlan) {
+    return [
+      "Today only covers the setup visit shown below.",
+      "Recurring billing starts next month, not immediately after checkout.",
+      "Your technician confirms the first service window after payment.",
+    ];
+  }
+
+  return [
+    "Stripe handles payment securely and confirms it instantly.",
+    "Your booking details are saved to your account right after checkout.",
+    "Squito follows up with timing and arrival details after payment.",
+  ];
+}
+
 // ── Price lookup (mirrors the API so the UI can preview costs) ──────────────
 const SERVICE_PRICES: Record<string, number> = {
   "Mosquito Barrier Spray ($119)": 119,
@@ -468,6 +505,12 @@ function BookForm() {
 
   // Points preview
   const pointsPreview = isCartMode ? cartTotalPoints : (SERVICE_POINTS[formData.service] ?? 50);
+  const trustSteps = getBookingTrustSteps({
+    isCartMode,
+    isFree,
+    isMonthlyPlan,
+    itemCount: cartItems.length,
+  });
 
   return (
     <>
@@ -504,6 +547,36 @@ function BookForm() {
           className="mt-4 rounded-xl bg-red-500/10 p-4 border border-red-500/20"
         >
           <p className="text-sm font-bold text-red-500">{errorMessage}</p>
+          <p className="mt-1 text-xs text-red-300/80">
+            If checkout didn&apos;t open, no payment was taken. You can retry below or reach us directly.
+          </p>
+        </motion.div>
+      )}
+
+      {(wasCancelled || status === "error") && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4"
+        >
+          <p className="text-sm font-bold text-white">Need help finishing this booking?</p>
+          <p className="mt-1 text-xs text-white/55">
+            Our team can help with payment issues, plan questions, or appointment changes.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href="tel:6312031000"
+              className="rounded-full bg-squito-green/10 px-3 py-2 text-xs font-bold text-squito-green transition active:scale-95"
+            >
+              Call (631) 203-1000
+            </a>
+            <a
+              href="mailto:service@getsquito.com?subject=Booking%20support"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white/70 transition active:scale-95"
+            >
+              Email Support
+            </a>
+          </div>
         </motion.div>
       )}
 
@@ -790,6 +863,29 @@ function BookForm() {
             </div>
           </motion.div>
         )}
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45, type: "spring", stiffness: 220, damping: 22 }}
+        className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4"
+      >
+        <p className="text-2xs font-bold uppercase tracking-widest text-white/40 mb-3">
+          What Happens Next
+        </p>
+        <div className="space-y-3">
+          {trustSteps.map((step, index) => (
+            <div key={step} className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-squito-green/10 text-xs font-bold text-squito-green">
+                {index + 1}
+              </div>
+              <p className="text-sm font-medium leading-relaxed text-white/65">
+                {step}
+              </p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Live Order Summary Card */}
       {!isFree && (

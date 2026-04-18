@@ -4,7 +4,7 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
@@ -25,6 +25,8 @@ interface ServiceBooking {
   service_type: string;
   status: string;
   scheduled_date: string | null;
+  notes: string | null;
+  created_at: string | null;
 }
 
 interface ConfirmModalState {
@@ -49,6 +51,76 @@ const itemVariants: Variants = {
     transition: { type: "spring", stiffness: 300, damping: 24 },
   },
 };
+
+function cleanServiceName(serviceType: string) {
+  return serviceType.replace(/\s*\(.*\)$/, "");
+}
+
+function parseBookingNotes(notes: string | null) {
+  const details = {
+    time: null as string | null,
+    address: null as string | null,
+    county: null as string | null,
+    payment: null as string | null,
+  };
+
+  if (!notes) return details;
+
+  for (const segment of notes.split("|").map((part) => part.trim())) {
+    if (segment.startsWith("Time: ")) details.time = segment.replace("Time: ", "");
+    if (segment.startsWith("Address: ")) details.address = segment.replace("Address: ", "");
+    if (segment.startsWith("County: ")) details.county = segment.replace("County: ", "");
+    if (segment.includes("Paid via Stripe")) details.payment = "Paid";
+    if (segment.includes("Free Estimate")) details.payment = "Estimate";
+    if (segment.startsWith("Cart order")) details.payment = "Paid";
+  }
+
+  return details;
+}
+
+function formatServiceDate(date: string | null, time: string | null) {
+  if (!date) return time ? `Preferred time: ${time}` : "Scheduling in progress";
+
+  const formattedDate = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return time ? `${formattedDate} • ${time}` : formattedDate;
+}
+
+function getBookingStatusMeta(status: string) {
+  const normalized = status.toLowerCase();
+
+  switch (normalized) {
+    case "complete":
+      return {
+        label: "Completed",
+        badgeClass: "bg-squito-green/15 text-squito-green",
+        helper: "Your visit is complete. Need a follow-up or another treatment? We’re ready.",
+      };
+    case "in_progress":
+      return {
+        label: "In Progress",
+        badgeClass: "bg-amber-500/15 text-amber-400",
+        helper: "Your service is actively being worked. If you need to reach the office, contact us any time.",
+      };
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        badgeClass: "bg-red-500/15 text-red-400",
+        helper: "This visit was cancelled. You can rebook anytime or call us to get it back on the calendar.",
+      };
+    default:
+      return {
+        label: "Scheduled",
+        badgeClass: "bg-blue-500/15 text-blue-400",
+        helper: "Your visit is on the schedule. We’ll confirm the appointment window and arrival details.",
+      };
+  }
+}
 
 // ── Avatar helper: resolves emoji:id or image URL ──
 function ProfileAvatar({
@@ -255,6 +327,7 @@ function AuthenticatedProfile() {
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({ isOpen: false, reward: null });
   const [serviceBookings, setServiceBookings] = useState<ServiceBooking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [bookingsLoadError, setBookingsLoadError] = useState(false);
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";
   const totalPoints = profile?.total_points || 0;
@@ -296,34 +369,50 @@ function AuthenticatedProfile() {
   }, [activeView, user]);
 
   // Load service bookings
-  useEffect(() => {
-    async function loadBookings() {
-      if (!supabase || !user) {
-        setLoadingBookings(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("service_bookings")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("scheduled_date", { ascending: false })
-        .limit(10);
-
-      if (!error && data) {
-        setServiceBookings(
-          data.map((booking) => ({
-            id: booking.id,
-            user_id: booking.user_id,
-            service_type: booking.service_type,
-            status: booking.status,
-            scheduled_date: booking.scheduled_date,
-          })),
-        );
-      }
+  const loadBookings = useCallback(async () => {
+    if (!supabase || !user) {
+      setServiceBookings([]);
+      setBookingsLoadError(false);
       setLoadingBookings(false);
+      return;
     }
-    loadBookings();
+
+    setLoadingBookings(true);
+    setBookingsLoadError(false);
+
+    const { data, error } = await supabase
+      .from("service_bookings")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("scheduled_date", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error("[Profile] Failed to load service history:", error);
+      setServiceBookings([]);
+      setBookingsLoadError(true);
+      setLoadingBookings(false);
+      return;
+    }
+
+    setServiceBookings(
+      (data || []).map((booking) => ({
+        id: booking.id,
+        user_id: booking.user_id,
+        service_type: booking.service_type,
+        status: booking.status,
+        scheduled_date: booking.scheduled_date,
+        notes: booking.notes ?? null,
+        created_at: booking.created_at ?? null,
+      })),
+    );
+    setBookingsLoadError(false);
+    setLoadingBookings(false);
   }, [user]);
+
+  useEffect(() => {
+    void loadBookings();
+  }, [loadBookings]);
 
   const handleConfirmRedeem = async () => {
     if (!user || !confirmModal.reward) return;
@@ -472,12 +561,52 @@ function AuthenticatedProfile() {
               variants={itemVariants}
               className="rounded-3xl border border-white/10 bg-squito-cardDark/90 backdrop-blur-xl p-6 shadow-sm"
             >
-              <h2 className="font-bold text-white mb-4">Service history</h2>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="font-bold text-white">Service history</h2>
+                  <p className="mt-1 text-sm text-white/45">
+                    Track your recent visits, upcoming appointments, and what happens next.
+                  </p>
+                </div>
+                {!loadingBookings && (
+                  <button
+                    type="button"
+                    onClick={() => { void loadBookings(); }}
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/70 transition hover:bg-white/10 active:scale-95"
+                  >
+                    Refresh
+                  </button>
+                )}
+              </div>
 
               {loadingBookings ? (
-                <div className="py-8 text-center">
-                  <span className="text-3xl">⏳</span>
-                  <p className="mt-2 text-base text-white/40 font-medium">Loading...</p>
+                <div className="space-y-3 py-2">
+                  {[0, 1].map((index) => (
+                    <div
+                      key={index}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse"
+                    >
+                      <div className="h-3 w-24 rounded bg-white/10" />
+                      <div className="mt-3 h-5 w-2/3 rounded bg-white/10" />
+                      <div className="mt-2 h-4 w-1/2 rounded bg-white/10" />
+                      <div className="mt-4 h-4 w-full rounded bg-white/10" />
+                    </div>
+                  ))}
+                </div>
+              ) : bookingsLoadError ? (
+                <div className="rounded-3xl border border-amber-500/20 bg-amber-500/10 p-6 text-center shadow-sm">
+                  <span className="text-4xl">⚠️</span>
+                  <p className="mt-3 font-bold text-white">Couldn&apos;t load your visits</p>
+                  <p className="mt-1 text-sm text-white/60">
+                    Your account is fine, but service history didn&apos;t sync this time.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { void loadBookings(); }}
+                    className="mt-4 rounded-full bg-squito-green px-4 py-2 text-sm font-bold text-white"
+                  >
+                    Retry history
+                  </button>
                 </div>
               ) : serviceBookings.length === 0 ? (
                 <div className="py-8 text-center">
@@ -496,38 +625,90 @@ function AuthenticatedProfile() {
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-col gap-0">
+                <div className="flex flex-col gap-3">
                   {serviceBookings.map((booking, idx) => {
-                    const statusColors: Record<string, string> = {
-                      complete: "bg-squito-green/15 text-squito-green",
-                      scheduled: "bg-blue-500/15 text-blue-400",
-                      in_progress: "bg-amber-500/15 text-amber-400",
-                      cancelled: "bg-red-500/15 text-red-400",
-                    };
-                    const statusColor = statusColors[booking.status] || statusColors.scheduled;
-                    const displayDate = booking.scheduled_date
-                      ? new Date(booking.scheduled_date).toLocaleDateString("en-US", {
-                          month: "long",
+                    const bookingMeta = parseBookingNotes(booking.notes);
+                    const statusMeta = getBookingStatusMeta(booking.status);
+                    const displayDate = formatServiceDate(booking.scheduled_date, bookingMeta.time);
+                    const createdLabel = booking.created_at
+                      ? new Date(booking.created_at).toLocaleDateString("en-US", {
+                          month: "short",
                           day: "numeric",
                           year: "numeric",
                         })
-                      : "TBD";
+                      : null;
+                    const supportSubject = encodeURIComponent(`Squito booking help: ${cleanServiceName(booking.service_type)}`);
 
                     return (
                       <div
                         key={booking.id}
-                        className={`flex items-center justify-between py-4 ${idx > 0 ? "border-t border-white/10" : ""}`}
+                        className={`rounded-2xl border border-white/10 bg-white/5 p-4 ${idx > 0 ? "" : ""}`}
                       >
-                        <div>
-                          <h3 className="font-bold text-md text-white">
-                            {booking.service_type}
-                          </h3>
-                          <p className="text-sm text-white/50 mt-0.5">
-                            {displayDate}
-                          </p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-2xs font-bold uppercase tracking-widest text-white/35">
+                              Visit {serviceBookings.length - idx}
+                            </p>
+                            <h3 className="mt-1 font-bold text-md text-white">
+                              {cleanServiceName(booking.service_type)}
+                            </h3>
+                            <p className="mt-1 text-sm text-white/55">
+                              {displayDate}
+                            </p>
+                            {bookingMeta.address && (
+                              <p className="mt-1 text-xs text-white/35 line-clamp-2">
+                                {bookingMeta.address}
+                              </p>
+                            )}
+                          </div>
+                          <div className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${statusMeta.badgeClass}`}>
+                            {statusMeta.label}
+                          </div>
                         </div>
-                        <div className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${statusColor}`}>
-                          {booking.status.replace("_", " ")}
+
+                        <p className="mt-3 text-sm text-white/60">
+                          {statusMeta.helper}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-2 text-2xs font-bold uppercase tracking-wide">
+                          {bookingMeta.payment && (
+                            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-white/60">
+                              {bookingMeta.payment}
+                            </span>
+                          )}
+                          {bookingMeta.county && (
+                            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-white/50">
+                              {bookingMeta.county}
+                            </span>
+                          )}
+                          {createdLabel && (
+                            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-white/50">
+                              Added {createdLabel}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <a
+                            href="tel:6312031000"
+                            className="rounded-full bg-squito-green/10 px-3 py-2 text-xs font-bold text-squito-green transition active:scale-95"
+                          >
+                            Call Support
+                          </a>
+                          <a
+                            href={`mailto:service@getsquito.com?subject=${supportSubject}`}
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white/70 transition active:scale-95"
+                          >
+                            Email Update
+                          </a>
+                          {booking.status.toLowerCase() === "cancelled" && (
+                            <Link
+                              href="/plans"
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white/70 transition active:scale-95"
+                            >
+                              Rebook
+                            </Link>
+                          )}
                         </div>
                       </div>
                     );

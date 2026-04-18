@@ -727,6 +727,22 @@ export default function PestsPage() {
                         <p className="text-base text-red-400 mt-2 font-medium">
                           {identifyResult.error}
                         </p>
+                        <p className="mt-2 text-sm text-white/60">
+                          Try a brighter photo, keep the pest centered, and avoid motion blur for the best result.
+                        </p>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                          <Link href="/plans" className="flex-1">
+                            <GlassButton variant="secondary" className="w-full py-3 text-sm">
+                              Book Without ID
+                            </GlassButton>
+                          </Link>
+                          <a
+                            href="tel:6312031000"
+                            className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white/70 transition active:scale-95"
+                          >
+                            Call an Expert
+                          </a>
+                        </div>
                       </div>
                     )}
 

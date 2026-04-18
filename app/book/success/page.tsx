@@ -364,6 +364,16 @@ function SuccessContent() {
         transition={{ delay: 1.0 }}
         className="mt-6 flex flex-col gap-3 w-full max-w-sm"
       >
+        {user && (
+          <Link href="/me">
+            <GlassButton
+              variant="secondary"
+              className="w-full py-3 text-base"
+            >
+              View My Visits
+            </GlassButton>
+          </Link>
+        )}
         <Link href="/plans">
           <GlassButton
             variant="primary"
