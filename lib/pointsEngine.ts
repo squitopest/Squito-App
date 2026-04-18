@@ -389,7 +389,10 @@ export async function getRewardsCatalog(): Promise<Reward[]> {
     .eq("active", true)
     .order("cost_points", { ascending: true });
 
-  if (error || !data) return [];
+  if (error || !data) {
+    console.error("[PointsEngine] Failed to load rewards catalog:", error);
+    return [];
+  }
 
   return data.map((reward) => ({
     id: reward.id,

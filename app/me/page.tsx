@@ -247,6 +247,8 @@ function AuthenticatedProfile() {
   const [pointsTab, setPointsTab] = useState<"Earn" | "Redeem" | "History">("Earn");
   const [pointsHistory, setPointsHistory] = useState<PointsTransaction[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(false);
+  const [rewardsLoadError, setRewardsLoadError] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({ isOpen: false, reward: null });
   const [serviceBookings, setServiceBookings] = useState<ServiceBooking[]>([]);
@@ -268,10 +270,26 @@ function AuthenticatedProfile() {
   }, [searchParams]);
 
   // Load points data when viewing points
+  const loadRewards = async () => {
+    setRewardsLoading(true);
+    setRewardsLoadError(false);
+    try {
+      const catalog = await getRewardsCatalog();
+      setRewards(catalog);
+      setRewardsLoadError(false);
+    } catch (err) {
+      console.error("[Profile] Rewards catalog load failed:", err);
+      setRewards([]);
+      setRewardsLoadError(true);
+    } finally {
+      setRewardsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeView === "points" && user) {
       getPointsHistory(user.id).then(setPointsHistory);
-      getRewardsCatalog().then(setRewards);
+      loadRewards();
     }
   }, [activeView, user]);
 
@@ -895,7 +913,29 @@ function AuthenticatedProfile() {
                     </p>
                   </div>
 
-                  {rewards.length === 0 ? (
+                  {rewardsLoading ? (
+                    <div className="rounded-3xl border border-white/10 bg-squito-cardDark p-8 text-center shadow-sm">
+                      <span className="text-4xl">⏳</span>
+                      <p className="mt-3 font-bold text-white">Loading rewards...</p>
+                      <p className="mt-1 text-sm text-white/40">
+                        Fetching the latest rewards catalog for your account.
+                      </p>
+                    </div>
+                  ) : rewardsLoadError ? (
+                    <div className="rounded-3xl border border-amber-500/20 bg-amber-500/10 p-8 text-center shadow-sm">
+                      <span className="text-4xl">⚠️</span>
+                      <p className="mt-3 font-bold text-white">Couldn&apos;t load rewards</p>
+                      <p className="mt-1 text-sm text-white/60">
+                        Pull to retry by reopening this tab, or tap below.
+                      </p>
+                      <button
+                        onClick={loadRewards}
+                        className="mt-4 rounded-full bg-squito-green px-4 py-2 text-sm font-bold text-white"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : rewards.length === 0 ? (
                     <div className="rounded-3xl border border-white/10 bg-squito-cardDark p-8 text-center shadow-sm">
                       <span className="text-4xl">🎁</span>
                       <p className="mt-3 font-bold text-white">Check back later!</p>
