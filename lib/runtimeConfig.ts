@@ -32,3 +32,20 @@ export function getAppleAuthRedirectUri(): string {
 export function getApiBase(isNative: boolean): string {
   return isNative ? NATIVE_API_BASE : "";
 }
+
+export function getNativeRouteUrl(path: string): string {
+  const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+  return `${NATIVE_APP_SCHEME}://${normalizedPath}`;
+}
+
+export function getCheckoutSuccessUrl(isNative: boolean): string {
+  return isNative
+    ? `${getNativeRouteUrl("book/success")}?session_id={CHECKOUT_SESSION_ID}`
+    : `${WEB_APP_ORIGIN}/book/success?session_id={CHECKOUT_SESSION_ID}`;
+}
+
+export function getCheckoutCancelUrl(isNative: boolean): string {
+  return isNative
+    ? `${getNativeRouteUrl("book")}?cancelled=true`
+    : `${WEB_APP_ORIGIN}/book?cancelled=true`;
+}

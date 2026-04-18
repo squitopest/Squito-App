@@ -339,6 +339,7 @@ function BookForm() {
             })),
             coordinates: coordinates || undefined,
             userId: user && !isGuest ? user.id : undefined,
+            isNative: Capacitor.isNativePlatform(),
             ...(pendingDiscount ? {
               discountCents: pendingDiscount.discountCents,
               redemptionId: pendingDiscount.redemptionId,
@@ -384,6 +385,7 @@ function BookForm() {
           ...formData,
           coordinates: coordinates || undefined,
           userId: user && !isGuest ? user.id : undefined,
+          isNative: Capacitor.isNativePlatform(),
           // Pass pending PestPoints discount if available
           ...(pendingDiscount ? {
             discountCents: pendingDiscount.discountCents,

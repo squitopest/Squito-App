@@ -4,7 +4,11 @@ import { getErrorMessage } from "@/lib/errors";
 import { getStripe } from "@/lib/stripe";
 import { calculateTax } from "@/lib/bookingEngine";
 import { createRateLimiter } from "@/lib/rateLimit";
-import { WEB_APP_ORIGIN } from "@/lib/runtimeConfig";
+import {
+  WEB_APP_ORIGIN,
+  getCheckoutCancelUrl,
+  getCheckoutSuccessUrl,
+} from "@/lib/runtimeConfig";
 
 const checkoutRateLimit = createRateLimiter({
   windowMs: 60_000,
@@ -78,6 +82,7 @@ interface CheckoutRequestBody {
   userId?: string;
   discountCents?: number;
   redemptionId?: string;
+  isNative?: boolean;
   cartItems?: CheckoutCartInputItem[];
 }
 
@@ -120,6 +125,7 @@ export async function POST(request: Request) {
   const {
     name, email, phone, address, service, preferredDate, preferredTime,
     coordinates, userId, discountCents, redemptionId,
+    isNative,
     // Cart-specific fields
     cartItems: clientCartItems,
   } = body;
@@ -374,8 +380,8 @@ export async function POST(request: Request) {
       customer_email: email,
       line_items,
       metadata,
-      success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/book?cancelled=true`,
+      success_url: isNative ? getCheckoutSuccessUrl(true) : `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: isNative ? getCheckoutCancelUrl(true) : `${origin}/book?cancelled=true`,
     });
 
     return NextResponse.json({ url: session.url, tax });

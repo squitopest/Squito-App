@@ -8,6 +8,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { CartProvider } from "@/lib/CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
+import { NativeDeepLinkHandler } from "@/components/NativeDeepLinkHandler";
 
 const display = Outfit({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className="font-sans min-h-[100dvh] w-full flex flex-col bg-squito-appBlack text-white antialiased">
         <AuthProvider>
           <CartProvider>
+            <NativeDeepLinkHandler />
             <SplashScreen />
             <AuthGate />
             <OnboardingWizard />
