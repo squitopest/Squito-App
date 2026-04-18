@@ -2,66 +2,58 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 interface SplashScreenProps {
   onComplete?: () => void;
 }
 
-// ── Floating bokeh orb ─────────────────────────────────────────────────────
-function BokehOrb({
-  size,
-  x,
-  y,
-  delay,
-  duration,
+// ── One drifting liquid blob ───────────────────────────────────────────────────
+function LiquidBlob({
+  width, height, color, blur,
+  x, y, scale, opacity, duration, delay = 0,
 }: {
-  size: number;
-  x: string;
-  y: string;
-  delay: number;
-  duration: number;
+  width: number; height: number;
+  color: string; blur: number;
+  x: string[]; y: string[];
+  scale: number[]; opacity: number[];
+  duration: number; delay?: number;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.4 }}
-      animate={{
-        opacity: [0, 0.35, 0.15, 0.35, 0],
-        scale: [0.4, 1, 0.8, 1, 0.4],
-        y: [0, -30, -10, -40, 0],
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ x, y, scale, opacity }}
       transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
+        opacity: { duration: 1.5, delay },
+        x:       { duration, delay, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
+        y:       { duration: duration * 1.15, delay, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
+        scale:   { duration: duration * 0.85, delay, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
       }}
-      className="absolute rounded-full pointer-events-none"
       style={{
-        width: size,
-        height: size,
-        left: x,
-        top: y,
-        background:
-          "radial-gradient(circle, rgba(107,158,17,0.4) 0%, rgba(107,158,17,0) 70%)",
-        filter: `blur(${size * 0.3}px)`,
+        position: "absolute",
+        width,
+        height,
+        borderRadius: "50%",
+        background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+        filter: `blur(${blur}px)`,
+        pointerEvents: "none",
       }}
     />
   );
 }
 
+// ── Splash screen ─────────────────────────────────────────────────────────────
 export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [showSplash, setShowSplash] = useState(true);
-  const router = useRouter();
+  const [logoIn,     setLogoIn]     = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const t1 = setTimeout(() => setLogoIn(true), 500);
+    const t2 = setTimeout(() => {
       setShowSplash(false);
       onComplete?.();
-    }, 3200);
-
-    return () => clearTimeout(timer);
-  }, [onComplete, router]);
+    }, 4400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onComplete]);
 
   return (
     <AnimatePresence>
@@ -69,152 +61,119 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         <motion.div
           key="splash"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.08, filter: "blur(12px)" }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
-          style={{ background: "linear-gradient(180deg, #0a0a0a 0%, #0d1208 50%, #0a0a0a 100%)" }}
+          exit={{ opacity: 0, scale: 1.08, filter: "blur(18px)" }}
+          transition={{ duration: 0.65, ease: "easeInOut" }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
+          style={{ background: "#09090b" }}
         >
-          {/* ── Background Bokeh Orbs ── */}
-          <BokehOrb size={120} x="10%" y="15%" delay={0.2} duration={6} />
-          <BokehOrb size={80} x="75%" y="20%" delay={0.8} duration={5} />
-          <BokehOrb size={100} x="60%" y="65%" delay={0.5} duration={7} />
-          <BokehOrb size={60} x="20%" y="72%" delay={1.0} duration={5.5} />
-          <BokehOrb size={90} x="85%" y="55%" delay={0.3} duration={6.5} />
-          <BokehOrb size={50} x="45%" y="85%" delay={1.2} duration={4.5} />
 
-          {/* ── Content Container ── */}
-          <div className="relative flex flex-col items-center justify-center -mt-8">
-            {/* ── Glassmorphism Circle ── */}
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 150,
-                damping: 18,
-                delay: 0.15,
-              }}
-              className="relative flex items-center justify-center"
-            >
-              {/* Outer green glow ring */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0.4, 0.8, 0.4] }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.6,
-                }}
-                className="absolute inset-0 rounded-full"
+          {/* ── Liquid blobs ── */}
+
+          {/* Primary large blob — upper left */}
+          <LiquidBlob
+            width={420} height={420}
+            color="rgba(107,158,17,0.2)"
+            blur={72}
+            x={["-22%", "4%", "-12%"]}
+            y={["-32%", "-8%", "-24%"]}
+            scale={[1, 1.22, 0.94]}
+            opacity={[0.7, 1, 0.75]}
+            duration={13}
+            delay={0}
+          />
+
+          {/* Secondary blob — lower right */}
+          <LiquidBlob
+            width={320} height={320}
+            color="rgba(80,124,8,0.22)"
+            blur={65}
+            x={["28%", "8%", "22%"]}
+            y={["22%", "38%", "16%"]}
+            scale={[1, 0.88, 1.12]}
+            opacity={[0.55, 0.85, 0.65]}
+            duration={16}
+            delay={0.4}
+          />
+
+          {/* Bright accent blob — center, subtle */}
+          <LiquidBlob
+            width={180} height={180}
+            color="rgba(149,201,62,0.28)"
+            blur={48}
+            x={["-6%", "12%", "2%"]}
+            y={["4%", "-6%", "10%"]}
+            scale={[1, 1.35, 0.82]}
+            opacity={[0.45, 0.75, 0.5]}
+            duration={10}
+            delay={0.2}
+          />
+
+          {/* Deep dark-green mass — bottom */}
+          <LiquidBlob
+            width={380} height={280}
+            color="rgba(35,62,4,0.35)"
+            blur={85}
+            x={["-8%", "6%", "-2%"]}
+            y={["28%", "42%", "32%"]}
+            scale={[1.1, 0.93, 1.02]}
+            opacity={[0.8, 0.55, 0.9]}
+            duration={19}
+            delay={0.1}
+          />
+
+          {/* Oil-sheen teal whisper — floats top right */}
+          <LiquidBlob
+            width={220} height={220}
+            color="rgba(0,155,110,0.09)"
+            blur={58}
+            x={["18%", "-18%", "6%"]}
+            y={["-18%", "8%", "-6%"]}
+            scale={[0.88, 1.18, 1.0]}
+            opacity={[0.35, 0.65, 0.42]}
+            duration={14}
+            delay={0.6}
+          />
+
+          {/* Extra depth blob — far left */}
+          <LiquidBlob
+            width={260} height={200}
+            color="rgba(60,95,8,0.15)"
+            blur={60}
+            x={["-38%", "-20%", "-30%"]}
+            y={["0%", "15%", "-8%"]}
+            scale={[1, 1.1, 0.9]}
+            opacity={[0.5, 0.7, 0.55]}
+            duration={11}
+            delay={0.3}
+          />
+
+          {/* ── Logo — clean, centered, still ── */}
+          <AnimatePresence>
+            {logoIn && (
+              <motion.img
+                key="logo"
+                src="/images/services/SquitoLogo1.png"
+                alt="Squito"
+                initial={{ opacity: 0, scale: 0.88 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
                 style={{
-                  width: 185,
-                  height: 185,
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  boxShadow: "0 0 40px 8px rgba(107,158,17,0.3), 0 0 80px 20px rgba(107,158,17,0.15)",
-                  borderRadius: "50%",
+                  width: 148,
+                  height: "auto",
+                  position: "relative",
+                  zIndex: 20,
+                  filter: [
+                    "drop-shadow(0 0 40px rgba(107,158,17,0.6))",
+                    "drop-shadow(0 0 14px rgba(149,201,62,0.45))",
+                    "drop-shadow(0 2px 24px rgba(0,0,0,0.8))",
+                  ].join(" "),
+                  userSelect: "none",
+                  pointerEvents: "none",
                 }}
               />
+            )}
+          </AnimatePresence>
 
-              {/* Frosted glass circle */}
-              <div
-                className="relative flex items-center justify-center rounded-full border border-white/10 overflow-hidden"
-                style={{
-                  width: 180,
-                  height: 180,
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 32px rgba(0,0,0,0.4)",
-                }}
-              >
-                {/* Green accent border */}
-                <div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    border: "1.5px solid rgba(107,158,17,0.35)",
-                  }}
-                />
-
-                {/* Actual Logo */}
-                <motion.img
-                  src="/squito_logo_v2.png"
-                  alt="Squito Logo"
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    delay: 0.5,
-                    duration: 0.8,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="w-[120px] h-auto relative z-10"
-                  style={{
-                    filter: "drop-shadow(0 0 16px rgba(107,158,17,0.35))",
-                  }}
-                />
-              </div>
-            </motion.div>
-
-            {/* ── Tagline ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
-              className="mt-8 flex flex-col items-center gap-3"
-            >
-              {/* Thin green separator line */}
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: 1.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="h-[1px] w-16"
-                style={{
-                  background: "linear-gradient(90deg, transparent, rgba(107,158,17,0.6), transparent)",
-                }}
-              />
-
-              <motion.p
-                initial={{ opacity: 0, letterSpacing: "0.05em" }}
-                animate={{ opacity: 1, letterSpacing: "0.25em" }}
-                transition={{ delay: 1.6, duration: 1, ease: "easeOut" }}
-                className="text-xs font-bold uppercase text-white/50"
-              >
-                Pest Control
-              </motion.p>
-            </motion.div>
-
-            {/* ── Bottom Tagline ── */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
-              transition={{ delay: 2.0, duration: 0.8 }}
-              className="mt-6 text-2xs font-medium tracking-[0.15em] text-white/30"
-            >
-              Smart. Safe. <span className="text-squito-green/60">Pest Control.</span>
-            </motion.p>
-          </div>
-
-          {/* ── Bottom Loading Bar ── */}
-          <motion.div
-            className="absolute bottom-[15%] left-1/2 -translate-x-1/2 h-[2px] rounded-full overflow-hidden"
-            style={{ width: "40%" }}
-          >
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: "100%" }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="h-full w-1/2 rounded-full"
-              style={{
-                background: "linear-gradient(90deg, transparent, rgba(107,158,17,0.6), transparent)",
-              }}
-            />
-          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
