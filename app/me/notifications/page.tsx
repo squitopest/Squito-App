@@ -3,6 +3,14 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import {
+  PEST_WATCHLIST_OPTIONS,
+  loadCustomerPreferences,
+  loadNotificationPreferences,
+  saveCustomerPreferences,
+  saveNotificationPreferences,
+  type CustomerPreferences,
+} from "@/lib/personalization";
 
 // Mock toggle functional component
 function Toggle({
@@ -31,29 +39,48 @@ export default function NotificationsPage() {
     email: false,
     marketing: false,
   });
-
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [preferences, setPreferences] = useState<CustomerPreferences | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("squito_notification_prefs");
-      if (saved) {
-        try {
-          setToggles(JSON.parse(saved));
-        } catch (e) {
-          // ignore parse errors
-        }
-      }
-      setIsLoaded(true);
-    }
+    setToggles(loadNotificationPreferences());
+    setPreferences(loadCustomerPreferences());
   }, []);
 
   const handleToggle = (key: keyof typeof toggles) => {
     setToggles((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("squito_notification_prefs", JSON.stringify(next));
-      }
+      saveNotificationPreferences(next);
+      return next;
+    });
+  };
+
+  const toggleWatchlistPest = (pest: (typeof PEST_WATCHLIST_OPTIONS)[number]) => {
+    setPreferences((current) => {
+      if (!current) return current;
+
+      const nextWatchlist = current.watchlist.includes(pest)
+        ? current.watchlist.filter((item) => item !== pest)
+        : current.watchlist.length >= 3
+        ? [...current.watchlist.slice(1), pest]
+        : [...current.watchlist, pest];
+
+      const next = {
+        ...current,
+        watchlist: nextWatchlist,
+      };
+      saveCustomerPreferences(next);
+      return next;
+    });
+  };
+
+  const toggleSeasonalReminders = () => {
+    setPreferences((current) => {
+      if (!current) return current;
+      const next = {
+        ...current,
+        seasonalReminders: !current.seasonalReminders,
+      };
+      saveCustomerPreferences(next);
       return next;
     });
   };
@@ -120,6 +147,50 @@ export default function NotificationsPage() {
               onChange={() => handleToggle("email")}
             />
           </div>
+        </div>
+
+        <h2 className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">
+          Pest Watchlist
+        </h2>
+        <div className="overflow-hidden rounded-[20px] bg-[#1a1a1a] border border-white/10 shadow-sm mb-8 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="block text-lg font-bold text-white">
+                Seasonal reminders
+              </span>
+              <span className="block text-sm font-medium text-white/40 mt-0.5">
+                Get nudges tied to the pests you care about most.
+              </span>
+            </div>
+            <Toggle
+              active={!!preferences?.seasonalReminders}
+              onChange={toggleSeasonalReminders}
+            />
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {PEST_WATCHLIST_OPTIONS.map((pest) => {
+              const isActive = !!preferences?.watchlist.includes(pest);
+              return (
+                <button
+                  key={pest}
+                  type="button"
+                  onClick={() => toggleWatchlistPest(pest)}
+                  className={`rounded-full border px-3 py-2 text-sm font-bold transition ${
+                    isActive
+                      ? "border-squito-green bg-squito-green/10 text-squito-green"
+                      : "border-white/10 bg-white/5 text-white/60"
+                  }`}
+                >
+                  {pest}
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="mt-4 text-xs text-white/35">
+            Choose up to 3 pests. Squito uses this to surface smarter seasonal prompts in the app.
+          </p>
         </div>
 
         <h2 className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-white/30">

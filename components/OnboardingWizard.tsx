@@ -1,11 +1,23 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
+import {
+  DEFAULT_CUSTOMER_PREFERENCES,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  PEST_WATCHLIST_OPTIONS,
+  PRIORITY_OPTIONS,
+  type CustomerPriority,
+  type PestWatchlistOption,
+  loadCustomerPreferences,
+  loadNotificationPreferences,
+  saveCustomerPreferences,
+  saveNotificationPreferences,
+} from "@/lib/personalization";
 
 // ── Bug Avatar Options ──
 const BUG_AVATARS = [
@@ -45,6 +57,19 @@ export function OnboardingWizard() {
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Step 3 personalization ──
+  const [priority, setPriority] = useState<CustomerPriority>(DEFAULT_CUSTOMER_PREFERENCES.priority);
+  const [watchlist, setWatchlist] = useState<PestWatchlistOption[]>(DEFAULT_CUSTOMER_PREFERENCES.watchlist);
+  const [seasonalReminders, setSeasonalReminders] = useState(DEFAULT_CUSTOMER_PREFERENCES.seasonalReminders);
+  const [skipSaving, setSkipSaving] = useState(false);
+
+  useEffect(() => {
+    const preferences = loadCustomerPreferences();
+    setPriority(preferences.priority);
+    setWatchlist(preferences.watchlist);
+    setSeasonalReminders(preferences.seasonalReminders);
+  }, []);
 
   // ── Step 2: get display avatar ──
   const getAvatarDisplay = () => {
@@ -93,6 +118,20 @@ export function OnboardingWizard() {
     setUploadingPhoto(false);
   };
 
+  const toggleWatchlistPest = (pest: PestWatchlistOption) => {
+    setWatchlist((current) => {
+      if (current.includes(pest)) {
+        return current.filter((item) => item !== pest);
+      }
+
+      if (current.length >= 3) {
+        return [...current.slice(1), pest];
+      }
+
+      return [...current, pest];
+    });
+  };
+
   // ── Save Profile ──
   const handleFinish = async () => {
     if (!supabase || !user) return;
@@ -125,8 +164,43 @@ export function OnboardingWizard() {
       return;
     }
 
+    const existingNotifications = loadNotificationPreferences();
+    saveCustomerPreferences({
+      priority,
+      watchlist,
+      seasonalReminders,
+    });
+    saveNotificationPreferences({
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      ...existingNotifications,
+      push: seasonalReminders ? true : existingNotifications.push,
+    });
+
     await refreshProfile();
     setSaving(false);
+  };
+
+  const handleSkip = async () => {
+    if (!supabase || !user) return;
+    setSkipSaving(true);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        onboarding_complete: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("[Onboarding] Skip error:", error);
+      alert("We couldn’t skip setup right now. Please try again.");
+      setSkipSaving(false);
+      return;
+    }
+
+    await refreshProfile();
+    setSkipSaving(false);
   };
 
   // Don't show if user is not authenticated or onboarding is already done
@@ -145,6 +219,16 @@ export function OnboardingWizard() {
     >
       {/* Progress Bar */}
       <div className="relative px-6 pt-14 pb-2">
+        <div className="mb-5 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={skipSaving}
+            className="text-sm font-bold uppercase tracking-widest text-white/35 transition hover:text-white/60 disabled:opacity-40"
+          >
+            {skipSaving ? "Skipping..." : "Skip for now"}
+          </button>
+        </div>
         <div className="flex items-center gap-2">
           {[1, 2, 3].map((s) => (
             <div
@@ -220,6 +304,7 @@ export function OnboardingWizard() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="(631) 555-0123"
+                    inputMode="tel"
                     className={inputClasses}
                   />
                 </div>
@@ -417,128 +502,175 @@ export function OnboardingWizard() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="flex flex-col items-center pt-12 text-center"
+              className="flex flex-col pt-6"
             >
-              {/* Animated confetti-style celebration */}
-              <motion.div
-                initial={{ scale: 0, rotate: -30 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", delay: 0.1, stiffness: 150, damping: 12 }}
-                className="relative"
-              >
-                {avatarDisplay.type === "image" ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={avatarDisplay.url}
-                    alt="Your avatar"
-                    className="h-28 w-28 rounded-full object-cover border-4 border-squito-green shadow-[0_8px_30px_rgba(107,158,17,0.3)]"
-                  />
-                ) : (
-                  <div
-                    className={`flex h-28 w-28 items-center justify-center rounded-full border-4 border-squito-green ${avatarDisplay.bg} shadow-[0_8px_30px_rgba(107,158,17,0.3)]`}
-                  >
-                    <span className="text-[52px]">{avatarDisplay.emoji}</span>
-                  </div>
-                )}
-                {/* Sparkle decorations */}
+              <div className="text-center">
                 <motion.span
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4, type: "spring" }}
-                  className="absolute -top-3 -right-2 text-2xl"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", delay: 0.1, stiffness: 200, damping: 15 }}
+                  className="inline-block text-5xl mb-3"
                 >
                   ✨
                 </motion.span>
-                <motion.span
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6, type: "spring" }}
-                  className="absolute -bottom-1 -left-3 text-xl"
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="font-display text-[28px] font-bold text-white"
                 >
-                  🎉
-                </motion.span>
+                  Make Squito smarter
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-1 text-base text-white/50 font-medium max-w-[320px] mx-auto"
+                >
+                  Tell us what matters most at your home so we can surface the right reminders and quick actions.
+                </motion.p>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="mt-8 rounded-3xl border border-white/10 bg-[#1a1a1a] p-5 shadow-sm"
+              >
+                <p className="text-xs font-bold uppercase tracking-widest text-white/40">
+                  Priority
+                </p>
+                <div className="mt-4 grid gap-3">
+                  {PRIORITY_OPTIONS.map((option) => {
+                    const isActive = priority === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setPriority(option.id)}
+                        className={`rounded-2xl border p-4 text-left transition ${
+                          isActive
+                            ? "border-squito-green bg-squito-green/10"
+                            : "border-white/10 bg-white/5 hover:bg-white/10"
+                        }`}
+                      >
+                        <p className={`font-bold ${isActive ? "text-squito-green" : "text-white"}`}>
+                          {option.label}
+                        </p>
+                        <p className="mt-1 text-sm text-white/50">
+                          {option.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
               </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-6 font-display text-[28px] font-bold text-white"
+                transition={{ delay: 0.45 }}
+                className="mt-4 rounded-3xl border border-white/10 bg-[#1a1a1a] p-5 shadow-sm"
               >
-                You&apos;re all set!
-              </motion.h1>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-white/40">
+                      Pest Watchlist
+                    </p>
+                    <p className="mt-1 text-sm text-white/50">
+                      Pick up to 3 pests you care about most.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-white/40">
+                    {watchlist.length}/3
+                  </span>
+                </div>
 
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mt-1 text-base text-white/50 font-medium max-w-[260px] mx-auto"
-              >
-                Welcome to the Squito family, {fullName.split(" ")[0]}. Let&apos;s keep your home pest-free.
-              </motion.p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {PEST_WATCHLIST_OPTIONS.map((pest) => {
+                    const isActive = watchlist.includes(pest);
+                    return (
+                      <button
+                        key={pest}
+                        type="button"
+                        onClick={() => toggleWatchlistPest(pest)}
+                        className={`rounded-full border px-3 py-2 text-sm font-bold transition ${
+                          isActive
+                            ? "border-squito-green bg-squito-green/10 text-squito-green"
+                            : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                        }`}
+                      >
+                        {pest}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Summary Card */}
+                <button
+                  type="button"
+                  onClick={() => setSeasonalReminders((current) => !current)}
+                  className={`mt-5 flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${
+                    seasonalReminders
+                      ? "border-squito-green/30 bg-squito-green/10"
+                      : "border-white/10 bg-white/5"
+                  }`}
+                >
+                  <div>
+                    <p className="font-bold text-white">Seasonal reminders</p>
+                    <p className="mt-1 text-sm text-white/50">
+                      Get proactive prompts when your watchlist pests are entering peak season.
+                    </p>
+                  </div>
+                  <div className={`flex h-7 w-12 items-center rounded-full p-1 ${seasonalReminders ? "bg-squito-green" : "bg-white/15"}`}>
+                    <div className={`h-5 w-5 rounded-full bg-white shadow-md transition-transform ${seasonalReminders ? "translate-x-5" : "translate-x-0"}`} />
+                  </div>
+                </button>
+              </motion.div>
+
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="mt-8 w-full rounded-3xl border border-white/10 bg-[#1a1a1a] p-6 shadow-sm text-left"
+                transition={{ delay: 0.55 }}
+                className="mt-4 w-full rounded-3xl border border-white/10 bg-[#1a1a1a] p-6 shadow-sm text-left"
               >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">👤</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-0.5">
-                        Name
-                      </p>
-                      <p className="font-medium text-lg truncate text-white/90">
-                        {fullName}
-                      </p>
-                    </div>
-                  </div>
-                  {phone && (
-                    <div className="flex items-center gap-3 border-t border-white/10 pt-4">
-                      <span className="text-lg">📞</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-0.5">
-                          Phone
-                        </p>
-                        <p className="font-medium text-lg truncate text-white/90">
-                          {phone}
-                        </p>
-                      </div>
+                <div className="flex items-center gap-4">
+                  {avatarDisplay.type === "image" ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={avatarDisplay.url}
+                      alt="Your avatar"
+                      className="h-16 w-16 rounded-full object-cover border-4 border-squito-green"
+                    />
+                  ) : (
+                    <div className={`flex h-16 w-16 items-center justify-center rounded-full border-4 border-squito-green ${avatarDisplay.bg}`}>
+                      <span className="text-3xl">{avatarDisplay.emoji}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-3 border-t border-white/10 pt-4">
-                    <span className="text-lg">🏠</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold uppercase tracking-wider text-white/50 mb-0.5">
-                        Service Address
+                  <div className="min-w-0">
+                    <p className="font-display text-xl font-bold text-white">
+                      {fullName}
+                    </p>
+                    <p className="text-sm text-white/45">
+                      {serviceAddress}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-[#f7fbe8] border border-squito-green/20 p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🎁</span>
+                    <div>
+                      <p className="text-base font-bold text-squito-green">
+                        50 PestPoints are waiting for you
                       </p>
-                      <p className="font-medium text-lg truncate text-white/90">
-                        {serviceAddress}
+                      <p className="text-sm text-squito-green/70">
+                        We&apos;ll use your setup to personalize reminders, pest alerts, and quick actions.
                       </p>
                     </div>
                   </div>
                 </div>
               </motion.div>
 
-              {/* PestPoints Welcome */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 }}
-                className="mt-4 w-full rounded-2xl bg-[#f7fbe8] border border-squito-green/20 p-4 shadow-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🎁</span>
-                  <p className="text-base font-bold text-squito-green">
-                    50 PestPoints added to your account!
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Buttons */}
               <div className="mt-8 flex w-full gap-3">
                 <GlassButton
                   variant="ghost"
@@ -553,7 +685,7 @@ export function OnboardingWizard() {
                   disabled={saving}
                   className="flex-[2] py-4 text-lg bg-squito-green/90 dark:bg-squito-green shadow-[0_8px_20px_rgba(107,158,17,0.25)]"
                 >
-                  {saving ? "Saving..." : "Let's Go! 🚀"}
+                  {saving ? "Saving..." : "Finish Setup"}
                 </GlassButton>
               </div>
             </motion.div>

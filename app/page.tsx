@@ -7,6 +7,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/haptics";
 import { GlassButton } from "@/components/ui/GlassButton";
 import { WelcomeCarousel } from "@/components/WelcomeCarousel";
+import { useAuth } from "@/lib/AuthContext";
+import { useCart } from "@/lib/CartContext";
+import {
+  DEFAULT_CUSTOMER_PREFERENCES,
+  getPersonalizedPrompt,
+  loadCustomerPreferences,
+} from "@/lib/personalization";
 import {
   HeartIcon,
   CommentIcon,
@@ -461,6 +468,66 @@ function CommentsDrawer({ post, onClose }: { post: FeedPost; onClose: () => void
   );
 }
 
+function HomeFocusCard() {
+  const { user, isGuest } = useAuth();
+  const { hasItems, itemCount } = useCart();
+  const [dismissed, setDismissed] = useState(false);
+
+  const prompt = useMemo(() => {
+    if (!user && !hasItems) return null;
+    const preferences = user && !isGuest ? loadCustomerPreferences() : DEFAULT_CUSTOMER_PREFERENCES;
+    return getPersonalizedPrompt(preferences, hasItems, itemCount);
+  }, [hasItems, isGuest, itemCount, user]);
+
+  useEffect(() => {
+    setDismissed(false);
+  }, [hasItems, itemCount, user]);
+
+  if (!prompt || dismissed) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed left-4 right-4 top-20 z-30 rounded-3xl border border-white/10 bg-black/45 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.28)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-2xs font-bold uppercase tracking-widest text-squito-green/80">
+            {prompt.eyebrow}
+          </p>
+          <h2 className="mt-1 font-display text-xl font-bold text-white">
+            {prompt.title}
+          </h2>
+          <p className="mt-1 text-sm text-white/65">
+            {prompt.body}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-white/15"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <Link href={prompt.primaryHref} className="flex-1">
+          <GlassButton variant="primary" className="w-full py-3 text-sm bg-squito-green/90 dark:bg-squito-green">
+            {prompt.primaryLabel}
+          </GlassButton>
+        </Link>
+        <Link href={prompt.secondaryHref} className="flex-1">
+          <GlassButton variant="ghost" className="w-full py-3 text-sm text-white/80 border border-white/10">
+            {prompt.secondaryLabel}
+          </GlassButton>
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function TikTokFeed() {
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [commentsOpen, setCommentsOpen] = useState<FeedPost | null>(null);
@@ -500,6 +567,7 @@ export default function TikTokFeed() {
   return (
     <>
       <WelcomeCarousel />
+      <HomeFocusCard />
       <div className="absolute inset-0 snap-y snap-mandatory overflow-y-scroll bg-black scrollbar-hide">
         {feed.map((post) => (
           <FeedItem
