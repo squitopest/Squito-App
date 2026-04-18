@@ -10,6 +10,7 @@ import { useCart, SERVICE_CATALOG } from "@/lib/CartContext";
 import { haptics } from "@/lib/haptics";
 import { Capacitor } from "@capacitor/core";
 import { usePlacesAutocomplete } from "@/lib/usePlacesAutocomplete";
+import { getApiBase } from "@/lib/runtimeConfig";
 
 // ── Phone number formatting ─────────────────────────────────────────────────
 function formatPhone(value: string): string {
@@ -289,7 +290,7 @@ function BookForm() {
     }
 
     try {
-      const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+      const API_BASE = getApiBase(Capacitor.isNativePlatform());
       const openCheckout = async (url: string) => {
         if (Capacitor.isNativePlatform()) {
           const { Browser } = await import("@capacitor/browser");

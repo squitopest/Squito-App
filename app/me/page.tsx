@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Suspense, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
+import { WEB_APP_ORIGIN } from "@/lib/runtimeConfig";
 import {
   getTierForPoints,
   getProgressToNextTier,
@@ -820,7 +821,7 @@ function AuthenticatedProfile() {
                         onClick: async () => {
                           try {
                             const { Share } = await import("@capacitor/share");
-                            const refUrl = `https://squito-app.vercel.app/?ref=${encodeURIComponent(user?.email || "")}`;
+                            const refUrl = `${WEB_APP_ORIGIN}/?ref=${encodeURIComponent(user?.email || "")}`;
                             await Share.share({
                               title: "Squito Pest Control",
                               text: `Get $50 off your first pest control service with Squito! Tap here:`,

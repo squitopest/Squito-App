@@ -7,6 +7,7 @@ import { GlassButton } from "@/components/ui/GlassButton";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { NativeBiometric } from "@capgo/capacitor-native-biometric";
+import { getApiBase } from "@/lib/runtimeConfig";
 
 function Toggle({
   active,
@@ -166,7 +167,7 @@ export default function SecurityPage() {
 
     try {
       const { Capacitor } = await import("@capacitor/core");
-      const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+      const API_BASE = getApiBase(Capacitor.isNativePlatform());
       const res = await fetch(`${API_BASE}/api/delete-account`, {
         method: "POST",
         headers: {

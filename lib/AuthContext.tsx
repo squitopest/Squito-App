@@ -11,6 +11,12 @@ import {
 import { supabase } from "./supabase";
 import { useRouter } from "next/navigation";
 import type { User, Session } from "@supabase/supabase-js";
+import {
+  NATIVE_APP_SCHEME,
+  getAppleAuthRedirectUri,
+  getClientOrigin,
+  getNativeAuthRedirectUrl,
+} from "./runtimeConfig";
 
 export interface UserProfile {
   id: string;
@@ -272,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = async (email: string) => {
     if (!supabase) return { error: "Supabase not configured." };
     setIsLoading(true);
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
+    const origin = getClientOrigin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${origin}/me/security`,
     });
@@ -290,9 +296,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isNative = Capacitor.isNativePlatform();
     } catch (e) {}
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
+    const origin = getClientOrigin();
     // Send users back to root page/localhost natively or on the web
-    const redirectUrl = isNative ? "com.squito.pestcontrol.app://auth/callback" : origin;
+    const redirectUrl = isNative ? getNativeAuthRedirectUrl() : origin;
 
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -319,8 +325,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
         const result = await SignInWithApple.authorize({
-          clientId: "com.squito.pestcontrol.app", // Fallback, Supabase/Apple native ignores this on iOS but requires it for web
-          redirectURI: "https://squito-app.vercel.app/api/auth/callback",
+          clientId: NATIVE_APP_SCHEME, // Fallback, Supabase/Apple native ignores this on iOS but requires it for web
+          redirectURI: getAppleAuthRedirectUri(),
           scopes: "email name",
         });
         
@@ -343,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } else {
       // Web fallback
-      const origin = typeof window !== "undefined" ? window.location.origin : "https://squito-app.vercel.app";
+      const origin = getClientOrigin();
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "apple",

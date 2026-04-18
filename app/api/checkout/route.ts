@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { getStripe } from "@/lib/stripe";
 import { calculateTax } from "@/lib/bookingEngine";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { WEB_APP_ORIGIN } from "@/lib/runtimeConfig";
 
 const checkoutRateLimit = createRateLimiter({
   windowMs: 60_000,
@@ -242,9 +243,9 @@ export async function POST(request: Request) {
     const stripe = getStripe();
 
     // In Native iOS Capacitor, origin is capacitor://localhost — lock to Vercel
-    let origin = request.headers.get("origin") || "https://squito-app.vercel.app";
+    let origin = request.headers.get("origin") || WEB_APP_ORIGIN;
     if (origin.includes("capacitor://")) {
-      origin = "https://squito-app.vercel.app";
+      origin = WEB_APP_ORIGIN;
     }
 
     // ── Build line items ──

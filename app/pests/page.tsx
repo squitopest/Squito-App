@@ -6,6 +6,7 @@ import Image from "next/image";
 import { pestsData, pestCategories, Pest, PestCategory } from "@/lib/pests-data";
 import { GlassButton } from "@/components/ui/GlassButton";
 import Link from "next/link";
+import { getApiBase } from "@/lib/runtimeConfig";
 
 interface PestIdentifyResult {
   name: string;
@@ -18,8 +19,6 @@ interface PestIdentifyResult {
   recommendation?: string;
   error?: string;
 }
-
-const DEFAULT_NATIVE_API_BASE = "https://squito-app.vercel.app";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -169,9 +168,7 @@ export default function PestsPage() {
       const jpeg = await compressToJpeg(file);
 
       const { Capacitor } = await import("@capacitor/core");
-      const API_BASE = Capacitor.isNativePlatform()
-        ? (process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_NATIVE_API_BASE)
-        : "";
+      const API_BASE = getApiBase(Capacitor.isNativePlatform());
       const res = await fetch(`${API_BASE}/api/identify-pest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

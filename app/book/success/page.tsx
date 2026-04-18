@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import Link from "next/link";
 import { haptics } from "@/lib/haptics";
 import { Capacitor } from "@capacitor/core";
+import { getApiBase } from "@/lib/runtimeConfig";
 
 interface CartItemDetails {
   service: string;
@@ -95,7 +96,7 @@ function SuccessContent() {
     }).catch(err => console.warn("Confetti load failed", err));
 
     // Fetch booking details from Stripe session
-    const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+    const API_BASE = getApiBase(Capacitor.isNativePlatform());
     fetch(`${API_BASE}/api/checkout/session?id=${sessionId}`)
       .then((r) => r.json())
       .then((data) => {
