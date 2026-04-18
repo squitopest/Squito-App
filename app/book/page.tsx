@@ -290,6 +290,14 @@ function BookForm() {
 
     try {
       const API_BASE = Capacitor.isNativePlatform() ? "https://squito-app.vercel.app" : "";
+      const openCheckout = async (url: string) => {
+        if (Capacitor.isNativePlatform()) {
+          const { Browser } = await import("@capacitor/browser");
+          await Browser.open({ url });
+          return;
+        }
+        window.location.href = url;
+      };
 
       if (isCartMode) {
         // ── Cart checkout ──
@@ -344,7 +352,7 @@ function BookForm() {
 
         // Clear cart before redirecting to Stripe
         clearCart();
-        window.location.href = result.url;
+        await openCheckout(result.url);
         return;
       }
 
@@ -390,7 +398,7 @@ function BookForm() {
       }
 
       // Redirect to Stripe Checkout
-      window.location.href = result.url;
+      await openCheckout(result.url);
     } catch (err: unknown) {
       console.error(err);
       setErrorMessage(getErrorMessage(err));
