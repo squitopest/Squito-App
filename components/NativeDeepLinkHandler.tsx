@@ -10,6 +10,7 @@ function mapIncomingUrl(url: string): string | null {
     const parsed = new URL(url);
     const isNativeScheme = parsed.protocol === `${NATIVE_APP_SCHEME}:`;
     const isWebOrigin = parsed.origin === WEB_APP_ORIGIN;
+    const hashParams = new URLSearchParams(parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash);
 
     if (!isNativeScheme && !isWebOrigin) {
       return null;
@@ -18,6 +19,17 @@ function mapIncomingUrl(url: string): string | null {
     const path = isNativeScheme
       ? `/${parsed.hostname}${parsed.pathname}`.replace(/\/+/g, "/")
       : parsed.pathname;
+
+    const isAuthCallback =
+      path === "/auth/callback" ||
+      hashParams.has("access_token") ||
+      hashParams.has("refresh_token") ||
+      hashParams.has("error_description") ||
+      parsed.searchParams.has("code");
+
+    if (isAuthCallback) {
+      return null;
+    }
 
     return `${path}${parsed.search}${parsed.hash}`;
   } catch {

@@ -5,9 +5,10 @@ import { GlassButton } from "@/components/ui/GlassButton";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense, useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
-import { WEB_APP_ORIGIN } from "@/lib/runtimeConfig";
+import { WEB_APP_ORIGIN, getApiBase } from "@/lib/runtimeConfig";
 import {
   getTierForPoints,
   getProgressToNextTier,
@@ -339,7 +340,8 @@ function AuthenticatedProfile() {
                                   
     if (res.success) {
       try {
-        await fetch("/api/redeem-alert", {
+        const apiBase = getApiBase(Capacitor.isNativePlatform());
+        await fetch(`${apiBase}/api/redeem-alert`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -77,9 +77,14 @@ function SuccessContent() {
   const { user, refreshProfile } = useAuth();
   const [details, setDetails] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    if (!sessionId) { setLoading(false); return; }
+    if (!sessionId) {
+      setLoading(false);
+      return;
+    }
 
     if (Capacitor.isNativePlatform()) haptics.success();
 
@@ -98,17 +103,28 @@ function SuccessContent() {
     // Fetch booking details from Stripe session
     const API_BASE = getApiBase(Capacitor.isNativePlatform());
     fetch(`${API_BASE}/api/checkout/session?id=${sessionId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.error) setDetails(data);
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || data.error) {
+          throw new Error(data.error || "We couldn't load your booking details.");
+        }
+        return data;
       })
-      .catch(console.error)
+      .then((data) => {
+        setDetails(data);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        console.error(err);
+        setDetails(null);
+        setLoadError(err instanceof Error ? err.message : "We couldn't load your booking details.");
+      })
       .finally(() => setLoading(false));
 
     // Give webhook 3s to process then refresh points
     const timer = setTimeout(() => refreshProfile(), 3000);
     return () => clearTimeout(timer);
-  }, [sessionId, refreshProfile]);
+  }, [sessionId, refreshProfile, reloadKey]);
 
   if (!sessionId) {
     return (
@@ -261,6 +277,28 @@ function SuccessContent() {
       {/* Loading skeleton */}
       {loading && (
         <div className="mt-6 w-full max-w-sm rounded-3xl border border-white/10 bg-[#1a1a1a] p-5 animate-pulse h-44" />
+      )}
+
+      {!loading && loadError && !details && (
+        <div className="mt-6 w-full max-w-sm rounded-3xl border border-amber-500/20 bg-amber-500/10 p-5 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <p className="mt-4 font-bold text-white">Payment received, but details are still syncing</p>
+          <p className="mt-2 text-sm text-white/70">
+            {loadError}
+          </p>
+          <button
+            onClick={() => {
+              setLoadError(null);
+              setLoading(true);
+              setReloadKey((current) => current + 1);
+            }}
+            className="mt-4 rounded-full bg-squito-green px-4 py-2 text-sm font-bold text-white"
+          >
+            Retry details
+          </button>
+        </div>
       )}
 
       {/* PestPoints Banner */}

@@ -13,9 +13,12 @@ import { useRouter } from "next/navigation";
 import type { User, Session } from "@supabase/supabase-js";
 import {
   NATIVE_APP_SCHEME,
+  WEB_APP_ORIGIN,
+  getApiBase,
   getAppleAuthRedirectUri,
   getClientOrigin,
   getNativeAuthRedirectUrl,
+  getNativeRouteUrl,
 } from "./runtimeConfig";
 
 export interface UserProfile {
@@ -65,6 +68,49 @@ export function useAuth() {
 
 const GUEST_KEY = "squito_guest_mode";
 
+function getAuthCallbackData(url: string) {
+  try {
+    const parsed = new URL(url);
+    const isNativeScheme = parsed.protocol === `${NATIVE_APP_SCHEME}:`;
+    const isWebOrigin = parsed.origin === WEB_APP_ORIGIN;
+
+    if (!isNativeScheme && !isWebOrigin) {
+      return null;
+    }
+
+    const path = isNativeScheme
+      ? `/${parsed.hostname}${parsed.pathname}`.replace(/\/+/g, "/")
+      : parsed.pathname;
+    const queryParams = parsed.searchParams;
+    const hashParams = new URLSearchParams(parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash);
+
+    const accessToken = hashParams.get("access_token") ?? queryParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token") ?? queryParams.get("refresh_token");
+    const authCode = queryParams.get("code");
+    const authError =
+      hashParams.get("error_description") ??
+      queryParams.get("error_description") ??
+      hashParams.get("error") ??
+      queryParams.get("error");
+    const type = hashParams.get("type") ?? queryParams.get("type");
+
+    if (!accessToken && !refreshToken && !authCode && !authError) {
+      return null;
+    }
+
+    return {
+      path,
+      accessToken,
+      refreshToken,
+      authCode,
+      authError,
+      type,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -111,6 +157,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     let authCleanup: (() => void) | undefined;
     const pushListenerRemovers: Array<() => void> = [];
+    let removeNativeAuthListener: (() => void) | undefined;
+
+    const handleNativeAuthUrl = async (url?: string | null) => {
+      if (!url || !supabase) return false;
+
+      const callback = getAuthCallbackData(url);
+      if (!callback) return false;
+
+      try {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.close();
+      } catch {}
+
+      if (callback.authError) {
+        console.warn("[Auth] Native auth callback failed:", callback.authError);
+        router.push("/");
+        return true;
+      }
+
+      if (callback.authCode) {
+        const { error } = await supabase.auth.exchangeCodeForSession(callback.authCode);
+        if (error) {
+          console.warn("[Auth] Failed to exchange native auth code:", error.message);
+          router.push("/");
+          return true;
+        }
+      } else if (callback.accessToken && callback.refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: callback.accessToken,
+          refresh_token: callback.refreshToken,
+        });
+        if (error) {
+          console.warn("[Auth] Failed to restore native auth session:", error.message);
+          router.push("/");
+          return true;
+        }
+      } else {
+        return false;
+      }
+
+      if (callback.type === "recovery" || callback.path === "/me/security") {
+        router.push("/me/security#type=recovery");
+      } else {
+        router.push("/");
+      }
+
+      return true;
+    };
 
     async function init() {
       // Check for guest mode first
@@ -187,6 +281,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }).catch(console.warn);
       }
 
+      if (typeof window !== "undefined") {
+        import("@capacitor/core").then(async ({ Capacitor }) => {
+          if (!Capacitor.isNativePlatform()) return;
+
+          try {
+            const { App } = await import("@capacitor/app");
+            const launch = await App.getLaunchUrl();
+            await handleNativeAuthUrl(launch?.url);
+
+            const listener = await App.addListener("appUrlOpen", async ({ url }) => {
+              await handleNativeAuthUrl(url);
+            });
+
+            removeNativeAuthListener = () => {
+              void listener.remove();
+            };
+          } catch (err) {
+            console.warn("[Auth] Native auth listener setup failed", err);
+          }
+        }).catch(console.warn);
+      }
+
       if (!isMounted) return;
       setIsLoading(false);
       setIsAuthReady(true);
@@ -223,6 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
       authCleanup?.();
+      removeNativeAuthListener?.();
       pushListenerRemovers.forEach((remove) => remove());
     };
   }, [fetchProfile, router]);
@@ -262,7 +379,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fire welcome email only when Supabase returns a live session token.
     // This keeps the email endpoint private instead of publicly callable.
     if (data.session?.access_token) {
-      fetch("/api/welcome-email", {
+      let isNative = false;
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        isNative = Capacitor.isNativePlatform();
+      } catch {}
+
+      const apiBase = getApiBase(isNative);
+      fetch(`${apiBase}/api/welcome-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -277,10 +401,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     if (!supabase) return { error: "Supabase not configured." };
+    let isNative = false;
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      isNative = Capacitor.isNativePlatform();
+    } catch {}
+
     setIsLoading(true);
     const origin = getClientOrigin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/me/security`,
+      redirectTo: isNative ? getNativeRouteUrl("me/security") : `${origin}/me/security`,
     });
     setIsLoading(false);
     if (error) return { error: error.message };
@@ -301,12 +431,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const redirectUrl = isNative ? getNativeAuthRedirectUrl() : origin;
 
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl,
+        ...(isNative ? { skipBrowserRedirect: true } : {}),
       },
     });
+
+    if (!error && isNative && data?.url) {
+      try {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: data.url });
+      } catch (browserError) {
+        setIsLoading(false);
+        return {
+          error: browserError instanceof Error ? browserError.message : "Could not open Google sign-in.",
+        };
+      }
+    }
+
     setIsLoading(false);
     if (error) return { error: error.message };
     return {};
